@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&family=Barlow+Condensed:wght@600;700&display=swap');
+
+:root {
+  --ink: #13261a;
+  --paper: #f3fff7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 85% -20%, #f8da57 0%, transparent 40%),
+    radial-gradient(circle at -12% 120%, #61d387 0%, transparent 32%),
+    linear-gradient(180deg, var(--paper) 0%, #edfff5 100%);
+  font-family: Montserrat, 'Segoe UI', sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Barlow Condensed', 'Segoe UI', sans-serif;
+  letter-spacing: 0.015em;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}

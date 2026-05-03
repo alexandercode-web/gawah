@@ -1,0 +1,132 @@
+-- GawaHelper MySQL schema for phpMyAdmin
+-- Database: gawahelperdb
+
+CREATE DATABASE IF NOT EXISTS gawahelperdb
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+USE gawahelperdb;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS Reports;
+DROP TABLE IF EXISTS Notifications;
+DROP TABLE IF EXISTS Reviews;
+DROP TABLE IF EXISTS Payments;
+DROP TABLE IF EXISTS TaskAssignments;
+DROP TABLE IF EXISTS Tasks;
+DROP TABLE IF EXISTS Categories;
+DROP TABLE IF EXISTS Users;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE TABLE Users (
+  UserID INT AUTO_INCREMENT PRIMARY KEY,
+  FullName VARCHAR(100) NOT NULL,
+  Email VARCHAR(100) NOT NULL UNIQUE,
+  PasswordHash VARCHAR(255) NOT NULL,
+  Rating DECIMAL(2,1) NOT NULL DEFAULT 0.0,
+  CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE Categories (
+  CategoryID INT AUTO_INCREMENT PRIMARY KEY,
+  CategoryName VARCHAR(50) NOT NULL,
+  UNIQUE KEY uq_category_name (CategoryName)
+) ENGINE=InnoDB;
+
+CREATE TABLE Tasks (
+  TaskID INT AUTO_INCREMENT PRIMARY KEY,
+  UserID INT NOT NULL,
+  Title VARCHAR(100) NOT NULL,
+  Description TEXT NOT NULL,
+  Location VARCHAR(100) NOT NULL,
+  TaskTime DATETIME NOT NULL,
+  Budget DECIMAL(10,2) NOT NULL,
+  CategoryID INT NOT NULL,
+  Status VARCHAR(20) NOT NULL DEFAULT 'Open',
+  CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_tasks_user FOREIGN KEY (UserID) REFERENCES Users(UserID),
+  CONSTRAINT fk_tasks_category FOREIGN KEY (CategoryID) REFERENCES Categories(CategoryID)
+) ENGINE=InnoDB;
+
+CREATE TABLE TaskAssignments (
+  AssignmentID INT AUTO_INCREMENT PRIMARY KEY,
+  TaskID INT NOT NULL,
+  HelperID INT NOT NULL,
+  AcceptedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CompletedAt DATETIME NULL,
+  ProofImage VARCHAR(255) NULL,
+  CONSTRAINT fk_assignments_task FOREIGN KEY (TaskID) REFERENCES Tasks(TaskID),
+  CONSTRAINT fk_assignments_helper FOREIGN KEY (HelperID) REFERENCES Users(UserID),
+  UNIQUE KEY uq_task_helper (TaskID, HelperID)
+) ENGINE=InnoDB;
+
+CREATE TABLE Payments (
+  PaymentID INT AUTO_INCREMENT PRIMARY KEY,
+  TaskID INT NOT NULL,
+  Amount DECIMAL(10,2) NOT NULL,
+  PaymentMethod VARCHAR(20) NOT NULL,
+  Status VARCHAR(20) NOT NULL DEFAULT 'Pending',
+  CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_payments_task FOREIGN KEY (TaskID) REFERENCES Tasks(TaskID),
+  CONSTRAINT chk_payment_method CHECK (PaymentMethod IN ('Cash', 'GCash'))
+) ENGINE=InnoDB;
+
+CREATE TABLE Messages (
+  MessageID INT AUTO_INCREMENT PRIMARY KEY,
+  TaskID INT NOT NULL,
+  SenderID INT NOT NULL,
+  RecipientID INT NOT NULL,
+  Content TEXT NOT NULL,
+  AttachmentType VARCHAR(20) NULL,
+  AttachmentData LONGTEXT NULL,
+  AttachmentName VARCHAR(255) NULL,
+  AttachmentMime VARCHAR(100) NULL,
+  IsRead TINYINT(1) NOT NULL DEFAULT 0,
+  CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_messages_task FOREIGN KEY (TaskID) REFERENCES Tasks(TaskID),
+  CONSTRAINT fk_messages_sender FOREIGN KEY (SenderID) REFERENCES Users(UserID),
+  CONSTRAINT fk_messages_recipient FOREIGN KEY (RecipientID) REFERENCES Users(UserID)
+) ENGINE=InnoDB;
+
+CREATE TABLE Reviews (
+  ReviewID INT AUTO_INCREMENT PRIMARY KEY,
+  TaskID INT NOT NULL,
+  ReviewerID INT NOT NULL,
+  ReviewedUserID INT NOT NULL,
+  Rating INT NOT NULL,
+  Comment TEXT NULL,
+  CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_reviews_task FOREIGN KEY (TaskID) REFERENCES Tasks(TaskID),
+  CONSTRAINT fk_reviews_reviewer FOREIGN KEY (ReviewerID) REFERENCES Users(UserID),
+  CONSTRAINT fk_reviews_reviewed_user FOREIGN KEY (ReviewedUserID) REFERENCES Users(UserID),
+  CONSTRAINT chk_review_rating CHECK (Rating BETWEEN 1 AND 5)
+) ENGINE=InnoDB;
+
+CREATE TABLE Notifications (
+  NotificationID INT AUTO_INCREMENT PRIMARY KEY,
+  UserID INT NOT NULL,
+  Message VARCHAR(255) NOT NULL,
+  IsRead TINYINT(1) NOT NULL DEFAULT 0,
+  CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_notifications_user FOREIGN KEY (UserID) REFERENCES Users(UserID)
+) ENGINE=InnoDB;
+
+CREATE TABLE Reports (
+  ReportID INT AUTO_INCREMENT PRIMARY KEY,
+  ReporterID INT NOT NULL,
+  ReportedUserID INT NOT NULL,
+  Reason TEXT NOT NULL,
+  CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_reports_reporter FOREIGN KEY (ReporterID) REFERENCES Users(UserID),
+  CONSTRAINT fk_reports_reported_user FOREIGN KEY (ReportedUserID) REFERENCES Users(UserID)
+) ENGINE=InnoDB;
+
+INSERT INTO Categories (CategoryName)
+VALUES
+  ('Cleaning'),
+  ('Delivery'),
+  ('Tutoring'),
+  ('Repairs'),
+  ('Shopping');
