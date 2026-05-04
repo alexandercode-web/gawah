@@ -608,7 +608,7 @@ app.post('/api/auth/forgot-password/request-code', async (req, res) => {
         `,
       })
     } catch (emailError) {
-      logger.error('Email sending failed:', emailError.message)
+      console.error('Email sending failed FULL TRACE:', emailError)
       return res.status(500).json({ message: 'Failed to send reset code email. Please check your email configuration.' })
     }
 
