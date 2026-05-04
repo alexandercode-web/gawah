@@ -867,8 +867,26 @@ img {
   }
 
   .admin-stats-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, 1fr) !important;
     gap: 0.5rem !important;
+    padding: 1rem 0.5rem !important;
+  }
+
+  .stat-card {
+    padding: 1rem 0.5rem !important;
+    border-radius: 12px !important;
+    gap: 0.25rem !important;
+  }
+
+  .stat-icon-box {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 1.2rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .stat-value {
+    font-size: 1.4rem !important;
   }
 
   .admin-tabs {
