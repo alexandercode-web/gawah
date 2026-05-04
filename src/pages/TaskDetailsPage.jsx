@@ -720,7 +720,7 @@ function TaskDetailsPage({ user, hasUnreadNotifications = false, onLogout, onTas
                 </div>
                 <div>
                   <p className="task-poster-name">{task.PosterName || user?.FullName || 'User'}</p>
-                  <p className="task-poster-rating">★ {Number(task.PosterRating || 0).toFixed(1)} rating</p>
+                  <p className="task-poster-rating">★ {Number(task.PosterRating || 5.0).toFixed(1)} rating</p>
                 </div>
               </div>
             </article>
@@ -743,7 +743,7 @@ function TaskDetailsPage({ user, hasUnreadNotifications = false, onLogout, onTas
                   </div>
                   <div>
                     <p className="task-poster-name">{task.HelperName || user?.FullName || 'You'}</p>
-                    <p className="task-poster-rating">★ {Number(task.HelperRating || 0).toFixed(1)} rating</p>
+                    <p className="task-poster-rating">★ {Number(task.HelperRating || 5.0).toFixed(1)} rating</p>
                   </div>
                 </div>
               </article>

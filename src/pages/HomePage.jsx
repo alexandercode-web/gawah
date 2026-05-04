@@ -53,7 +53,7 @@ function HomePage({ user, summary, myTasks = [], loading, error, hasUnreadNotifi
     return source.map((task, index) => ({
       id: task.TaskID || task.id || `task-${index}`,
       title: task.Title || task.title || 'Untitled Task',
-      rating: Number(task.AvgRating || task.rating || 0),
+      rating: Number(task.AvgRating || task.rating || 5.0),
       requester: task.PosterName || task.requester || user?.FullName || 'User',
       location: task.Location || task.location || 'No location',
       schedule: task.ScheduledTime || task.schedule || 'Today',
