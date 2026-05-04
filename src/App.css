@@ -3272,6 +3272,7 @@ textarea:focus-visible {
   display: grid;
   place-items: center;
   font-size: 1.5rem;
+  flex-shrink: 0;
 }
 
 .task-helper-avatar {
@@ -3283,6 +3284,7 @@ textarea:focus-visible {
   display: grid;
   place-items: center;
   font-size: 1.5rem;
+  flex-shrink: 0;
 }
 
 .task-party-avatar-image {
@@ -3297,6 +3299,11 @@ textarea:focus-visible {
   font-size: 1.05rem;
   font-weight: 700;
   color: #0f172a;
+  word-break: break-word;
+}
+
+.task-poster-block > div:last-child {
+  min-width: 0;
 }
 
 .task-poster-rating {

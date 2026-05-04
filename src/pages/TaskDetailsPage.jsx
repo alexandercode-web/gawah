@@ -706,11 +706,16 @@ function TaskDetailsPage({ user, hasUnreadNotifications = false, onLogout, onTas
             <article className="task-details-card">
               <h3>Task Poster</h3>
               <div className="task-poster-block">
-                <div className="task-poster-avatar" aria-hidden={posterProfileImageSrc ? 'false' : 'true'}>
-                  {posterProfileImageSrc ? (
-                    <img src={posterProfileImageSrc} alt={`${task.PosterName || user?.FullName || 'User'} profile`} className="task-party-avatar-image" />
-                  ) : (
-                    <span>{getInitials(task.PosterName || user?.FullName || 'User')}</span>
+                <div className="task-poster-avatar" style={{ position: 'relative' }} aria-hidden={posterProfileImageSrc ? 'false' : 'true'}>
+                  <span>{getInitials(task.PosterName || user?.FullName || 'User')}</span>
+                  {posterProfileImageSrc && (
+                    <img 
+                      src={posterProfileImageSrc} 
+                      alt="" 
+                      className="task-party-avatar-image" 
+                      style={{ position: 'absolute', inset: 0 }}
+                      onError={(e) => e.target.style.display = 'none'}
+                    />
                   )}
                 </div>
                 <div>
@@ -724,11 +729,16 @@ function TaskDetailsPage({ user, hasUnreadNotifications = false, onLogout, onTas
               <article className="task-details-card">
                 <h3>Helper</h3>
                 <div className="task-poster-block">
-                  <div className="task-helper-avatar" aria-hidden={helperProfileImageSrc ? 'false' : 'true'}>
-                    {helperProfileImageSrc ? (
-                      <img src={helperProfileImageSrc} alt={`${task.HelperName || user?.FullName || 'Helper'} profile`} className="task-party-avatar-image" />
-                    ) : (
-                      <span>{getInitials(task.HelperName || user?.FullName || 'Helper')}</span>
+                  <div className="task-helper-avatar" style={{ position: 'relative' }} aria-hidden={helperProfileImageSrc ? 'false' : 'true'}>
+                    <span>{getInitials(task.HelperName || user?.FullName || 'Helper')}</span>
+                    {helperProfileImageSrc && (
+                      <img 
+                        src={helperProfileImageSrc} 
+                        alt="" 
+                        className="task-party-avatar-image" 
+                        style={{ position: 'absolute', inset: 0 }}
+                        onError={(e) => e.target.style.display = 'none'}
+                      />
                     )}
                   </div>
                   <div>
