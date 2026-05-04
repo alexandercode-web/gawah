@@ -888,21 +888,46 @@ img {
 
   .team-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 1.5rem 0.75rem !important;
+    gap: 1rem 0.5rem !important;
+  }
+
+  .team-card {
+    padding: 1.5rem 0.75rem !important;
+    border-radius: 20px !important;
   }
 
   .team-photo-wrap {
-    width: 120px !important;
-    height: 120px !important;
+    width: 90px !important;
+    height: 90px !important;
+    margin-bottom: 1rem !important;
   }
 
   .team-name {
-    font-size: 1.1rem !important;
+    font-size: 0.95rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .team-role {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.4rem !important;
   }
 
   .team-bio {
-    font-size: 0.8rem !important;
-    line-height: 1.4 !important;
+    font-size: 0.75rem !important;
+    line-height: 1.3 !important;
+  }
+
+  .team-socials a {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .footer-bottom {
+    flex-direction: column !important;
+    gap: 1rem !important;
+    text-align: center !important;
+    margin-top: 3rem !important;
+    padding-top: 1.5rem !important;
   }
 
   .benefits-content {
@@ -1197,5 +1222,26 @@ img {
   .category-filter {
     padding: 0.45rem 0.7rem !important;
     font-size: 0.75rem !important;
+  }
+
+  /* Team Section narrow fix */
+  .team-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  .team-card {
+    padding: 2rem 1.5rem !important;
+  }
+
+  .team-photo-wrap {
+    width: 120px !important;
+    height: 120px !important;
+  }
+
+  .footer-bottom {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 0.75rem !important;
   }
 }
