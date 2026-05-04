@@ -157,9 +157,22 @@ img {
   }
 
   .hero-title {
-    font-size: clamp(2.2rem, 6vw, 3.5rem) !important;
+    font-size: clamp(1.8rem, 8vw, 2.8rem) !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    max-width: 100% !important;
   }
 
+  .hero-subtitle {
+    font-size: 0.95rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  /* Ensure the background gradient doesn't overpower text on small screens */
+  .hero-live-shell {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.8) 0%, rgba(2, 6, 23, 0.88) 100%) !important;
+  }
   /* Features section */
   .features-section {
     margin: 3rem 1rem !important;
