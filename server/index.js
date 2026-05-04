@@ -3,6 +3,8 @@ import cors from 'cors'
 import helmet from 'helmet'
 import bcrypt from 'bcryptjs'
 import dotenv from 'dotenv'
+import dns from 'node:dns'
+dns.setDefaultResultOrder('ipv4first')
 import { mkdir, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
