@@ -93,7 +93,7 @@ app.use(helmet({ crossOriginResourcePolicy: false }))
 app.use(cors({
   origin: true,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }))
 app.use(express.json({ limit: '5mb' }))
