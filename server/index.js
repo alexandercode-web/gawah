@@ -91,19 +91,10 @@ const corsOptions = {
 }
 app.use(helmet({ crossOriginResourcePolicy: false }))
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || !process.env.CLIENT_ORIGIN || process.env.CLIENT_ORIGIN === '*') {
-      return callback(null, true);
-    }
-    const allowed = process.env.CLIENT_ORIGIN.replace(/\/$/, '');
-    if (origin === allowed) {
-      return callback(null, true);
-    }
-    callback(new Error('Not allowed by CORS'));
-  },
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }))
 app.use(express.json({ limit: '5mb' }))
 app.use(express.urlencoded({ limit: '5mb', extended: true }))
