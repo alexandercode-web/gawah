@@ -878,6 +878,33 @@ img {
     margin: 2rem 0.5rem !important;
   }
 
+  .team-section {
+    padding: 3rem 1rem !important;
+  }
+
+  .team-title {
+    font-size: 2rem !important;
+  }
+
+  .team-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1.5rem 0.75rem !important;
+  }
+
+  .team-photo-wrap {
+    width: 120px !important;
+    height: 120px !important;
+  }
+
+  .team-name {
+    font-size: 1.1rem !important;
+  }
+
+  .team-bio {
+    font-size: 0.8rem !important;
+    line-height: 1.4 !important;
+  }
+
   .benefits-content {
     flex-direction: column !important;
     gap: 2rem !important;

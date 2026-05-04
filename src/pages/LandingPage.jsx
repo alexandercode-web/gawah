@@ -198,6 +198,77 @@ function LandingPage() {
         </div>
       </section>
 
+      <section id="team" className="team-section">
+        <div className="team-header">
+          <div className="team-icon-top">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <h2 className="team-title">Our Team</h2>
+          <p className="team-subtitle">
+            Meet the dedicated professionals working behind the scenes to make GawaHelper 
+            the most trusted task platform for everyone.
+          </p>
+        </div>
+
+        <div className="team-grid">
+          <div className="team-card">
+            <div className="team-photo-wrap">
+              <img src="/team1.jpg" alt="Bob Brown" className="team-photo" />
+            </div>
+            <span className="team-role">Creative Leader</span>
+            <h3 className="team-name">Bob Brown</h3>
+            <p className="team-bio">Expert in design systems and user experience, leading our creative direction with passion.</p>
+            <div className="team-socials">
+              <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+              <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg></a>
+              <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+            </div>
+          </div>
+
+          <div className="team-card">
+            <div className="team-photo-wrap">
+              <img src="/team2.jpg" alt="Mary Smith" className="team-photo" />
+            </div>
+            <span className="team-role">Operations Manager</span>
+            <h3 className="team-name">Mary Smith</h3>
+            <p className="team-bio">Ensuring smooth platform operations and maintaining the highest standards of service.</p>
+            <div className="team-socials">
+              <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+              <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg></a>
+              <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+            </div>
+          </div>
+
+          <div className="team-card">
+            <div className="team-photo-wrap">
+              <img src="/team3.jpg" alt="Nick Dark" className="team-photo" />
+            </div>
+            <span className="team-role">Tech Lead</span>
+            <h3 className="team-name">Nick Dark</h3>
+            <p className="team-bio">Driving technical innovation and building robust systems to empower our users.</p>
+            <div className="team-socials">
+              <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+              <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg></a>
+              <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+            </div>
+          </div>
+
+          <div className="team-card">
+            <div className="team-photo-wrap">
+              <img src="/team4.jpg" alt="Mark Dowson" className="team-photo" />
+            </div>
+            <span className="team-role">Support Manager</span>
+            <h3 className="team-name">Mark Dowson</h3>
+            <p className="team-bio">Dedicated to user success and building a supportive community for all GawaHelpers.</p>
+            <div className="team-socials">
+              <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+              <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg></a>
+              <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="benefits" className="benefits-section">
         <div className="benefits-content">
           <div className="benefits-left">
