@@ -912,6 +912,50 @@ img {
     grid-template-columns: 1fr !important;
   }
 
+  .reports-tabs {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 0.5rem !important;
+    padding: 0.75rem 0.5rem 0.5rem !important;
+    justify-content: flex-start !important;
+  }
+
+  .reports-tab {
+    flex-shrink: 0 !important;
+    padding: 0.6rem 0.8rem !important;
+    font-size: 0.8rem !important;
+    min-width: fit-content !important;
+  }
+
+  .reports-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+    padding: 0.5rem !important;
+  }
+
+  .kpi-card {
+    padding: 0.75rem 0.5rem !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 0.4rem !important;
+  }
+
+  .kpi-icon {
+    margin-right: 0 !important;
+    font-size: 1.2rem !important;
+  }
+
+  .kpi-value {
+    font-size: 1.1rem !important;
+  }
+
+  .kpi-label {
+    font-size: 0.65rem !important;
+  }
+
   /* Feedback banner */
   .feedback {
     font-size: 0.85rem !important;
