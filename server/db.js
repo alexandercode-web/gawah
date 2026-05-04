@@ -8,14 +8,19 @@ const { Pool } = pg
 
 const dbName = process.env.DB_NAME || 'gawahelperdb'
 
-const poolConfig = {
-  host: process.env.DB_HOST || '127.0.0.1',
-  port: Number(process.env.DB_PORT || 5432),
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '',
-  database: dbName,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-}
+const poolConfig = process.env.DATABASE_URL 
+  ? { 
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    }
+  : {
+      host: process.env.DB_HOST || '127.0.0.1',
+      port: Number(process.env.DB_PORT || 5432),
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || '',
+      database: dbName,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    }
 
 let pool
 let initialized = false
@@ -341,32 +346,34 @@ const keyMap = {
   reviewerprofileimage: 'ReviewerProfileImage',
   role: 'Role',
   referenceid: 'referenceId',
-  totalusers: 'totalUsers',
-  totaltasks: 'totalTasks',
-  opentasks: 'openTasks',
-  assignedtasks: 'assignedTasks',
-  completedtasks: 'completedTasks',
-  cancelledtasks: 'cancelledTasks',
-  totalbudget: 'totalBudget',
-  completedvalue: 'completedValue',
-  avgbudget: 'avgBudget',
-  totalassignments: 'totalAssignments',
-  totalhelpers: 'totalHelpers',
-  totalpayments: 'totalPayments',
-  completedpayments: 'completedPayments',
-  totalearnings: 'totalEarnings',
-  completedtasks: 'completedTasks',
-  rating: 'rating',
-  totalmessages: 'totalMessages',
-  totalreviews: 'totalReviews',
-  totalvalue: 'totalValue',
+  totalusers: 'TotalUsers',
+  totaltasks: 'TotalTasks',
+  opentasks: 'OpenTasks',
+  assignedtasks: 'AssignedTasks',
+  completedtasks: 'CompletedTasks',
+  cancelledtasks: 'CancelledTasks',
+  totalbudget: 'TotalBudget',
+  completedvalue: 'CompletedValue',
+  avgbudget: 'AvgBudget',
+  totalassignments: 'TotalAssignments',
+  totalhelpers: 'TotalHelpers',
+  totalpayments: 'TotalPayments',
+  completedpayments: 'CompletedPayments',
+  totalearnings: 'TotalEarnings',
+  rating: 'Rating',
+  totalmessages: 'TotalMessages',
+  totalreviews: 'TotalReviews',
+  totalvalue: 'TotalValue',
   avgrating: 'AvgRating',
-  reviewcount: 'ReviewCount',
+  allcompletedtasks: 'AllCompletedTasks',
+  reviewcount: 'reviewCount',
   ratingcount: 'RatingCount',
   taskcount: 'TaskCount',
   completedcount: 'CompletedCount',
   activecount: 'ActiveCount',
   pendingcount: 'PendingCount',
+  activetasks: 'ActiveTasks',
+  activehelpers: 'ActiveHelpers',
   isdeactivated: 'IsDeactivated',
   tasksposted: 'TasksPosted',
   taskscompleted: 'TasksCompleted',
