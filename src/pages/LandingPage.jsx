@@ -245,7 +245,7 @@ function LandingPage() {
             </div>
             <span className="team-role">Project Manager</span>
             <h3 className="team-name">Marion Gerunda</h3>
-            <p className="team-bio">The Project Manager oversees the entire development of GawaHelper. They plan tasks, manage timelines, assign responsibilities, and ensure the team stays on track to complete the project successfully.</p>
+            <p className="team-bio">The Project Manager oversees the entire development of GawaHelper.</p>
             <div className="team-socials">
               <a href="https://www.facebook.com/marion.gerunda.3" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg></a>
 
@@ -258,7 +258,7 @@ function LandingPage() {
             </div>
             <span className="team-role">Hustler</span>
             <h3 className="team-name">Louie Jhe Antigua</h3>
-            <p className="team-bio">The Hustler handles the business side of GawaHelper. They define the target users, promote the platform, gather feedback, and ensure the system solves real user problems. They also help in pitching the project and presenting its value.</p>
+            <p className="team-bio">The Hustler handles the business side of GawaHelper. </p>
             <div className="team-socials">
               <a href="https://www.facebook.com/louiejhe.basanezantigua" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg></a>
 
@@ -271,7 +271,7 @@ function LandingPage() {
             </div>
             <span className="team-role">Hipster</span>
             <h3 className="team-name">Samantha Nicole Cabrillos</h3>
-            <p className="team-bio">The Hipster focuses on the design and user experience of GawaHelper. They create a clean, modern, and mobile-responsive interface, making sure the app is easy to use and visually appealing for users.</p>
+            <p className="team-bio">The Hipster focuses on the design and user experience of GawaHelper.</p>
             <div className="team-socials">
               <a href="https://www.facebook.com/miss.nicx0" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg></a>
 
@@ -284,7 +284,7 @@ function LandingPage() {
             </div>
             <span className="team-role">Hacker</span>
             <h3 className="team-name">Alexander Ducay</h3>
-            <p className="team-bio">The Hacker is responsible for building the core system of GawaHelper. They develop the frontend using React, handle backend logic with Node.js, and manage database integration using PostgreSQL. They ensure the system works correctly, is secure, and performs efficiently.</p>
+            <p className="team-bio">The Hacker is responsible for building the core system of GawaHelper.</p>
             <div className="team-socials">
               <a href="https://www.facebook.com/ducay.alexander" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg></a>
 
