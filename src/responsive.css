@@ -102,7 +102,8 @@ img {
   }
 
   /* Show tiny text label under icon on tablet */
-  .nav-item span {
+  .nav-item > span:not(.nav-icon) {
+    display: block !important;
     font-size: 0.6rem !important;
     font-weight: 600 !important;
     line-height: 1 !important;
@@ -110,6 +111,7 @@ img {
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     max-width: 60px !important;
+    text-align: center !important;
   }
 
   .nav-item .nav-icon {
@@ -234,19 +236,35 @@ img {
    -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
 
-  /* Nav items: hide text labels on mobile */
-  .nav-item span {
-    display: none !important;
+  /* Nav items: show small text labels under icons */
+  .nav-item > span:not(.nav-icon) {
+    display: block !important;
+    font-size: 0.55rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 56px !important;
+    text-align: center !important;
+    color: #64748b !important;
+  }
+
+  .nav-item.active > span:not(.nav-icon) {
+    color: #2563eb !important;
   }
 
   .nav-item .nav-icon {
-    font-size: 1.5rem !important;
-    width: 1.5rem !important;
-    height: 1.5rem !important;
+    font-size: 1.4rem !important;
+    width: 1.4rem !important;
+    height: 1.4rem !important;
+    display: inline-flex !important;
+    color: #64748b !important;
   }
 
   .nav-item.active .nav-icon {
-    transform: scale(1.15);
+    color: #2563eb !important;
+    transform: scale(1.1);
     transition: transform 0.2s ease;
   }
 
