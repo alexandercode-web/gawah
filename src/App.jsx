@@ -19,6 +19,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 
 import SupportPage from './pages/SupportPage'
 import './App.css'
+import './responsive.css'
 
 const lastMessageRouteKey = 'gh_last_message_route'
 
