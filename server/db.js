@@ -92,12 +92,14 @@ export async function initDatabase() {
     }
 
     console.log('PostgreSQL: Admin seeded, seeding categories...')
-    // Seed Categories
-    await pool.query(`
-    INSERT INTO Categories (CategoryName) 
-    VALUES ('Cleaning'), ('Delivery'), ('Tutoring'), ('Repairs'), ('Shopping')
-    ON CONFLICT (CategoryName) DO NOTHING
-  `)
+    // Seed Categories (safe check instead of ON CONFLICT)
+    const catCheck = await pool.query('SELECT COUNT(*) FROM Categories');
+    if (parseInt(catCheck.rows[0].count) === 0) {
+      await pool.query(`
+        INSERT INTO Categories (CategoryName) 
+        VALUES ('Cleaning'), ('Delivery'), ('Tutoring'), ('Repairs'), ('Shopping')
+      `);
+    }
 
     // PasswordResetCodes
     await pool.query(`
