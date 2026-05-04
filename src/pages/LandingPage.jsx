@@ -199,6 +199,34 @@ function LandingPage() {
       </section>
 
       <section id="team" className="team-section">
+        <style>{`
+          .team-section {
+            background: transparent !important;
+            color: #e2e8f0 !important;
+            padding: 6rem 2rem !important;
+          }
+          .team-title {
+            color: #ffffff !important;
+          }
+          .team-name {
+            color: #ffffff !important;
+          }
+          .team-role {
+            color: #60a5fa !important;
+          }
+          .team-subtitle, .team-bio {
+            color: #94a3b8 !important;
+          }
+          .team-card {
+            background: rgba(255, 255, 255, 0.03) !important;
+            border: 1px solid rgba(255, 255, 255, 0.05) !important;
+          }
+          @media (max-width: 768px) {
+            .team-section {
+              padding: 3rem 1rem !important;
+            }
+          }
+        `}</style>
         <div className="team-header">
           <div className="team-icon-top">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
