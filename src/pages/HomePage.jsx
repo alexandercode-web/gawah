@@ -136,15 +136,17 @@ function HomePage({ user, summary, myTasks = [], loading, error, hasUnreadNotifi
     return Math.round((done / total) * 100)
   })()
 
+  const totalCompleted = Number(metrics.AllCompletedTasks || metrics.CompletedTasks || 0)
+
   const homeInsights = [
     { label: 'Open tasks', value: Number(metrics.OpenTasks || 0) },
-    { label: 'Completed', value: Number(metrics.CompletedTasks || 0) },
+    { label: 'Completed', value: totalCompleted },
     { label: 'My posts', value: Number(metrics.MyPostedTasks || 0) },
   ]
 
   const homeHighlights = [
     { label: 'Open', value: Number(metrics.OpenTasks || 0), tone: 'blue' },
-    { label: 'Completed', value: Number(metrics.CompletedTasks || 0), tone: 'green' },
+    { label: 'Completed', value: totalCompleted, tone: 'green' },
     { label: 'Completion', value: `${completionRate}%`, tone: 'orange' },
   ]
 
@@ -274,7 +276,7 @@ function HomePage({ user, summary, myTasks = [], loading, error, hasUnreadNotifi
           <article className="home-side-panel">
             <div className="home-side-head">
               <p>Task Completed</p>
-              <strong>{Number(metrics.CompletedTasks || 0)}</strong>
+              <strong>{totalCompleted}</strong>
             </div>
 
             <div className="home-side-list">

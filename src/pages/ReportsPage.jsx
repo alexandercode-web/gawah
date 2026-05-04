@@ -520,8 +520,10 @@ function ReportsPage({ user, hasUnreadNotifications = false, onLogout }) {
   }
 
   const stats = summary?.stats || {}
-  const completionRate = Number(stats.totalTasks) > 0
-    ? Math.round((Number(stats.completedTasks) / Number(stats.totalTasks)) * 100)
+  const rTotal = Number(stats.TotalTasks || stats.totalTasks || 0)
+  const rDone = Number(stats.CompletedTasks || stats.completedTasks || 0)
+  const completionRate = rTotal > 0
+    ? Math.round((rDone / rTotal) * 100)
     : 0
 
   if (loading) {
@@ -590,21 +592,21 @@ function ReportsPage({ user, hasUnreadNotifications = false, onLogout }) {
             <article className="kpi-card kpi-users">
               <div className="kpi-icon">👥</div>
               <div className="kpi-body">
-                <span className="kpi-value">{Number(stats.totalUsers || 0).toLocaleString()}</span>
+                <span className="kpi-value">{Number(stats.TotalUsers || stats.totalUsers || 0).toLocaleString()}</span>
                 <span className="kpi-label">Total Users</span>
               </div>
             </article>
             <article className="kpi-card kpi-tasks">
               <div className="kpi-icon">📋</div>
               <div className="kpi-body">
-                <span className="kpi-value">{Number(stats.totalTasks || 0).toLocaleString()}</span>
+                <span className="kpi-value">{Number(stats.TotalTasks || stats.totalTasks || 0).toLocaleString()}</span>
                 <span className="kpi-label">Total Tasks</span>
               </div>
             </article>
             <article className="kpi-card kpi-completed">
               <div className="kpi-icon">✅</div>
               <div className="kpi-body">
-                <span className="kpi-value">{Number(stats.completedTasks || 0).toLocaleString()}</span>
+                <span className="kpi-value">{Number(stats.CompletedTasks || stats.completedTasks || 0).toLocaleString()}</span>
                 <span className="kpi-label">Completed</span>
               </div>
             </article>
@@ -618,7 +620,7 @@ function ReportsPage({ user, hasUnreadNotifications = false, onLogout }) {
             <article className="kpi-card kpi-value">
               <div className="kpi-icon">💰</div>
               <div className="kpi-body">
-                <span className="kpi-value">₱{Number(stats.completedValue || 0).toLocaleString()}</span>
+                <span className="kpi-value">₱{Number(stats.CompletedValue || stats.completedValue || 0).toLocaleString()}</span>
                 <span className="kpi-label">Completed Value</span>
               </div>
             </article>
@@ -661,10 +663,10 @@ function ReportsPage({ user, hasUnreadNotifications = false, onLogout }) {
                     {summary.topHelpers.map((helper, i) => (
                       <tr key={`helper-${i}`}>
                         <td><span className="rank-badge">#{i + 1}</span></td>
-                        <td><strong>{helper.name}</strong></td>
-                        <td>★ {Number(helper.rating || 0).toFixed(1)}</td>
-                        <td>{helper.completedTasks}</td>
-                        <td>₱{Number(helper.totalEarnings || 0).toLocaleString()}</td>
+                        <td><strong>{helper.name || helper.Name}</strong></td>
+                        <td>★ {Number(helper.Rating || helper.rating || 0).toFixed(1)}</td>
+                        <td>{helper.CompletedTasks || helper.completedTasks || 0}</td>
+                        <td>₱{Number(helper.TotalEarnings || helper.totalEarnings || 0).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>

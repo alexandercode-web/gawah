@@ -2,6 +2,11 @@ import jwt from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'change-this-secret'
 
+if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'change-this-secret')) {
+  console.error('FATAL ERROR: JWT_SECRET is not defined in production environment.')
+  process.exit(1)
+}
+
 export function signToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' })
 }

@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Debug Scripts
+verify-pass.js
+server/check-db.js

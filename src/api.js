@@ -151,8 +151,8 @@ export const api = {
       method: 'DELETE',
     })
   },
-  listTasks() {
-    return request('/tasks')
+  listTasks(limit = 50, offset = 0) {
+    return request(`/tasks?limit=${limit}&offset=${offset}`)
   },
   getTask(taskId) {
     return request(`/tasks/${taskId}`)
@@ -224,8 +224,8 @@ export const api = {
       method: 'POST',
     })
   },
-  myTasks() {
-    return request('/my/tasks')
+  myTasks(limit = 50, offset = 0) {
+    return request(`/my/tasks?limit=${limit}&offset=${offset}`)
   },
   myReviews() {
     return request('/me/reviews')
@@ -269,11 +269,11 @@ export const api = {
   getAdminStats() {
     return request('/admin/stats')
   },
-  getAdminUsers() {
-    return request('/admin/users')
+  getAdminUsers(limit = 50, offset = 0) {
+    return request(`/admin/users?limit=${limit}&offset=${offset}`)
   },
-  getAdminTasks() {
-    return request('/admin/tasks')
+  getAdminTasks(limit = 50, offset = 0) {
+    return request(`/admin/tasks?limit=${limit}&offset=${offset}`)
   },
   getAdminMessages() {
     return request('/admin/messages')

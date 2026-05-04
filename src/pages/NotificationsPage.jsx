@@ -245,12 +245,10 @@ function NotificationsPage({ summary, myTasks, user, onNotificationsRead, onLogo
   }
 
   async function handleNotificationClick(notificationId, senderId, taskId, message) {
-    console.log('Notification clicked:', { notificationId, senderId, taskId })
-
+    
     // Extract the actual notification ID from the format "n-123"
     const actualNotificationId = notificationId.replace('n-', '')
-    console.log('Actual notification ID:', actualNotificationId)
-
+    
     try {
       // Mark notification as read on backend
       await api.markNotificationAsRead(actualNotificationId)
@@ -263,8 +261,7 @@ function NotificationsPage({ summary, myTasks, user, onNotificationsRead, onLogo
             : item
         )
       )
-      console.log('Notification marked as read')
-    } catch (error) {
+          } catch (error) {
       console.error('Failed to mark notification as read:', error)
     }
 
@@ -295,11 +292,9 @@ function NotificationsPage({ summary, myTasks, user, onNotificationsRead, onLogo
         setRatingModalLoading(false)
       }
     } else if (isMessage && senderId && taskId) {
-      console.log('Navigating to messages with senderId:', senderId, 'taskId:', taskId)
-      navigate(`/messages/${senderId}/${taskId}`)
+            navigate(`/messages/${senderId}/${taskId}`)
     } else if (taskId) {
-      console.log('Navigating to task:', taskId)
-      navigate(`/task/${taskId}`)
+            navigate(`/task/${taskId}`)
     } else {
       console.warn('No destination available, navigating to tasks list')
       navigate('/tasks')

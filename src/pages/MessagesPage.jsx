@@ -143,6 +143,63 @@ function MessagesPage({ user, onLogout }) {
     return () => clearInterval(interval)
   }, [taskId, chatReady, task])
 
+  const getSafeAttachmentUrl = (data) => {
+    if (!data) return ''
+    if (data.startsWith('data:') || data.startsWith('http')) return data
+    
+    // It's a filename or path, construct the full URL
+    const apiUrl = import.meta.env.VITE_API_URL || '/api'
+    const origin = /^https?:\/\//i.test(apiUrl) ? new URL(apiUrl).origin : window.location.origin
+    
+    if (data.startsWith('/uploads/') || data.startsWith('uploads/')) {
+      const path = data.startsWith('/') ? data : `/${data}`
+      return `${origin}${path}`
+    }
+    
+    return data.startsWith('/') ? `${origin}${data}` : `${origin}/uploads/proofs/${data}`
+  }
+
+  const handleAttachmentClick = (e, msg) => {
+    const url = msg.AttachmentData
+    if (!url) return
+
+    if (url.startsWith('data:')) {
+      e.preventDefault()
+      try {
+        const parts = url.split(',')
+        const mime = parts[0].match(/:(.*?);/)[1]
+        const b64Data = parts[1]
+        
+        const byteCharacters = atob(b64Data)
+        const byteArrays = []
+        
+        for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+          const slice = byteCharacters.slice(offset, offset + 512)
+          const byteNumbers = new Array(slice.length)
+          for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i)
+          }
+          const byteArray = new Uint8Array(byteNumbers)
+          byteArrays.push(byteArray)
+        }
+        
+        const blob = new Blob(byteArrays, { type: mime })
+        const blobUrl = URL.createObjectURL(blob)
+        window.open(blobUrl, '_blank')
+      } catch (err) {
+        console.error('Failed to open base64 attachment:', err)
+        window.open(url, '_blank')
+      }
+    } else {
+      // For normal URLs, just let the <a> tag handle it or use window.open
+      const safeUrl = getSafeAttachmentUrl(url)
+      if (!msg.AttachmentType || msg.AttachmentType === 'image') {
+        e.preventDefault()
+        setActiveImage({ src: safeUrl, alt: msg.AttachmentName || 'Shared image' })
+      }
+    }
+  }
+
   function resetAttachment() {
     setAttachmentType('')
     setAttachmentData('')
@@ -530,26 +587,33 @@ function MessagesPage({ user, onLogout }) {
                       <button
                         type="button"
                         className="message-attachment-link message-image-btn"
-                        onClick={() => setActiveImage({ src: msg.AttachmentData, alt: msg.AttachmentName || 'Shared image' })}
+                        onClick={(e) => handleAttachmentClick(e, msg)}
                         aria-label="View image"
                       >
-                        <img className="message-image" src={msg.AttachmentData} alt={msg.AttachmentName || 'Shared image'} />
+                        <img className="message-image" src={getSafeAttachmentUrl(msg.AttachmentData)} alt={msg.AttachmentName || 'Shared image'} />
                       </button>
                     )}
                     {isLinkAttachment && (
-                      <a className="message-link-card" href={msg.AttachmentData} target="_blank" rel="noreferrer">
+                      <a 
+                        className="message-link-card" 
+                        href={getSafeAttachmentUrl(msg.AttachmentData)} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        onClick={(e) => msg.AttachmentData.startsWith('data:') && handleAttachmentClick(e, msg)}
+                      >
                         <span className="message-link-label">Document link</span>
                         <strong>{msg.AttachmentName || msg.AttachmentData}</strong>
-                        <span>{msg.AttachmentData}</span>
+                        <span>{msg.AttachmentData.startsWith('data:') ? 'Document File' : msg.AttachmentData}</span>
                       </a>
                     )}
                     {isFileAttachment && (
                       <a
                         className="message-file-card"
-                        href={msg.AttachmentData}
+                        href={getSafeAttachmentUrl(msg.AttachmentData)}
                         download={msg.AttachmentName || 'attachment'}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={(e) => msg.AttachmentData.startsWith('data:') && handleAttachmentClick(e, msg)}
                       >
                         <span className="message-link-label">File</span>
                         <strong>{msg.AttachmentName || 'Attachment file'}</strong>

@@ -164,14 +164,12 @@ function App() {
 
     async function initAndRefreshUser() {
       try {
-        console.log('App: Initializing and refreshing user profile...')
-        const freshUser = await api.getMe()
+                const freshUser = await api.getMe()
 
         if (freshUser) {
           const userVal = freshUser.IsAdmin ?? freshUser.isAdmin
           const isAdmin = Number(userVal) === 1 || userVal === true || String(userVal) === '1'
-          console.log('App: Fresh user loaded. Admin status:', isAdmin)
-
+          
           setUser(freshUser)
           localStorage.setItem('gh_user', JSON.stringify(freshUser))
         }
@@ -198,8 +196,7 @@ function App() {
     const isOnLoginPath = location.pathname === '/login'
 
     if (isAdmin && (location.pathname === '/home' || location.pathname === '/')) {
-      console.log('Auto-redirecting admin to /admin')
-      navigate('/admin', { replace: true })
+            navigate('/admin', { replace: true })
     }
   }, [user, token, navigate, location.pathname])
 
@@ -221,15 +218,11 @@ function App() {
       // For regular users, redirect to home or restore route
       const userVal = response.user.IsAdmin ?? response.user.isAdmin
       const isAdmin = Number(userVal) === 1 || userVal === true || String(userVal) === '1'
-      console.log('Login successful. User:', response.user)
-      console.log('IsAdmin:', isAdmin)
-
+            
       if (isAdmin) {
-        console.log('Admin user redirecting to /admin')
-        navigate('/admin', { replace: true })
+                navigate('/admin', { replace: true })
       } else {
-        console.log('Regular user, will redirect to /home')
-        await refreshTaskData()
+                await refreshTaskData()
         const restoreRoute = localStorage.getItem(lastMessageRouteKey)
         if (restoreRoute && restoreRoute.startsWith('/messages/')) {
           localStorage.removeItem(lastMessageRouteKey)

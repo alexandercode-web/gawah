@@ -16,6 +16,8 @@ function AdminPage({ user, onLogout }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [lastRefresh, setLastRefresh] = useState(new Date())
+  const [userPage, setUserPage] = useState(0)
+  const [taskPage, setTaskPage] = useState(0)
   const [selectedImage, setSelectedImage] = useState(null)
 
   // Check if user is admin
@@ -38,8 +40,8 @@ function AdminPage({ user, onLogout }) {
     try {
       const [stats, users, tasks, messages] = await Promise.all([
         api.getAdminStats(),
-        api.getAdminUsers(),
-        api.getAdminTasks(),
+        api.getAdminUsers(50, 0),
+        api.getAdminTasks(50, 0),
         api.getAdminMessages(),
       ])
 
@@ -55,6 +57,36 @@ function AdminPage({ user, onLogout }) {
       setError(err.message || 'Unable to load admin data')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadMoreUsers = async () => {
+    try {
+      const nextOffset = (userPage + 1) * 50
+      const newUsers = await api.getAdminUsers(50, nextOffset)
+      if (Array.isArray(newUsers) && newUsers.length > 0) {
+        setAdminData(prev => ({ ...prev, users: [...prev.users, ...newUsers] }))
+        setUserPage(prev => prev + 1)
+      } else {
+        alert('No more users found')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const loadMoreTasks = async () => {
+    try {
+      const nextOffset = (taskPage + 1) * 50
+      const newTasks = await api.getAdminTasks(50, nextOffset)
+      if (Array.isArray(newTasks) && newTasks.length > 0) {
+        setAdminData(prev => ({ ...prev, tasks: [...prev.tasks, ...newTasks] }))
+        setTaskPage(prev => prev + 1)
+      } else {
+        alert('No more tasks found')
+      }
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -369,6 +401,11 @@ function AdminPage({ user, onLogout }) {
                 )}
               </tbody>
             </table>
+            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+              <button type="button" className="admin-refresh-btn" onClick={loadMoreUsers}>
+                Load More Users
+              </button>
+            </div>
           </div>
         </article>
       )}
@@ -456,6 +493,11 @@ function AdminPage({ user, onLogout }) {
                 )}
               </tbody>
             </table>
+            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+              <button type="button" className="admin-refresh-btn" onClick={loadMoreTasks}>
+                Load More Tasks
+              </button>
+            </div>
           </div>
         </article>
       )}
@@ -1112,12 +1154,12 @@ function AdminPage({ user, onLogout }) {
 
 function AdminStats({ stats, onCardClick }) {
   const cards = [
-    { label: 'Total Users', sub: 'Registered Accounts', value: stats.totalUsers || 0, icon: '👥', color: '#3b82f6' },
-    { label: 'Active Tasks', sub: 'In Progress', value: stats.activeTasks || 0, icon: '⚡', color: '#f59e0b' },
-    { label: 'Completed Tasks', sub: 'Successfully Done', value: stats.completedTasks || 0, icon: '✅', color: '#10b981' },
-    { label: 'Total Value', sub: 'Platform Volume', value: `₱${Number(stats.totalValue || 0).toLocaleString()}`, icon: '💰', color: '#06b6d4' },
-    { label: 'Total Messages', sub: 'Conversations', value: stats.totalMessages || 0, icon: '💬', color: '#8b5cf6' },
-    { label: 'Active Helpers', sub: 'Task Workers', value: stats.activeHelpers || 0, icon: '🤝', color: '#ec4899' },
+    { label: 'Total Users', sub: 'Registered Accounts', value: stats.TotalUsers || stats.totalUsers || 0, icon: '👥', color: '#3b82f6' },
+    { label: 'Active Tasks', sub: 'In Progress', value: stats.ActiveTasks || stats.activeTasks || 0, icon: '⚡', color: '#f59e0b' },
+    { label: 'Completed Tasks', sub: 'Successfully Done', value: stats.CompletedTasks || stats.completedTasks || 0, icon: '✅', color: '#10b981' },
+    { label: 'Total Value', sub: 'Platform Volume', value: `₱${Number(stats.TotalValue || stats.totalValue || 0).toLocaleString()}`, icon: '💰', color: '#06b6d4' },
+    { label: 'Total Messages', sub: 'Conversations', value: stats.TotalMessages || stats.totalMessages || 0, icon: '💬', color: '#8b5cf6' },
+    { label: 'Active Helpers', sub: 'Task Workers', value: stats.ActiveHelpers || stats.activeHelpers || 0, icon: '🤝', color: '#ec4899' },
   ]
 
   return (
@@ -1153,16 +1195,54 @@ function AttachmentCard({ msg, onImageClick }) {
   const handleClick = () => {
     if (msg.AttachmentData) {
       let url = msg.AttachmentData
+      
+      // Handle base64/data URIs safely
       if (url.startsWith('data:')) {
-        // base64
+        try {
+          const parts = url.split(',')
+          const mime = parts[0].match(/:(.*?);/)[1]
+          const b64Data = parts[1]
+          
+          const byteCharacters = atob(b64Data)
+          const byteArrays = []
+          
+          for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+            const slice = byteCharacters.slice(offset, offset + 512)
+            const byteNumbers = new Array(slice.length)
+            for (let i = 0; i < slice.length; i++) {
+              byteNumbers[i] = slice.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+            byteArrays.push(byteArray)
+          }
+          
+          const blob = new Blob(byteArrays, { type: mime })
+          url = URL.createObjectURL(blob)
+        } catch (e) {
+          console.error('Failed to convert attachment data:', e)
+        }
       } else if (!url.startsWith('http')) {
-        url = `http://localhost:4000/uploads/proofs/${url}`
+        const apiUrl = import.meta.env.VITE_API_URL || '/api'
+        const origin = /^https?:\/\//i.test(apiUrl) ? new URL(apiUrl).origin : window.location.origin
+        
+        if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
+          const path = url.startsWith('/') ? url : `/${url}`
+          url = `${origin}${path}`
+        } else if (url.startsWith('/')) {
+          url = `${origin}${url}`
+        } else {
+          url = `${origin}/uploads/proofs/${url}`
+        }
       }
       
       if (isImage && onImageClick) {
         onImageClick(url)
       } else {
-        window.open(url, '_blank')
+        const win = window.open(url, '_blank')
+        if (!win) {
+          // If popup blocked, fallback to direct link
+          window.location.href = url
+        }
       }
     }
   }
