@@ -1147,6 +1147,75 @@ function AdminPage({ user, onLogout }) {
           from { opacity: 0; }
           to { opacity: 1; }
         }
+
+        /* Mobile Admin Adjustments */
+        @media (max-width: 768px) {
+          .admin-header {
+            padding: 1.5rem;
+          }
+          .admin-header h1 {
+            font-size: 1.5rem;
+          }
+          .admin-stats-grid {
+            padding: 1rem;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+          }
+          .stat-card {
+            padding: 1rem;
+          }
+          .stat-value {
+            font-size: 1.4rem;
+          }
+          .admin-message-group {
+            margin: 0 0.75rem 2rem;
+            border-radius: 16px;
+          }
+          .admin-message-group-header {
+            padding: 1rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+          }
+          .group-task-title {
+            font-size: 1rem;
+            width: 100%;
+          }
+          .group-header-actions {
+            width: 100%;
+            justify-content: space-between;
+          }
+          .admin-message-thread {
+            padding: 1rem;
+            gap: 1rem;
+          }
+          .admin-chat-bubble {
+            max-width: 95%;
+          }
+          .bubble-content {
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+          }
+          .bubble-attachment {
+            padding: 0.6rem 0.75rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.4rem;
+          }
+          .attachment-text {
+            word-break: break-all;
+            white-space: normal;
+          }
+          .admin-tabs {
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 0 1rem;
+            -webkit-overflow-scrolling: touch;
+          }
+          .admin-tab {
+            padding: 0.75rem 1rem;
+            flex: none;
+          }
+        }
       `}</style>
     </section>
   )
