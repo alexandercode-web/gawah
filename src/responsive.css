@@ -873,6 +873,65 @@ img {
     font-size: 1.8rem !important;
   }
 
+  .benefits-section {
+    padding: 3rem 1rem !important;
+    margin: 2rem 0.5rem !important;
+  }
+
+  .benefits-content {
+    flex-direction: column !important;
+    gap: 2rem !important;
+  }
+
+  .benefits-list {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem !important;
+  }
+
+  .benefits-list-item {
+    font-size: 0.85rem !important;
+    margin-bottom: 0 !important;
+  }
+
+  .cta-buttons {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 0.75rem !important;
+  }
+
+  .btn-cta-primary,
+  .btn-cta-secondary {
+    width: auto !important;
+    min-width: 150px !important;
+    flex: 1 !important;
+    padding: 0.85rem 1rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  .landing-footer {
+    padding: 4rem 1.5rem 3rem !important;
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr !important;
+    gap: 2.5rem !important;
+    text-align: center !important;
+  }
+
+  .footer-section h4 {
+    margin-bottom: 1rem !important;
+  }
+
+  .footer-section p {
+    margin: 0 auto !important;
+  }
+
+  .footer-section a {
+    margin: 0.5rem 0 !important;
+  }
+
   /* Auth pages */
   .auth-card,
   .login-card,
