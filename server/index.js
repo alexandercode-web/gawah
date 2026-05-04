@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
 import bcrypt from 'bcryptjs'
 import dotenv from 'dotenv'
 import { mkdir, unlink, writeFile } from 'node:fs/promises'
@@ -15,6 +16,7 @@ import {
 } from '@simplewebauthn/server'
 import rateLimit from 'express-rate-limit'
 import nodemailer from 'nodemailer'
+import logger from './logger.js'
 
 // Load environment variables FIRST before anything reads them
 dotenv.config()
@@ -36,7 +38,7 @@ function getEmailTransporter() {
 
 // Replace with your actual domain when deploying
 const rpName = 'GawaHelper'
-const rpID = 'localhost'
+const rpID = process.env.RP_ID || 'localhost'
 const origin = process.env.CLIENT_ORIGIN || `http://${rpID}:5173`
 
 const app = express()
@@ -74,9 +76,37 @@ const authLimiter = rateLimit({
   },
 })
 
-app.use(cors())
-app.use(express.json({ limit: '50mb' }))
-app.use(express.urlencoded({ limit: '50mb', extended: true }))
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: 'Too many file uploads. Please wait a moment and try again.',
+  },
+})
+
+const corsOptions = {
+  origin: process.env.CLIENT_ORIGIN || '*',
+}
+app.use(helmet({ crossOriginResourcePolicy: false }))
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || !process.env.CLIENT_ORIGIN || process.env.CLIENT_ORIGIN === '*') {
+      return callback(null, true);
+    }
+    const allowed = process.env.CLIENT_ORIGIN.replace(/\/$/, '');
+    if (origin === allowed) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}))
+app.use(express.json({ limit: '5mb' }))
+app.use(express.urlencoded({ limit: '5mb', extended: true }))
 app.use('/uploads', express.static(path.resolve(__dirname, '../public/uploads')))
 app.use('/api/', apiLimiter)
 app.use('/api/auth/', authLimiter)
@@ -97,7 +127,8 @@ app.get('/api/public/stats', async (_, res) => {
 
     return res.json(result[0])
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -120,21 +151,19 @@ app.get('/api/home/summary', requireAuth, async (req, res) => {
         (SELECT COUNT(*) FROM TaskAssignments WHERE HelperID = ?) AS HelperAcceptedTasks,
         (SELECT COUNT(*) FROM Categories) AS TotalCategories,
         (SELECT COUNT(*) FROM Tasks WHERE UserID = ?) AS MyPostedTasks,
-        (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND Status = 'Completed') AS MyCompletedTasks
-      `, [req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id])
+        (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND Status = 'Completed') AS MyCompletedTasks,
+        (
+          (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND Status = 'Completed')
+          +
+          (SELECT COUNT(*) FROM TaskAssignments ta INNER JOIN Tasks t ON ta.TaskID = t.TaskID WHERE ta.HelperID = ? AND t.Status = 'Completed')
+        ) AS AllCompletedTasks
+      `, [req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id])
 
-    // Home feed should show active tasks only (hide closed/completed tasks).
     const recentTasksResult = await query(`
       SELECT DISTINCT
-        t.TaskID,
-        t.Title,
-        t.Location,
-        t.Budget,
-        t.Status,
-        u.FullName AS PosterName,
-        u.Rating AS PosterRating,
-        c.CategoryName,
-        t.CreatedAt
+        t.TaskID, t.Title, t.Location, t.Budget, t.Status,
+        u.FullName AS PosterName, u.Rating AS PosterRating,
+        c.CategoryName, t.CreatedAt
       FROM Tasks t
       INNER JOIN Users u ON t.UserID = u.UserID
       LEFT JOIN Categories c ON t.CategoryID = c.CategoryID
@@ -145,12 +174,10 @@ app.get('/api/home/summary', requireAuth, async (req, res) => {
       LIMIT 6
     `, [req.user.id, req.user.id, req.user.id])
 
-    return res.json({
-      metrics: metricsResult[0],
-      recentTasks: recentTasksResult,
-    })
+    return res.json({ metrics: metricsResult[0], recentTasks: recentTasksResult })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -183,7 +210,8 @@ app.post('/api/webauthn/generate-registration-options', requireAuth, async (req,
 
     return res.json(options)
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -232,7 +260,8 @@ app.post('/api/webauthn/verify-registration', requireAuth, async (req, res) => {
 
     return res.status(400).json({ message: 'Verification failed' })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -266,7 +295,8 @@ app.post('/api/webauthn/generate-authentication-options', async (req, res) => {
 
     return res.json(options)
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -336,7 +366,8 @@ app.post('/api/webauthn/verify-authentication', async (req, res) => {
 
     return res.status(400).json({ message: 'Verification failed' })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -395,7 +426,8 @@ app.post('/api/auth/register', async (req, res) => {
     if (error.code === '23505') {
       return res.status(409).json({ message: 'Email already registered' })
     }
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -445,7 +477,8 @@ app.post('/api/auth/login', async (req, res) => {
       token,
     })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -523,7 +556,8 @@ app.post('/api/auth/change-password', requireAuth, async (req, res) => {
 
     return res.json({ message: 'Password changed successfully' })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -582,13 +616,14 @@ app.post('/api/auth/forgot-password/request-code', async (req, res) => {
         `,
       })
     } catch (emailError) {
-      console.error('Email sending failed:', emailError.message)
+      logger.error('Email sending failed:', emailError.message)
       return res.status(500).json({ message: 'Failed to send reset code email. Please check your email configuration.' })
     }
 
     return res.json({ message: 'Reset code sent to your email' })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -622,7 +657,8 @@ app.post('/api/auth/forgot-password/verify-code', async (req, res) => {
 
     return res.json({ message: 'Code verified successfully' })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -676,7 +712,8 @@ app.post('/api/auth/forgot-password/reset', async (req, res) => {
 
     return res.json({ message: 'Password reset successful' })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -690,7 +727,8 @@ app.get('/api/users', requireAuth, async (_req, res) => {
 
     return res.json(result)
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -699,7 +737,8 @@ app.get('/api/categories', async (_, res) => {
     const result = await query('SELECT CategoryID, CategoryName FROM Categories ORDER BY CategoryName')
     return res.json(result)
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -723,7 +762,8 @@ app.post('/api/categories', requireAuth, async (req, res) => {
     if (error.code === '23505') {
       return res.status(409).json({ message: 'Category already exists' })
     }
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -754,7 +794,8 @@ app.patch('/api/categories/:categoryId', requireAuth, async (req, res) => {
     if (error.code === '23505') {
       return res.status(409).json({ message: 'Category already exists' })
     }
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -782,12 +823,15 @@ app.delete('/api/categories/:categoryId', requireAuth, async (req, res) => {
     await query('DELETE FROM Categories WHERE CategoryID = ?', [categoryId])
     return res.json({ message: 'Category deleted', categoryId })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
 app.get('/api/tasks', async (req, res) => {
   const { status, categoryId } = req.query
+  const limit = Math.min(Number(req.query.limit) || 50, 100)
+  const offset = Number(req.query.offset) || 0
 
   try {
     const params = []
@@ -821,12 +865,13 @@ app.get('/api/tasks', async (req, res) => {
       params.push(Number(categoryId))
     }
 
-    sqlQuery += ' ORDER BY t.CreatedAt DESC'
-
+    sqlQuery += ' ORDER BY t.CreatedAt DESC LIMIT ? OFFSET ?'
+    params.push(limit, offset)
     const result = await query(sqlQuery, params)
     return res.json(result)
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -896,7 +941,8 @@ app.get('/api/tasks/:taskId', async (req, res) => {
 
     return res.json(result[0])
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -939,7 +985,8 @@ app.post('/api/tasks', requireAuth, async (req, res) => {
     const created = await query('SELECT * FROM Tasks WHERE TaskID = ?', [insert[0].TaskID])
     return res.status(201).json(created[0])
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -1001,7 +1048,8 @@ app.patch('/api/tasks/:taskId', requireAuth, async (req, res) => {
     const updated = await query('SELECT * FROM Tasks WHERE TaskID = ?', [taskId])
     return res.json(updated[0])
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -1042,7 +1090,8 @@ app.delete('/api/tasks/:taskId', requireAuth, async (req, res) => {
 
     return res.json({ message: 'Task deleted', taskId })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -1136,7 +1185,8 @@ app.post('/api/tasks/:taskId/apply', requireAuth, async (req, res) => {
       return res.status(409).json({ message: 'Task is already assigned to another helper' })
     }
 
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   } finally {
     conn.release()
   }
@@ -1150,10 +1200,15 @@ app.post('/api/tasks/:taskId/cancel', requireAuth, async (req, res) => {
     return res.status(400).json({ message: 'Cancellation reason is required' })
   }
 
+  const pool = await getDbPool()
+  const conn = await pool.getConnection()
+
   try {
-    const taskResult = await query('SELECT TaskID, UserID, Status FROM Tasks WHERE TaskID = ?', [taskId])
+    await conn.beginTransaction()
+    const [taskResult] = await conn.execute('SELECT TaskID, UserID, Status FROM Tasks WHERE TaskID = ? FOR UPDATE', [taskId])
 
     if (taskResult.length === 0) {
+      await conn.rollback()
       return res.status(404).json({ message: 'Task not found' })
     }
 
@@ -1161,62 +1216,68 @@ app.post('/api/tasks/:taskId/cancel', requireAuth, async (req, res) => {
     const status = String(task.Status || '').toLowerCase()
 
     if (status === 'completed' || status === 'cancelled') {
+      await conn.rollback()
       return res.status(400).json({ message: 'Task can no longer be cancelled' })
     }
 
     if (Number(task.UserID) === Number(req.user.id)) {
-      await query('UPDATE Tasks SET Status = ? WHERE TaskID = ?', ['Cancelled', taskId])
+      await conn.execute('UPDATE Tasks SET Status = ? WHERE TaskID = ?', ['Cancelled', taskId])
 
       // Get the task details for notification
-      const taskDetails = await query('SELECT Title FROM Tasks WHERE TaskID = ?', [taskId])
+      const [taskDetails] = await conn.execute('SELECT Title FROM Tasks WHERE TaskID = ?', [taskId])
       const taskTitle = taskDetails[0]?.Title || 'Unknown Task'
 
       // Notify any helpers if the task was assigned
-      const assignments = await query('SELECT HelperID FROM TaskAssignments WHERE TaskID = ?', [taskId])
+      const [assignments] = await conn.execute('SELECT HelperID FROM TaskAssignments WHERE TaskID = ?', [taskId])
       for (const assignment of assignments) {
         const notificationMessage = `Task "${taskTitle}" has been cancelled by the poster.`
-        await query(
+        await conn.execute(
           'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES (?, ?, ?, ?, ?, NOW())',
           [assignment.HelperID, req.user.id, taskId, notificationMessage.slice(0, 255), 0]
         )
       }
 
+      await conn.commit()
       return res.json({ message: 'Task cancelled by poster', taskId, reason })
     }
 
-    const assignment = await query(
-      'SELECT AssignmentID, AcceptedAt FROM TaskAssignments WHERE TaskID = ? AND HelperID = ? LIMIT 1',
+    const [assignment] = await conn.execute(
+      'SELECT AssignmentID, AcceptedAt FROM TaskAssignments WHERE TaskID = ? AND HelperID = ? LIMIT 1 FOR UPDATE',
       [taskId, req.user.id]
     )
 
     if (assignment.length === 0) {
+      await conn.rollback()
       return res.status(403).json({ message: 'You can only cancel tasks you accepted' })
     }
 
     // Helper cancelling their acceptance
-    await query('DELETE FROM TaskAssignments WHERE TaskID = ? AND HelperID = ?', [taskId, req.user.id])
-    await query('UPDATE Tasks SET Status = ? WHERE TaskID = ?', ['Open', taskId])
+    await conn.execute('DELETE FROM TaskAssignments WHERE TaskID = ? AND HelperID = ?', [taskId, req.user.id])
+    await conn.execute('UPDATE Tasks SET Status = ? WHERE TaskID = ?', ['Open', taskId])
 
     // Get the helper name and task title
-    const helperUser = await query('SELECT FullName FROM Users WHERE UserID = ?', [req.user.id])
-    const taskDetails = await query('SELECT Title FROM Tasks WHERE TaskID = ?', [taskId])
+    const [helperUser] = await conn.execute('SELECT FullName FROM Users WHERE UserID = ?', [req.user.id])
+    const [taskDetails2] = await conn.execute('SELECT Title FROM Tasks WHERE TaskID = ?', [taskId])
     const helperName = helperUser[0]?.FullName || 'A helper'
-    const taskTitle = taskDetails[0]?.Title || 'Unknown Task'
+    const taskTitle2 = taskDetails2[0]?.Title || 'Unknown Task'
 
     // Notify the task poster
-    const notificationMessage = `${helperName} cancelled their acceptance of task "${taskTitle}".`
-    await query(
+    const notificationMessage = `${helperName} cancelled their acceptance of task "${taskTitle2}".`
+    await conn.execute(
       'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES (?, ?, ?, ?, ?, NOW())',
       [task.UserID, req.user.id, taskId, notificationMessage.slice(0, 255), 0]
     )
 
+    await conn.commit()
     return res.json({ message: 'Task acceptance cancelled', taskId, reason })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    if (conn) await conn.rollback()
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
-app.post('/api/tasks/:taskId/proof', requireAuth, async (req, res) => {
+app.post('/api/tasks/:taskId/proof', requireAuth, uploadLimiter, async (req, res) => {
   const taskId = Number(req.params.taskId)
   const fileName = (req.body.fileName || '').trim()
   const proofDataUrl = (req.body.proofDataUrl || '').trim()
@@ -1225,6 +1286,9 @@ app.post('/api/tasks/:taskId/proof', requireAuth, async (req, res) => {
   if (!proofDataUrl) {
     return res.status(400).json({ message: 'Proof image upload is required' })
   }
+
+  const pool = await getDbPool()
+  const conn = await pool.getConnection()
 
   try {
     const matches = proofDataUrl.match(/^data:image\/(png|jpeg);base64,(.+)$/i)
@@ -1235,6 +1299,12 @@ app.post('/api/tasks/:taskId/proof', requireAuth, async (req, res) => {
 
     const extension = matches[1].toLowerCase() === 'jpeg' ? 'jpg' : 'png'
     const base64Payload = matches[2]
+    
+    // Validate image size strictly (5MB = 5 * 1024 * 1024 bytes)
+    const sizeInBytes = Math.ceil((base64Payload.length * 3) / 4)
+    if (sizeInBytes > 5 * 1024 * 1024) {
+      return res.status(413).json({ message: 'Proof image must be 5MB or less' })
+    }
     const safeFileName = `proof-${taskId}-${Date.now()}-${Math.round(Math.random() * 1e9)}.${extension}`
 
     await mkdir(uploadsDir, { recursive: true })
@@ -1242,39 +1312,43 @@ app.post('/api/tasks/:taskId/proof', requireAuth, async (req, res) => {
 
     proofValue = `/uploads/proofs/${safeFileName}`
 
-    const assignment = await query(
+    await conn.beginTransaction()
+
+    const [assignment] = await conn.execute(
       `
         SELECT AssignmentID
         FROM TaskAssignments
         WHERE TaskID = ? AND HelperID = ?
-        LIMIT 1
+        LIMIT 1 FOR UPDATE
       `,
       [taskId, req.user.id]
     )
 
     if (assignment.length === 0) {
+      await conn.rollback()
       return res.status(403).json({ message: 'Only the assigned helper can submit proof' })
     }
 
-    const taskRows = await query(
-      'SELECT UserID, Title, Budget FROM Tasks WHERE TaskID = ? LIMIT 1',
+    const [taskRows] = await conn.execute(
+      'SELECT UserID, Title, Budget FROM Tasks WHERE TaskID = ? LIMIT 1 FOR UPDATE',
       [taskId]
     )
 
     if (taskRows.length === 0) {
+      await conn.rollback()
       return res.status(404).json({ message: 'Task not found' })
     }
 
     const taskMeta = taskRows[0]
 
-    await query(
+    await conn.execute(
       'UPDATE TaskAssignments SET ProofImage = ? WHERE AssignmentID = ?',
       [proofValue, assignment[0].AssignmentID]
     )
 
-    await query('UPDATE Tasks SET Status = ? WHERE TaskID = ?', ['WaitingForReview', taskId])
+    await conn.execute('UPDATE Tasks SET Status = ? WHERE TaskID = ?', ['WaitingForReview', taskId])
 
-    const completedHelperTasks = await query(
+    const [completedHelperTasks] = await conn.execute(
       `
         SELECT COUNT(*) AS CompletedCount
         FROM TaskAssignments ta
@@ -1284,808 +1358,142 @@ app.post('/api/tasks/:taskId/proof', requireAuth, async (req, res) => {
       [req.user.id]
     )
 
-    // Don't update rating yet - wait for approval
-    // const completedCount = Number(completedHelperTasks[0]?.CompletedCount || 0)
-    // const computedRating = Math.min(5, Math.max(0, 4 + completedCount * 0.1))
-    // await query('UPDATE Users SET Rating = ? WHERE UserID = ?', [computedRating, req.user.id])
-
-    const helperRows = await query('SELECT FullName FROM Users WHERE UserID = ? LIMIT 1', [req.user.id])
-    const helperName = helperRows[0]?.FullName || 'Your helper'
-    const notificationMessage = `${helperName} submitted proof for "${taskMeta.Title}". Please review and approve.`
-
-    console.log(`Creating proof notification: posterID=${taskMeta.UserID}, helperID=${req.user.id}, taskID=${taskId}`)
-    await query(
-      'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES (?, ?, ?, ?, ?, NOW())',
-      [taskMeta.UserID, req.user.id, taskId, notificationMessage.slice(0, 255), 0]
-    )
-    console.log(`Proof notification created successfully for task ${taskId}`)
-
-    return res.json({ message: 'Proof submitted successfully', taskId, fileName, status: 'WaitingForReview' })
-  } catch (error) {
-    return res.status(500).json({ message: error.message })
-  }
-})
-
-app.post('/api/tasks/:taskId/review', requireAuth, async (req, res) => {
-  const taskId = Number(req.params.taskId)
-  const rating = Number(req.body.rating)
-  const comment = (req.body.comment || '').trim()
-
-  if (!Number.isFinite(rating) || rating < 0.5 || rating > 5) {
-    return res.status(400).json({ message: 'Rating must be between 0.5 and 5' })
-  }
-
-  try {
-    const taskRows = await query(
-      `
-        SELECT t.TaskID, t.UserID, t.Status, ta.HelperID, t.Title
-        FROM Tasks t
-        LEFT JOIN TaskAssignments ta ON ta.TaskID = t.TaskID
-        WHERE t.TaskID = ?
-        ORDER BY ta.AcceptedAt DESC
-        LIMIT 1
-      `,
-      [taskId]
-    )
-
-    if (taskRows.length === 0) {
-      return res.status(404).json({ message: 'Task not found' })
-    }
-
-    const task = taskRows[0]
-
-    if (Number(task.UserID) !== Number(req.user.id)) {
-      return res.status(403).json({ message: 'Only the task poster can rate the helper' })
-    }
-
-    if (!String(task.Status || '').toLowerCase().includes('complete')) {
-      return res.status(400).json({ message: 'You can rate only after task completion' })
-    }
-
-    if (!task.HelperID) {
-      return res.status(400).json({ message: 'No helper assigned for this task' })
-    }
-
-    const existingReview = await query(
-      `
-        SELECT ReviewID
-        FROM Reviews
-        WHERE TaskID = ? AND ReviewerID = ? AND ReviewedUserID = ?
-        LIMIT 1
-      `,
-      [taskId, req.user.id, task.HelperID]
-    )
-
-    if (existingReview.length > 0) {
-      await query('UPDATE Reviews SET Rating = ?, Comment = ? WHERE ReviewID = ?', [rating, comment, existingReview[0].ReviewID])
-    } else {
-      await query(
-        'INSERT INTO Reviews (TaskID, ReviewerID, ReviewedUserID, Rating, Comment) VALUES (?, ?, ?, ?, ?)',
-        [taskId, req.user.id, task.HelperID, rating, comment]
+    if (Number(completedHelperTasks[0].CompletedCount) === 0) {
+      await conn.execute(
+        'UPDATE Users SET Rating = 5.0 WHERE UserID = ? AND Rating = 0.0',
+        [req.user.id]
       )
     }
 
-    const ratingRows = await query(
-      'SELECT AVG(Rating) AS AvgRating FROM Reviews WHERE ReviewedUserID = ?',
-      [task.HelperID]
-    )
+    const [userRows] = await conn.execute('SELECT FullName FROM Users WHERE UserID = ?', [req.user.id])
+    const helperName = userRows[0]?.FullName || 'Your helper'
 
-    const avgRating = Number(ratingRows[0]?.AvgRating || 5.0)
-    const roundedRating = Math.round(avgRating * 10) / 10
-    await query('UPDATE Users SET Rating = ? WHERE UserID = ?', [roundedRating, task.HelperID])
-
-    const posterName = await query('SELECT FullName FROM Users WHERE UserID = ?', [req.user.id])
-    const notificationMessage = `${posterName[0]?.FullName || 'Task poster'} gave you a ${rating}-star rating for "${task.Title}".`
-
-    console.log(`Creating rating notification: helperID=${task.HelperID}, posterID=${req.user.id}, taskID=${taskId}`)
-    await query(
+    await conn.execute(
       'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES (?, ?, ?, ?, ?, NOW())',
-      [task.HelperID, req.user.id, taskId, notificationMessage.slice(0, 255), 0]
+      [taskMeta.UserID, req.user.id, taskId, `${helperName} submitted proof for "${taskMeta.Title || 'your task'}". Please review it.`, 0]
     )
 
-    return res.json({ message: 'Helper rated successfully', taskId, rating, helperRating: roundedRating })
+    await conn.commit()
+    return res.json({ message: 'Proof submitted successfully', proofImage: proofValue })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    if (conn) await conn.rollback()
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
-app.get('/api/notifications', requireAuth, async (req, res) => {
-  try {
-    const rows = await query(
-      `
-        SELECT NotificationID, Message, IsRead, SenderID, TaskID, CreatedAt
-        FROM Notifications
-        WHERE UserID = ?
-        ORDER BY CreatedAt DESC
-        LIMIT 50
-      `,
-      [req.user.id]
-    )
 
-    console.log('Notifications returned:', rows)
-    return res.json(rows)
-  } catch (error) {
-    console.error('Error fetching notifications:', error)
-    return res.status(500).json({ message: error.message })
-  }
-})
-
-app.patch('/api/notifications/:notificationId', requireAuth, async (req, res) => {
-  try {
-    const { notificationId } = req.params
-
-    await query(
-      `
-        UPDATE Notifications
-        SET IsRead = 1
-        WHERE NotificationID = ? AND UserID = ?
-      `,
-      [notificationId, req.user.id]
-    )
-
-    return res.json({ message: 'Notification marked as read' })
-  } catch (error) {
-    return res.status(500).json({ message: error.message })
-  }
-})
-
-app.get('/api/messages/:otherUserId/:taskId', requireAuth, async (req, res) => {
-  try {
-    const { otherUserId, taskId } = req.params
-
-    const taskRows = await query(
-      `
-        SELECT t.UserID AS PosterID, ta.HelperID
-        FROM Tasks t
-        LEFT JOIN TaskAssignments ta ON ta.TaskID = t.TaskID
-        WHERE t.TaskID = ?
-        LIMIT 1
-      `,
-      [taskId]
-    )
-
-    const taskRow = taskRows[0]
-    const helperId = Number(taskRow?.HelperID || 0)
-    const posterId = Number(taskRow?.PosterID || 0)
-    const currentUserId = Number(req.user.id)
-    const otherId = Number(otherUserId)
-
-    if (!taskRow || !helperId) {
-      return res.status(403).json({ message: 'Chat is available after a helper accepts this task.' })
-    }
-
-    const isAllowedParticipant =
-      (currentUserId === posterId && otherId === helperId) ||
-      (currentUserId === helperId && otherId === posterId)
-
-    if (!isAllowedParticipant) {
-      return res.status(403).json({ message: 'You can only chat with the assigned helper or poster for this task.' })
-    }
-
-    const rows = await query(
-      `
-        SELECT MessageID, TaskID, SenderID, RecipientID, Content, AttachmentType, AttachmentData, AttachmentName, AttachmentMime, IsRead, CreatedAt
-        FROM Messages
-        WHERE TaskID = ? AND (
-          (SenderID = ? AND RecipientID = ?) OR
-          (SenderID = ? AND RecipientID = ?)
-        )
-        ORDER BY CreatedAt ASC
-      `,
-      [taskId, req.user.id, otherUserId, otherUserId, req.user.id]
-    )
-
-    return res.json(rows)
-  } catch (error) {
-    return res.status(500).json({ message: error.message })
-  }
-})
-
-app.post('/api/messages', requireAuth, async (req, res) => {
-  try {
-    const { taskId, recipientId, attachmentType, attachmentData, attachmentName, attachmentMime } = req.body
-    let { content } = req.body
-
-    // Resilience: if content is an object (from old API calls), extract the string
-    if (content && typeof content === 'object' && content.content) {
-      content = content.content
-    }
-
-    const taskRows = await query(
-      `
-        SELECT t.UserID AS PosterID, ta.HelperID
-        FROM Tasks t
-        LEFT JOIN TaskAssignments ta ON ta.TaskID = t.TaskID
-        WHERE t.TaskID = ?
-        LIMIT 1
-      `,
-      [taskId]
-    )
-
-    const taskRow = taskRows[0]
-    const helperId = Number(taskRow?.HelperID || 0)
-    const posterId = Number(taskRow?.PosterID || 0)
-    const currentUserId = Number(req.user.id)
-    const recipientUserId = Number(recipientId)
-
-    if (!taskId || !recipientId || (!content && !attachmentData)) {
-      return res.status(400).json({ message: 'Missing required fields' })
-    }
-
-    if (!taskRow || !helperId) {
-      return res.status(403).json({ message: 'Chat is available after a helper accepts this task.' })
-    }
-
-    const isAllowedParticipant =
-      (currentUserId === posterId && recipientUserId === helperId) ||
-      (currentUserId === helperId && recipientUserId === posterId)
-
-    if (!isAllowedParticipant) {
-      return res.status(403).json({ message: 'You can only message the assigned helper or poster for this task.' })
-    }
-
-    await query(
-      `
-        INSERT INTO Messages (TaskID, SenderID, RecipientID, Content, AttachmentType, AttachmentData, AttachmentName, AttachmentMime)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      [
-        taskId,
-        req.user.id,
-        recipientId,
-        content || '',
-        attachmentType || null,
-        attachmentData || null,
-        attachmentName || null,
-        attachmentMime || null
-      ]
-    )
-
-    // Get sender name for notification
-    const senderRows = await query('SELECT FullName FROM Users WHERE UserID = ?', [req.user.id])
-    const senderName = senderRows[0]?.FullName || 'Someone'
-
-    // Notification message cleanup
-    const displayContent = content || (attachmentType === 'image' ? 'an image' : attachmentName || 'a file')
-    const safeContent = String(displayContent)
-    const notificationMessage = `${senderName} sent you a message: "${safeContent.substring(0, 50)}${safeContent.length > 50 ? '...' : ''}"`
-
-    // Create notification for recipient
-    console.log(`Creating message notification: recipientID=${recipientId}, senderID=${req.user.id}, taskID=${taskId}`)
-    await query(
-      'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES (?, ?, ?, ?, ?, NOW())',
-      [recipientId, req.user.id, taskId, notificationMessage.slice(0, 255), 0]
-    )
-
-    return res.json({ message: 'Message sent' })
-  } catch (error) {
-    return res.status(500).json({ message: error.message })
-  }
-})
-
-// Batch mark as read for a specific task
-app.patch('/api/messages/mark-as-read/:taskId', requireAuth, async (req, res) => {
-  try {
-    const { taskId } = req.params
-
-    await query(
-      `
-        UPDATE Messages
-        SET IsRead = 1
-        WHERE TaskID = ? AND RecipientID = ? AND IsRead = 0
-      `,
-      [taskId, req.user.id]
-    )
-
-    return res.json({ message: 'Messages marked as read' })
-  } catch (error) {
-    return res.status(500).json({ message: error.message })
-  }
-})
-
-app.patch('/api/messages/:messageId', requireAuth, async (req, res) => {
-  try {
-    const { messageId } = req.params
-
-    await query(
-      `
-        UPDATE Messages
-        SET IsRead = 1
-        WHERE MessageID = ? AND RecipientID = ?
-      `,
-      [messageId, req.user.id]
-    )
-
-    return res.json({ message: 'Message marked as read' })
-  } catch (error) {
-    return res.status(500).json({ message: error.message })
-  }
-})
-
-app.get('/api/me/rating-summary', requireAuth, async (req, res) => {
-  try {
-    const userRows = await query('SELECT Rating FROM Users WHERE UserID = ? LIMIT 1', [req.user.id])
-    const reviewRows = await query(
-      'SELECT COUNT(*) AS ReviewCount FROM Reviews WHERE ReviewedUserID = ?',
-      [req.user.id]
-    )
-
-    return res.json({
-      rating: Number(userRows[0]?.Rating || 5.0),
-      reviewCount: Number(reviewRows[0]?.ReviewCount || 0),
-    })
-  } catch (error) {
-    return res.status(500).json({ message: error.message })
-  }
-})
-
-app.post('/api/me/profile-image', requireAuth, async (req, res) => {
-  const imageDataUrl = String(req.body?.imageDataUrl || '').trim()
-  const fileName = String(req.body?.fileName || '').trim()
-
-  if (!imageDataUrl) {
-    return res.status(400).json({ message: 'Profile image is required' })
-  }
-
-  try {
-    const matches = imageDataUrl.match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/i)
-    if (!matches) {
-      return res.status(400).json({ message: 'Invalid image format. Use PNG, JPG, or WEBP.' })
-    }
-
-    const extension = matches[1].toLowerCase() === 'jpeg' ? 'jpg' : matches[1].toLowerCase()
-    const base64Payload = matches[2]
-    const bytes = Buffer.from(base64Payload, 'base64')
-
-    if (bytes.length > 10 * 1024 * 1024) {
-      return res.status(400).json({ message: 'Image must be 10MB or smaller' })
-    }
-
-    const safeFileName = `avatar-${req.user.id}-${Date.now()}-${Math.round(Math.random() * 1e9)}.${extension}`
-    const storedPath = `/uploads/avatars/${safeFileName}`
-
-    const existingRows = await query('SELECT ProfileImage FROM Users WHERE UserID = ? LIMIT 1', [req.user.id])
-    const previousImage = String(existingRows[0]?.ProfileImage || '').trim()
-
-    await mkdir(avatarUploadsDir, { recursive: true })
-    await writeFile(path.join(avatarUploadsDir, safeFileName), bytes)
-    await query('UPDATE Users SET ProfileImage = ? WHERE UserID = ?', [storedPath, req.user.id])
-
-    const normalizedPrevious = previousImage.replace(/\\+/g, '/')
-    if (normalizedPrevious.startsWith('/uploads/avatars/') || normalizedPrevious.startsWith('uploads/avatars/')) {
-      const removableName = path.basename(normalizedPrevious)
-      if (removableName && removableName !== safeFileName) {
-        try {
-          await unlink(path.join(avatarUploadsDir, removableName))
-        } catch {
-          // Ignore removal issues for old avatar files.
-        }
-      }
-    }
-
-    return res.json({
-      message: 'Profile image updated successfully',
-      profileImage: storedPath,
-      fileName: fileName || safeFileName,
-    })
-  } catch (error) {
-    return res.status(500).json({ message: error.message })
-  }
-})
 
 app.patch('/api/tasks/:taskId/approve-proof', requireAuth, async (req, res) => {
-  const taskId = Number(req.params.taskId)
-
-  if (!Number.isFinite(taskId) || taskId <= 0) {
-    return res.status(400).json({ message: 'Invalid task id' })
-  }
-
   try {
-    // Verify task exists and current user is the poster
-    const taskRows = await query(
-      'SELECT TaskID, UserID, Status, Title, Budget FROM Tasks WHERE TaskID = ? LIMIT 1',
-      [taskId]
-    )
-
-    if (taskRows.length === 0) {
-      return res.status(404).json({ message: 'Task not found' })
+    const taskId = Number(req.params.taskId)
+    // Only poster can approve
+    const taskRows = await query('SELECT UserID, Status FROM Tasks WHERE TaskID = ?', [taskId])
+    if (taskRows.length === 0) return res.status(404).json({ message: 'Task not found.' })
+    if (taskRows[0].UserID !== req.user.id) return res.status(403).json({ message: 'Only the poster can approve the proof.' })
+    if (taskRows[0].Status !== 'WaitingForReview' && taskRows[0].Status !== 'ProofSubmitted') {
+      return res.status(400).json({ message: 'Task is not in a state to approve proof.' })
     }
 
-    const task = taskRows[0]
-    const isPoster = Number(task.UserID) === Number(req.user.id)
-
-    if (!isPoster) {
-      return res.status(403).json({ message: 'Only the task poster can approve proof' })
-    }
-
-    if (task.Status !== 'WaitingForReview') {
-      return res.status(400).json({ message: 'Task is not waiting for review' })
-    }
-
-    // Resolve helper from the submitted proof to avoid mismatched payouts.
-    const assignmentRows = await query(
-      `
-        SELECT ta.HelperID
-        FROM TaskAssignments ta
-        WHERE ta.TaskID = ?
-          AND ta.ProofImage IS NOT NULL
-        ORDER BY ta.AcceptedAt DESC, ta.AssignmentID DESC
-        LIMIT 2
-      `,
-      [taskId]
-    )
-
-    if (assignmentRows.length === 0) {
-      return res.status(404).json({ message: 'No submitted proof found for this task' })
-    }
-
-    if (assignmentRows.length > 1) {
-      return res.status(409).json({ message: 'Multiple helper proofs detected. Resolve helper assignment before approval.' })
-    }
-
-    const helperID = assignmentRows[0].HelperID
-
-    // Mark task as ProofApproved (waiting for helper to confirm payment)
     await query('UPDATE Tasks SET Status = ? WHERE TaskID = ?', ['ProofApproved', taskId])
+    
+    const assignmentRows = await query('SELECT HelperID FROM TaskAssignments WHERE TaskID = ?', [taskId])
+    if (assignmentRows.length > 0) {
+      await query(
+        'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES ($1, $2, $3, $4, 0, NOW())',
+        [assignmentRows[0].HelperID, req.user.id, taskId, 'Your proof was approved! Payment is pending.']
+      )
+    }
 
-    // Get helper and poster names for notifications
-    const helperRows = await query('SELECT FullName FROM Users WHERE UserID = ? LIMIT 1', [helperID])
-    const helperName = helperRows[0]?.FullName || 'Helper'
-
-    const posterRows = await query('SELECT FullName FROM Users WHERE UserID = ? LIMIT 1', [req.user.id])
-    const posterName = posterRows[0]?.FullName || 'Task poster'
-
-    // Notify helper that proof was approved and payment is waiting
-    const approvalNotifText = `${posterName} approved your proof for "${task.Title}". Your payment of P${Number(task.Budget || 0).toFixed(2)} is ready. Click "Payment Received" to confirm.`
-
-    await query(
-      'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES (?, ?, ?, ?, ?, NOW())',
-      [helperID, req.user.id, taskId, approvalNotifText.slice(0, 255), 0]
-    )
-
-    return res.json({ message: 'Task approved successfully. Waiting for helper to confirm payment.', taskId, status: 'ProofApproved' })
+    return res.json({ success: true, message: 'Proof approved successfully.' })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
 app.post('/api/tasks/:taskId/payment-received', requireAuth, async (req, res) => {
-  const taskId = Number(req.params.taskId)
-
-  if (!Number.isFinite(taskId) || taskId <= 0) {
-    return res.status(400).json({ message: 'Invalid task id' })
-  }
-
-  const pool = await getDbPool()
-  const conn = await pool.getConnection()
-
   try {
-    await conn.beginTransaction()
+    const taskId = Number(req.params.taskId)
+    const taskRows = await query('SELECT UserID, Status FROM Tasks WHERE TaskID = ?', [taskId])
+    if (taskRows.length === 0) return res.status(404).json({ message: 'Task not found.' })
+    if (taskRows[0].Status !== 'ProofApproved') {
+      return res.status(400).json({ message: 'Task proof not yet approved by poster.' })
+    }
 
-    const [taskResult] = await conn.execute(
-      'SELECT TaskID, UserID, Title, Budget, Status FROM Tasks WHERE TaskID = ? LIMIT 1 FOR UPDATE',
-      [taskId]
+    // Check if req.user.id is the assigned helper
+    const assignmentRows = await query('SELECT HelperID FROM TaskAssignments WHERE TaskID = ?', [taskId])
+    if (assignmentRows.length === 0 || assignmentRows[0].HelperID !== req.user.id) {
+      return res.status(403).json({ message: 'Only the assigned helper can confirm payment.' })
+    }
+
+    await query('UPDATE Tasks SET Status = ? WHERE TaskID = ?', ['Completed', taskId])
+    
+    await query(
+      'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES ($1, $2, $3, $4, 0, NOW())',
+      [taskRows[0].UserID, req.user.id, taskId, 'Payment confirmed! The task is now completed.']
     )
 
-    if (taskResult.length === 0) {
-      await conn.rollback()
-      return res.status(404).json({ message: 'Task not found' })
+    return res.json({ success: true, message: 'Payment confirmed.' })
+  } catch (error) {
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+
+app.post('/api/tasks/:taskId/review', requireAuth, async (req, res) => {
+  try {
+    const taskId = Number(req.params.taskId)
+    const { rating, comment } = req.body
+    
+    const taskRows = await query('SELECT UserID, Status FROM Tasks WHERE TaskID = ?', [taskId])
+    if (taskRows.length === 0) return res.status(404).json({ message: 'Task not found' })
+    
+    const task = taskRows[0]
+    if (task.Status !== 'Completed') {
+      return res.status(400).json({ message: 'Cannot review a task that is not completed.' })
     }
 
-    const task = taskResult[0]
-    const isAdmin = Number(req.user.isAdmin || req.user.IsAdmin) === 1 || req.user.role === 'admin'
+    const assignmentRows = await query('SELECT HelperID FROM TaskAssignments WHERE TaskID = ?', [taskId])
+    const helperId = assignmentRows.length > 0 ? assignmentRows[0].HelperID : null
 
-    let assignmentRows;
-    if (isAdmin) {
-      // Admin can confirm for ANY helper assigned to this task
-      assignmentRows = await conn.execute(
-        `
-          SELECT AssignmentID, HelperID
-          FROM TaskAssignments
-          WHERE TaskID = ?
-            AND ProofImage IS NOT NULL
-          ORDER BY AcceptedAt DESC, AssignmentID DESC
-          LIMIT 1
-        `,
-        [taskId]
-      )
-    } else {
-      // Regular user must be the assigned helper
-      assignmentRows = await conn.execute(
-        `
-          SELECT AssignmentID, HelperID
-          FROM TaskAssignments
-          WHERE TaskID = ?
-            AND HelperID = ?
-            AND ProofImage IS NOT NULL
-          ORDER BY AcceptedAt DESC, AssignmentID DESC
-          LIMIT 1
-        `,
-        [taskId, req.user.id]
-      )
+    const isPoster = task.UserID === req.user.id
+    const isHelper = helperId === req.user.id
+
+    if (!isPoster && !isHelper) {
+      return res.status(403).json({ message: 'You are not part of this task.' })
     }
 
-    if (assignmentRows[0].length === 0) {
-      await conn.rollback()
-      return res.status(403).json({
-        message: isAdmin
-          ? 'No helper assignment with proof found for this task'
-          : 'Only the helper who submitted proof can confirm payment'
-      })
+    const reviewedUserId = isPoster ? helperId : task.UserID
+
+    // Check if review already exists
+    const existing = await query('SELECT ReviewID FROM Reviews WHERE TaskID = ? AND ReviewerID = ?', [taskId, req.user.id])
+    if (existing.length > 0) {
+      return res.status(400).json({ message: 'You have already reviewed this task.' })
     }
 
-    const helperId = Number(assignmentRows[0][0].HelperID)
-    const posterId = Number(task.UserID)
+    await query('INSERT INTO Reviews (TaskID, ReviewerID, ReviewedUserID, Rating, Comment) VALUES (?, ?, ?, ?, ?)', [
+      taskId, req.user.id, reviewedUserId, Number(rating), comment || ''
+    ])
 
-    if (helperId === posterId) {
-      await conn.rollback()
-      return res.status(400).json({ message: 'Poster and helper cannot be the same user for payout transfer' })
-    }
-
-    // Only allow confirmation after poster approval.
-    if (String(task.Status || '').toLowerCase() !== 'proofapproved') {
-      await conn.rollback()
-      return res.status(400).json({ message: 'Task is not in ProofApproved status' })
-    }
-
-    const paymentRows = await conn.execute(
-      'SELECT PaymentID, Amount, Status, PayerUserID, PayeeUserID FROM Payments WHERE TaskID = ? LIMIT 1 FOR UPDATE',
-      [taskId]
+    // Recalculate and update the reviewed user's average rating in Users table
+    const avgRows = await query(
+      'SELECT ROUND(AVG(Rating)::numeric, 2) AS AvgRating, COUNT(*) AS ReviewCount FROM Reviews WHERE ReviewedUserID = ?',
+      [reviewedUserId]
     )
-
-    if (paymentRows[0].length === 0) {
-      console.log(`Missing payment record for task ${taskId}. Creating one...`);
-      await conn.execute(
-        'INSERT INTO Payments (TaskID, Amount, PaymentMethod, Status, PayerUserID) VALUES (?, ?, ?, ?, ?)',
-        [taskId, task.Budget, 'Cash', 'Pending', posterId]
-      );
-
-      // Re-query to get the new payment record
-      const [retryPaymentRows] = await conn.execute(
-        'SELECT PaymentID, Amount, Status, PayerUserID, PayeeUserID FROM Payments WHERE TaskID = ? LIMIT 1 FOR UPDATE',
-        [taskId]
-      );
-      paymentRows[0] = retryPaymentRows;
+    if (avgRows.length > 0 && avgRows[0].AvgRating !== null) {
+      await query('UPDATE Users SET Rating = ? WHERE UserID = ?', [Number(avgRows[0].AvgRating), reviewedUserId])
     }
-
-    if (paymentRows[0].length === 0) {
-      await conn.rollback()
-      return res.status(404).json({ message: 'Payment record could not be created for this task' })
-    }
-
-    const payment = paymentRows[0][0]
-    if (String(payment.Status || '').toLowerCase() === 'completed') {
-      await conn.rollback()
-      return res.status(409).json({ message: 'Payment for this task is already completed' })
-    }
-
-    const transferAmount = Number(payment.Amount || task.Budget || 0)
-    if (!Number.isFinite(transferAmount) || transferAmount <= 0) {
-      await conn.rollback()
-      return res.status(400).json({ message: 'Invalid payment amount for this task' })
-    }
-
-    // Transfer value from poster (payer) to helper (payee).
-    await conn.execute(
-      'UPDATE Users SET WalletBalance = WalletBalance - ? WHERE UserID = ?',
-      [transferAmount, posterId]
-    )
-    await conn.execute(
-      'UPDATE Users SET WalletBalance = WalletBalance + ? WHERE UserID = ?',
-      [transferAmount, helperId]
-    )
-
-    // COMPLETE THE TASK - Set status to Completed
-    await conn.execute('UPDATE Tasks SET Status = ? WHERE TaskID = ?', ['Completed', taskId])
-
-    // Update TaskAssignments with CompletedAt timestamp
-    await conn.execute(
-      'UPDATE TaskAssignments SET CompletedAt = NOW() WHERE TaskID = ? AND HelperID = ?',
-      [taskId, helperId]
-    )
-
-    // Update payment status and role ownership.
-    await conn.execute(
-      `
-        UPDATE Payments
-        SET Status = ?, PayerUserID = ?, PayeeUserID = ?, CompletedAt = NOW()
-        WHERE PaymentID = ?
-      `,
-      ['Completed', posterId, helperId, payment.PaymentID]
-    )
-
-    await conn.commit()
-
-    // Calculate and update helper rating
-    const completedHelperTasks = await query(
-      `
-        SELECT COUNT(*) AS CompletedCount
-        FROM TaskAssignments ta
-        INNER JOIN Tasks t ON ta.TaskID = t.TaskID
-        WHERE ta.HelperID = ? AND t.Status = 'Completed'
-      `,
-      [helperId]
-    )
-
-    const completedCount = Number(completedHelperTasks[0]?.CompletedCount || 0)
-    const computedRating = Math.min(5, Math.max(0, 4 + completedCount * 0.1))
-    await query('UPDATE Users SET Rating = ? WHERE UserID = ?', [computedRating, helperId])
-
-    // Get helper and poster names for notifications
-    const helperRows = await query('SELECT FullName FROM Users WHERE UserID = ? LIMIT 1', [req.user.id])
-    const helperName = helperRows[0]?.FullName || 'Helper'
-
-    const posterRows = await query('SELECT FullName FROM Users WHERE UserID = ? LIMIT 1', [posterId])
-    const posterName = posterRows[0]?.FullName || 'Task poster'
-
-    // Notify poster that helper received payment
-    const posterNotifText = `${helperName} confirmed receiving payment of P${Number(task.Budget || 0).toFixed(2)} for "${task.Title}". Task is now complete! You can rate them.`
 
     await query(
-      'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES (?, ?, ?, ?, ?, NOW())',
-      [posterId, req.user.id, taskId, posterNotifText.slice(0, 255), 0]
+      'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES ($1, $2, $3, $4, 0, NOW())',
+      [reviewedUserId, req.user.id, taskId, 'You received a new review!']
     )
 
-    // Notify helper of successful completion
-    const helperNotifText = `Payment confirmed! Your task "${task.Title}" is now complete. Earnings of P${Number(task.Budget || 0).toFixed(2)} have been processed.`
-
-    await query(
-      'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES (?, ?, ?, ?, ?, NOW())',
-      [req.user.id, task.UserID, taskId, helperNotifText.slice(0, 255), 0]
-    )
-
-    return res.json({
-      message: 'Payment confirmed and task completed successfully',
-      taskId,
-      status: 'Completed',
-      earnings: Number(task.Budget || 0),
-      success: true
-    })
+    return res.json({ success: true, message: 'Review submitted.' })
   } catch (error) {
-    try {
-      await conn.rollback()
-    } catch {
-      // Best effort rollback.
-    }
-    console.error('Payment received error:', error)
-    return res.status(500).json({ message: error.message || 'Server error' })
-  } finally {
-    conn.release()
-  }
-})
-
-app.get('/api/me/reviews', requireAuth, async (req, res) => {
-  try {
-    const reviews = await query(
-      `
-      SELECT 
-        rv.ReviewID, rv.Rating, rv.Comment, rv.CreatedAt,
-        u.FullName AS ReviewerName, u.ProfileImage AS ReviewerProfileImage,
-        t.Title AS TaskTitle
-      FROM Reviews rv
-      INNER JOIN Users u ON rv.ReviewerID = u.UserID
-      INNER JOIN Tasks t ON rv.TaskID = t.TaskID
-      WHERE rv.ReviewedUserID = ?
-      ORDER BY rv.CreatedAt DESC
-      `,
-      [req.user.id]
-    )
-    return res.json(reviews)
-  } catch (error) {
-    return res.status(500).json({ message: error.message })
-  }
-})
-
-app.get('/api/me/history', requireAuth, async (req, res) => {
-  try {
-    const history = await query(
-      `
-      SELECT 
-        t.TaskID, t.Title, t.Status, t.Budget, t.CreatedAt,
-        c.CategoryName,
-        CASE WHEN t.UserID = ? THEN 'Posted' ELSE 'Applied' END AS Role
-      FROM Tasks t
-      LEFT JOIN Categories c ON t.CategoryID = c.CategoryID
-      LEFT JOIN TaskAssignments ta ON t.TaskID = ta.TaskID
-      WHERE (t.UserID = ? OR ta.HelperID = ?)
-        AND (t.Status IN ('Completed', 'Cancelled'))
-      GROUP BY t.TaskID, c.CategoryName
-      ORDER BY t.CreatedAt DESC
-      `,
-      [req.user.id, req.user.id, req.user.id]
-    )
-    return res.json(history)
-  } catch (error) {
-    return res.status(500).json({ message: error.message })
-  }
-})
-
-app.post('/api/tasks/:taskId/feedback', requireAuth, async (req, res) => {
-  console.log('=== FEEDBACK API CALLED ===')
-  console.log('TaskID:', req.params.taskId)
-  console.log('UserID:', req.user?.id)
-  console.log('Message:', req.body?.message)
-
-  const taskId = Number(req.params.taskId)
-  const feedbackMessage = (req.body?.message || '').trim()
-
-  if (!feedbackMessage) {
-    return res.status(400).json({ message: 'Feedback message is required' })
-  }
-
-  if (feedbackMessage.length > 500) {
-    return res.status(400).json({ message: 'Message exceeds 500 character limit' })
-  }
-
-  try {
-    // Get task and helper info from TaskAssignments
-    const taskResult = await query(
-      `SELECT t.TaskID, t.UserID, t.Status, t.Title, ta.HelperID 
-       FROM Tasks t 
-       LEFT JOIN TaskAssignments ta ON t.TaskID = ta.TaskID 
-       WHERE t.TaskID = ?`,
-      [taskId]
-    )
-
-    console.log('Task query result:', taskResult)
-
-    if (taskResult.length === 0) {
-      return res.status(404).json({ message: 'Task not found' })
-    }
-
-    const task = taskResult[0]
-    const isPoster = Number(task.UserID) === Number(req.user.id)
-
-    if (!isPoster) {
-      return res.status(403).json({ message: 'Only the task poster can send feedback' })
-    }
-
-    if (!task.HelperID || Number(task.HelperID) === 0) {
-      return res.status(400).json({ message: 'Task does not have an assigned helper' })
-    }
-
-    const helperID = Number(task.HelperID)
-
-    // Verify helper exists
-    const helperCheck = await query('SELECT UserID FROM Users WHERE UserID = ? LIMIT 1', [helperID])
-    if (helperCheck.length === 0) {
-      return res.status(400).json({ message: 'Helper user not found' })
-    }
-
-    // Save the feedback message to Messages table
-    const messageResult = await query(
-      'INSERT INTO Messages (TaskID, SenderID, RecipientID, Content, IsRead, CreatedAt) VALUES (?, ?, ?, ?, ?, NOW())',
-      [taskId, req.user.id, helperID, feedbackMessage, 0]
-    )
-
-    // Get poster name for notification
-    const posterName = await query('SELECT FullName FROM Users WHERE UserID = ? LIMIT 1', [req.user.id])
-    const senderFullName = posterName[0]?.FullName || 'Task poster'
-
-    // Create notification for the feedback message with more detail
-    const truncatedMessage = feedbackMessage.length > 50 ? feedbackMessage.substring(0, 50) + '...' : feedbackMessage
-    const messageNotifText = `${senderFullName} sent you feedback about the task: "${truncatedMessage}"`
-
-    const notifResult = await query(
-      'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES (?, ?, ?, ?, ?, NOW())',
-      [helperID, req.user.id, taskId, messageNotifText.slice(0, 255), 0]
-    )
-
-    if (!messageResult[0]?.messageid || !notifResult[0]?.notificationid) {
-      throw new Error('Failed to save message or notification')
-    }
-
-    console.log('✓ Feedback sent successfully to helper:', helperID)
-
-    return res.json({
-      message: 'Feedback sent successfully',
-      messageId: messageResult[0].messageid,
-      notificationId: notifResult[0].notificationid,
-      success: true
-    })
-  } catch (error) {
-    console.error('Feedback API error:', error)
-    return res.status(500).json({ message: error.message || 'Server error sending feedback' })
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -2161,11 +1569,175 @@ app.delete('/api/tasks/:taskId/proof', requireAuth, async (req, res) => {
 
     return res.json({ message: 'Proof deleted successfully', taskId })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+
+
+// ==========================================
+// Messages API
+// ==========================================
+
+app.get('/api/messages/:otherUserId/:taskId', requireAuth, async (req, res) => {
+  try {
+    const taskId = Number(req.params.taskId)
+    const otherUserId = Number(req.params.otherUserId)
+    const userId = req.user.id
+
+    const rows = await query(`
+      SELECT 
+        m.*,
+        u.FullName AS SenderName,
+        u.ProfileImage AS SenderAvatar
+      FROM Messages m
+      JOIN Users u ON m.SenderID = u.UserID
+      WHERE m.TaskID = ? AND (
+        (m.SenderID = ? AND m.RecipientID = ?) OR 
+        (m.SenderID = ? AND m.RecipientID = ?)
+      )
+      ORDER BY m.CreatedAt ASC
+    `, [taskId, userId, otherUserId, otherUserId, userId])
+
+    return res.json(rows)
+  } catch (error) {
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+
+app.post('/api/messages', requireAuth, async (req, res) => {
+  try {
+    const { taskId, recipientId, content, attachmentType, attachmentData, attachmentName, attachmentMime } = req.body
+    const senderId = req.user.id
+
+    if (!taskId || !recipientId || (!content && !attachmentData)) {
+      return res.status(400).json({ message: 'Missing required message fields' })
+    }
+
+    let savedAttachmentUrl = null
+    if (attachmentData && (attachmentType === 'image' || attachmentType === 'file')) {
+      const isBase64 = attachmentData.startsWith('data:')
+      if (isBase64) {
+        const matches = attachmentData.match(/^data:([^;]+);base64,(.+)$/i)
+        if (matches) {
+          const mime = matches[1]
+          const base64Payload = matches[2]
+          let ext = 'bin'
+          
+          if (mime.includes('image/')) {
+            const subType = mime.split('/')[1].toLowerCase()
+            ext = subType === 'jpeg' ? 'jpg' : subType
+          } else if (mime === 'application/pdf') {
+            ext = 'pdf'
+          } else if (attachmentName && attachmentName.includes('.')) {
+            ext = attachmentName.split('.').pop().toLowerCase()
+          }
+
+          // Validate size (10MB for files)
+          const sizeInBytes = Math.ceil((base64Payload.length * 3) / 4)
+          if (sizeInBytes <= 10 * 1024 * 1024) {
+            const safeName = `msg-${taskId}-${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`
+            const proofsDir = path.resolve(__dirname, '../public/uploads/proofs')
+            await mkdir(proofsDir, { recursive: true })
+            await writeFile(path.join(proofsDir, safeName), Buffer.from(base64Payload, 'base64'))
+            savedAttachmentUrl = `/uploads/proofs/${safeName}`
+          }
+        }
+      }
+    }
+
+    const result = await query(`
+      INSERT INTO Messages 
+        (TaskID, SenderID, RecipientID, Content, AttachmentType, AttachmentData, AttachmentName, AttachmentMime, IsRead)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+    `, [
+      Number(taskId),
+      senderId,
+      Number(recipientId),
+      content || '',
+      attachmentType || null,
+      savedAttachmentUrl || attachmentData || null,
+      attachmentName || null,
+      attachmentMime || null
+    ])
+
+    await query(
+      'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES ($1, $2, $3, $4, 0, NOW())',
+      [Number(recipientId), senderId, Number(taskId), 'You received a new message.']
+    )
+
+    return res.json({ success: true, messageId: result.insertId, attachmentUrl: savedAttachmentUrl })
+  } catch (error) {
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+
+app.patch('/api/messages/:messageId', requireAuth, async (req, res) => {
+  try {
+    const messageId = Number(req.params.messageId)
+    await query('UPDATE Messages SET IsRead = 1 WHERE MessageID = ? AND RecipientID = ?', [messageId, req.user.id])
+    return res.json({ success: true })
+  } catch (error) {
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+
+app.patch('/api/messages/mark-as-read/:taskId', requireAuth, async (req, res) => {
+  try {
+    const taskId = Number(req.params.taskId)
+    await query('UPDATE Messages SET IsRead = 1 WHERE TaskID = ? AND RecipientID = ?', [taskId, req.user.id])
+    return res.json({ success: true })
+  } catch (error) {
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+
+
+// ==========================================
+// Notifications API
+// ==========================================
+
+app.get('/api/notifications', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id
+
+    const rows = await query(`
+      SELECT 
+        n.*,
+        u.FullName AS SenderName,
+        u.ProfileImage AS SenderAvatar
+      FROM Notifications n
+      LEFT JOIN Users u ON n.SenderID = u.UserID
+      WHERE n.UserID = ?
+      ORDER BY n.CreatedAt DESC
+      LIMIT 100
+    `, [userId])
+
+    return res.json(rows)
+  } catch (error) {
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+
+app.patch('/api/notifications/:notificationId', requireAuth, async (req, res) => {
+  try {
+    const notificationId = Number(req.params.notificationId)
+    await query('UPDATE Notifications SET IsRead = 1 WHERE NotificationID = ? AND UserID = ?', [notificationId, req.user.id])
+    return res.json({ success: true })
+  } catch (error) {
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
 app.get('/api/my/tasks', requireAuth, async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 50, 100)
+  const offset = Number(req.query.offset) || 0
   try {
     const result = await query(
       `
@@ -2219,14 +1791,15 @@ app.get('/api/my/tasks', requireAuth, async (req, res) => {
           WHERE ta.HelperID = ?
         ) data
         LEFT JOIN Categories c ON data.CategoryID = c.CategoryID
-        ORDER BY data.SortAt DESC
+        ORDER BY data.SortAt DESC LIMIT ? OFFSET ?
       `,
-      [req.user.id, req.user.id]
+      [req.user.id, req.user.id, limit, offset]
     )
 
     return res.json(result)
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -2254,11 +1827,50 @@ app.patch('/api/tasks/:taskId/status', requireAuth, async (req, res) => {
 
     return res.json({ TaskID: taskId, Status: status })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
 // ─── Current User ────────────────────────────────────────────────────────────
+
+
+app.post('/api/me/profile-image', requireAuth, uploadLimiter, async (req, res) => {
+  try {
+    const { imageDataUrl, fileName } = req.body;
+    if (!imageDataUrl) {
+      return res.status(400).json({ message: 'No image data provided' });
+    }
+
+    const matches = imageDataUrl.match(/^data:image\/(png|jpeg|webp);base64,(.+)$/i);
+    if (!matches) {
+      return res.status(400).json({ message: 'Invalid image format. Only PNG, JPEG, and WebP are supported.' });
+    }
+
+    const ext = matches[1].toLowerCase() === 'jpeg' ? 'jpg' : matches[1].toLowerCase();
+    const base64Payload = matches[2];
+
+    const sizeInBytes = Math.ceil((base64Payload.length * 3) / 4);
+    if (sizeInBytes > 5 * 1024 * 1024) {
+      return res.status(413).json({ message: 'Image size exceeds the 5MB limit.' });
+    }
+
+    const safeName = `user-${req.user.id}-${Date.now()}.${ext}`;
+    const profilesDir = path.join(__dirname, '..', 'public', 'uploads', 'profiles');
+    await mkdir(profilesDir, { recursive: true });
+    
+    await writeFile(path.join(profilesDir, safeName), Buffer.from(base64Payload, 'base64'));
+    
+    const publicUrl = `/uploads/profiles/${safeName}`;
+    
+    await query('UPDATE Users SET ProfileImage = ? WHERE UserID = ?', [publicUrl, req.user.id]);
+    
+    return res.json({ success: true, profileImage: publicUrl });
+  } catch (error) {
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' });
+  }
+})
 
 app.get('/api/me', requireAuth, async (req, res) => {
   try {
@@ -2294,7 +1906,8 @@ app.get('/api/me', requireAuth, async (req, res) => {
       IsAdmin: u.IsAdmin || 0,
     })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -2307,7 +1920,8 @@ app.get('/api/me/rating-summary', requireAuth, async (req, res) => {
     )
     return res.json(result[0])
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -2351,7 +1965,8 @@ app.post('/api/auth/admin-login', async (req, res) => {
       token,
     })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -2383,7 +1998,8 @@ app.post('/api/admin/users', requireAdmin, async (req, res) => {
       Rating: 5.0
     })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -2408,7 +2024,8 @@ app.put('/api/admin/users/:userId', requireAdmin, async (req, res) => {
 
     return res.json({ message: 'User updated successfully' })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -2425,11 +2042,14 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
     `)
     return res.json(result[0])
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
-app.get('/api/admin/users', requireAdmin, async (_req, res) => {
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 50, 100)
+  const offset = Number(req.query.offset) || 0
   try {
     const result = await query(`
       SELECT
@@ -2442,15 +2062,18 @@ app.get('/api/admin/users', requireAdmin, async (_req, res) => {
         (SELECT COUNT(*) FROM Tasks WHERE UserID = u.UserID) AS TasksPosted,
         (SELECT COUNT(*) FROM TaskAssignments ta INNER JOIN Tasks t ON ta.TaskID = t.TaskID WHERE ta.HelperID = u.UserID AND t.Status = 'Completed') AS TasksCompleted
       FROM Users u
-      ORDER BY u.CreatedAt DESC
-    `)
+      ORDER BY u.CreatedAt DESC LIMIT ? OFFSET ?
+    `, [limit, offset])
     return res.json(result)
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
-app.get('/api/admin/tasks', requireAdmin, async (_req, res) => {
+app.get('/api/admin/tasks', requireAdmin, async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 50, 100)
+  const offset = Number(req.query.offset) || 0
   try {
     const result = await query(`
       SELECT
@@ -2461,11 +2084,12 @@ app.get('/api/admin/tasks', requireAdmin, async (_req, res) => {
       INNER JOIN Users u ON t.UserID = u.UserID
       LEFT JOIN TaskAssignments ta ON ta.TaskID = t.TaskID
       LEFT JOIN Users hu ON hu.UserID = ta.HelperID
-      ORDER BY t.CreatedAt DESC
-    `)
+      ORDER BY t.CreatedAt DESC LIMIT ? OFFSET ?
+    `, [limit, offset])
     return res.json(result)
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -2486,7 +2110,8 @@ app.get('/api/admin/messages', requireAdmin, async (_req, res) => {
     `)
     return res.json(result)
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -2505,7 +2130,8 @@ app.post('/api/admin/users/:userId/suspend', requireAdmin, async (req, res) => {
     await query('UPDATE Users SET IsDeactivated = 1 WHERE UserID = ?', [userId])
     return res.json({ message: 'User deactivated successfully', userId })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -2522,7 +2148,8 @@ app.post('/api/admin/users/:userId/activate', requireAdmin, async (req, res) => 
     await query('UPDATE Users SET IsDeactivated = 0 WHERE UserID = ?', [userId])
     return res.json({ message: 'User reactivated successfully', userId })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -2544,7 +2171,8 @@ app.delete('/api/admin/tasks/:taskId', requireAdmin, async (req, res) => {
     await query('DELETE FROM Tasks WHERE TaskID = ?', [taskId])
     return res.json({ message: 'Task deleted', taskId })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -2677,7 +2305,8 @@ app.get('/api/reports/summary', requireAdmin, async (req, res) => {
       revenueByMethod,
     })
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -2708,7 +2337,8 @@ app.get('/api/reports/transactions', requireAdmin, async (req, res) => {
 
     return res.json(transactions)
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
@@ -2773,31 +2403,33 @@ app.get('/api/reports/activity', requireAdmin, async (req, res) => {
 
     return res.json(activities)
   } catch (error) {
-    return res.status(500).json({ message: error.message })
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
 
 app.use((error, _req, res, _next) => {
-  res.status(500).json({ message: error.message || 'Unexpected server error' })
+  logger.error('API Error:', error.message);
+  res.status(500).json({ message: 'An internal server error occurred.' })
 })
 
 async function startServer(retries = 5) {
   for (let i = 0; i < retries; i++) {
     try {
-      console.log(`Starting server (Attempt ${i + 1}/${retries})...`)
+      logger.info(`Starting server (Attempt ${i + 1}/${retries})...`)
       await initDatabase()
       app.listen(port, '0.0.0.0', () => {
-        console.log(`GawaHelper API running on port ${port}`)
-        console.log(`PostgreSQL schema ensured for database: ${process.env.DB_NAME || 'gawahelperdb'}`)
+        logger.info(`GawaHelper API running on port ${port}`)
+        logger.info(`PostgreSQL schema ensured for database: ${process.env.DB_NAME || 'gawahelperdb'}`)
       })
       return // Success!
     } catch (error) {
-      console.error(`Attempt ${i + 1} failed: ${error.message}`)
+      logger.error(`Attempt ${i + 1} failed: ${error.message}`)
       if (i === retries - 1) {
-        console.error('All connection attempts failed. Exiting.')
+        logger.error('All connection attempts failed. Exiting.')
         process.exit(1)
       }
-      console.log('Retrying in 5 seconds...')
+      logger.info('Retrying in 5 seconds...')
       await new Promise(resolve => setTimeout(resolve, 5000))
     }
   }
