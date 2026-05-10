@@ -15,6 +15,50 @@ import process from 'node:process'
 
 const router = express.Router()
 
+// Temporary diagnostic endpoint — remove after debugging email issues
+router.get('/test-email', async (req, res) => {
+  const gmailUser = process.env.GMAIL_USER || '(not set)'
+  const gmailPass = process.env.GMAIL_APP_PASSWORD ? '***configured***' : '(not set)'
+
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    return res.json({
+      status: 'FAIL',
+      reason: 'Missing environment variables',
+      GMAIL_USER: gmailUser,
+      GMAIL_APP_PASSWORD: gmailPass,
+    })
+  }
+
+  try {
+    const transporter = getEmailTransporter()
+    // Verify SMTP connection first
+    await transporter.verify()
+
+    // Send a test email to the configured GMAIL_USER itself
+    await transporter.sendMail({
+      from: `"GawaHelper Test" <${process.env.GMAIL_USER}>`,
+      to: process.env.GMAIL_USER,
+      subject: 'GawaHelper Email Test - ' + new Date().toISOString(),
+      text: 'If you received this, email sending is working correctly!',
+    })
+
+    return res.json({
+      status: 'SUCCESS',
+      message: 'Test email sent successfully to ' + process.env.GMAIL_USER,
+      GMAIL_USER: gmailUser,
+    })
+  } catch (err) {
+    return res.json({
+      status: 'FAIL',
+      error: err.message,
+      code: err.code || 'unknown',
+      command: err.command || 'unknown',
+      GMAIL_USER: gmailUser,
+      GMAIL_APP_PASSWORD: gmailPass,
+    })
+  }
+})
+
 router.post('/generate-registration-options', requireAuth, async (req, res) => {
   try {
     const user = await query('SELECT UserID, Email FROM Users WHERE UserID = ?', [req.user.id])
