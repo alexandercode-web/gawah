@@ -37,9 +37,8 @@ export function getEmailTransporter() {
   if (!_emailTransporter) {
     _emailTransporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      requireTLS: true,
+      port: 465,
+      secure: true,
       family: 4,
       auth: {
         user: process.env.GMAIL_USER || '',
