@@ -72,19 +72,7 @@ export async function initDatabase() {
     )
   `)
 
-    console.log('PostgreSQL: Tables created, seeding defaults...')
-    // Seed default admin
-    const adminInitPassword = process.env.ADMIN_INITIAL_PASSWORD || 'gawahelper'
-    const admins = await pool.query('SELECT UserID FROM Users WHERE Email = $1 LIMIT 1', ['admin@gawahelper.com'])
-    if (admins.rows.length === 0) {
-      const salt = await bcrypt.genSalt(10)
-      const hash = await bcrypt.hash(adminInitPassword, salt)
-      await pool.query(
-        'INSERT INTO Users (FullName, Email, PasswordHash, IsAdmin, EmailVerified) VALUES ($1, $2, $3, $4, $5)',
-        ['Main Administrator', 'admin@gawahelper.com', hash, 1, 1]
-      )
-      console.log('Default admin account created: admin@gawahelper.com (change password on first login)')
-    }
+
 
     console.log('PostgreSQL: Admin seeded, seeding categories...')
     // Seed Categories — aligned with frontend (Errands, Delivery, Tutoring, Moving, Other)
@@ -348,6 +336,21 @@ export async function initDatabase() {
     `)
 
     console.log('PostgreSQL: All migrations applied.')
+
+    // Seed default admin
+    console.log('PostgreSQL: Seeding default admin...')
+    const adminInitPassword = process.env.ADMIN_INITIAL_PASSWORD || 'gawahelper'
+    const admins = await pool.query('SELECT UserID FROM Users WHERE Email = $1 LIMIT 1', ['admin@gawahelper.com'])
+    if (admins.rows.length === 0) {
+      const salt = await bcrypt.genSalt(10)
+      const hash = await bcrypt.hash(adminInitPassword, salt)
+      await pool.query(
+        'INSERT INTO Users (FullName, Email, PasswordHash, IsAdmin, EmailVerified) VALUES ($1, $2, $3, $4, $5)',
+        ['Main Administrator', 'admin@gawahelper.com', hash, 1, 1]
+      )
+      console.log('Default admin account created: admin@gawahelper.com (change password on first login)')
+    }
+
     initialized = true
     initializingPromise = null
   })()
