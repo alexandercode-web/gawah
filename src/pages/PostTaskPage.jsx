@@ -109,31 +109,39 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
   // Automatic pricing logic
   const budgetDetails = useMemo(() => {
     const cat = normalizeCategory(form.category)
-    let baseFee = 25
-    let complexityFee = 10
+    let baseFee = 20
+    let complexityFee = 5
     const prodPrice = Number(form.productPrice) || 0
 
     if (cat.includes('delivery')) {
-      baseFee = 20
-      complexityFee = 10 + (Number(form.itemQuantity) - 1) * 5
-    } else if (cat.includes('tutor')) {
+      baseFee = 15
+      complexityFee = 5 + (Number(form.itemQuantity) - 1) * 3
+    } else if (cat.includes('tutor') || cat.includes('academic')) {
+      baseFee = 50
+      complexityFee = 20
+      if (form.tutoringYear.includes('3') || form.tutoringYear.includes('4')) complexityFee += 15
+    } else if (cat.includes('moving')) {
       baseFee = 70
       complexityFee = 30
-      if (form.tutoringYear.includes('3') || form.tutoringYear.includes('4')) complexityFee += 20
-    } else if (cat.includes('moving')) {
-      baseFee = 100
-      complexityFee = 50
     } else if (cat.includes('errand')) {
+      baseFee = 20
+      complexityFee = 10
+      if (form.errandType === 'Queueing') complexityFee += 15
+    } else if (cat.includes('laundry')) {
       baseFee = 30
       complexityFee = 15
-      if (form.errandType === 'Queueing') complexityFee += 20
+    }
+
+    // Special Student Discount for small errands
+    if (prodPrice > 0 && prodPrice < 50) {
+      baseFee = Math.max(10, baseFee - 5)
     }
 
     const serviceTotal = baseFee + complexityFee
-    const protectionFee = Math.ceil((serviceTotal + prodPrice) * 0.1)
+    const protectionFee = Math.ceil((serviceTotal + prodPrice) * 0.05) // Student Rate: 5%
     const total = serviceTotal + prodPrice + protectionFee
 
-    return { baseFee, complexityFee, prodPrice, protectionFee, total }
+    return { baseFee, complexityFee, prodPrice, protectionFee, total, isStudentRate: true }
   }, [form.category, form.itemQuantity, form.tutoringYear, form.errandType, form.productPrice])
 
   useEffect(() => {
@@ -144,20 +152,20 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
   useEffect(() => {
     const item = form.itemName.trim().toLowerCase()
     const commonItems = {
-      'pares': '65',
-      'siomai rice': '50',
-      'chicken meal': '135',
-      'milk tea': '120',
-      'corndog': '60',
-      'burger': '45',
-      'coke': '25',
-      'water': '20',
-      'school supplies': '50',
-      'photocopy': '10',
+      'pares': '55',
+      'siomai rice': '45',
+      'chicken meal': '125',
+      'milk tea': '99',
+      'corndog': '50',
+      'burger': '35',
+      'coke': '22',
+      'water': '15',
+      'school supplies': '45',
+      'photocopy': '1',
       'print': '2',
-      'scanning': '15',
-      'laundry': '150',
-      'medicine': '100',
+      'scanning': '10',
+      'laundry': '140',
+      'medicine': '90',
     }
 
     const foundPrice = Object.entries(commonItems).find(([key]) => item.includes(key))?.[1]
@@ -658,12 +666,12 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
               
               <div className="budget-input-wrapper read-only">
                 <div className="budget-display-value">₱{form.budget}</div>
-                <div className="budget-status-tag">Auto-Calculated</div>
+                <div className="budget-status-tag student">Student Rate Applied</div>
               </div>
 
-              <div className="price-breakdown-box premium">
+              <div className="price-breakdown-box premium student-themed">
                 <div className="price-row">
-                  <span><i className="icon">🏷️</i> Base Service Fee</span>
+                  <span><i className="icon">🏷️</i> Service Fee (Student Rate)</span>
                   <span>₱{budgetDetails.baseFee}</span>
                 </div>
                 <div className="price-row">
@@ -672,16 +680,16 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
                 </div>
                 {budgetDetails.prodPrice > 0 && (
                   <div className="price-row highlight">
-                    <span><i className="icon">🛍️</i> Estimated Product Price</span>
+                    <span><i className="icon">🛍️</i> Item Cost (Student Price)</span>
                     <span>₱{budgetDetails.prodPrice}</span>
                   </div>
                 )}
-                <div className="price-row">
-                  <span><i className="icon">🛡️</i> Protection Fee</span>
+                <div className="price-row student-discount">
+                  <span><i className="icon">🛡️</i> Platform Fee (Only 5%)</span>
                   <span>₱{budgetDetails.protectionFee}</span>
                 </div>
                 <div className="price-total-row">
-                  <span>Total Amount to Pay</span>
+                  <span>Student Total to Pay</span>
                   <strong>₱{form.budget}</strong>
                 </div>
               </div>
