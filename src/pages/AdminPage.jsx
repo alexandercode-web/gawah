@@ -282,16 +282,49 @@ function AdminPage() {
 
       {/* Stats Overview */}
       {activeTab === 'overview' && (
-        <AdminStats
-          stats={adminData.stats || {}}
-          onCardClick={(label) => {
-            if (label === 'Total Users') setActiveTab('users');
-            if (label === 'Active Tasks') setActiveTab('tasks');
-            if (label === 'Completed Tasks') setActiveTab('tasks');
-            if (label === 'Total Messages') setActiveTab('messages');
-            if (label === 'Active Helpers') setActiveTab('users');
-          }}
-        />
+        <>
+          <AdminStats
+            stats={adminData.stats || {}}
+            onCardClick={(label) => {
+              if (label === 'Total Users') setActiveTab('users');
+              if (label === 'Active Tasks') setActiveTab('tasks');
+              if (label === 'Completed Tasks') setActiveTab('tasks');
+              if (label === 'Total Messages') setActiveTab('messages');
+              if (label === 'Active Helpers') setActiveTab('users');
+            }}
+          />
+
+          <div className="admin-section danger-zone" style={{ marginTop: '2rem', padding: '2rem', background: '#fff1f2', borderRadius: '12px', border: '1px solid #fecaca' }}>
+            <h2 style={{ color: '#991b1b', marginBottom: '1rem' }}>Danger Zone</h2>
+            <p style={{ color: '#b91c1c', marginBottom: '1.5rem' }}>
+              The following actions are irreversible. Please use with extreme caution.
+            </p>
+            <button
+              type="button"
+              className="admin-action-btn danger"
+              style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: '600' }}
+              onClick={async () => {
+                if (window.confirm('CRITICAL WARNING: This will PERMANENTLY DELETE all tasks, messages, payments, and reviews. ONLY the admin account will be kept. Are you absolutely sure?')) {
+                  const confirmCode = window.prompt('Type "RESET" to confirm this action:');
+                  if (confirmCode === 'RESET') {
+                    try {
+                      setLoading(true);
+                      const res = await api.adminResetAllData();
+                      alert(res.message || 'Records cleared successfully!');
+                      window.location.reload();
+                    } catch (err) {
+                      alert('Reset failed: ' + err.message);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }
+                }
+              }}
+            >
+              🔥 Clear All Platform Records
+            </button>
+          </div>
+        </>
       )}
 
       {/* Navigation Tabs */}

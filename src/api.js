@@ -375,6 +375,9 @@ export const api = {
   getAdminAuditLog(limit = 50, offset = 0) {
     return request(`/admin/audit-log?limit=${limit}&offset=${offset}`)
   },
+  adminResetAllData() {
+    return request('/admin/reset-all-data', { method: 'POST' })
+  },
   getCurrentUser() {
     return request('/me')
   },
