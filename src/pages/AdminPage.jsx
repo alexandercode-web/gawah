@@ -257,7 +257,7 @@ function AdminPage() {
         <button
           type="button"
           className="admin-logout-btn"
-          onClick={() => onLogout()}
+          onClick={() => onLogout('/admin/login')}
           aria-label="Log out"
         >
           Log Out
@@ -683,7 +683,7 @@ function AdminPage() {
           </span>
           <span>Profile</span>
         </button>
-        <button type="button" className="nav-item" onClick={onLogout}>
+        <button type="button" className="nav-item" onClick={() => onLogout('/admin/login')}>
           <span className="nav-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" role="presentation" focusable="false">
               <path d="M10 7V5a2 2 0 0 1 2-2h6v18h-6a2 2 0 0 1-2-2v-2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
