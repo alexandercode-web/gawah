@@ -62,7 +62,12 @@ export function AuthProvider({ children }) {
   }
 
   const register = async (payload) => {
-    return api.register(payload)
+    const data = await api.register(payload)
+    if (data && data.user) {
+      // Redirect to verification page with email in state
+      window.location.href = `/verify-email?email=${encodeURIComponent(payload.email)}`
+    }
+    return data
   }
 
   const logout = async () => {
