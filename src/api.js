@@ -283,7 +283,7 @@ export const api = {
     return request(`/users/${userId}/profile`)
   },
   myTasks(limit = 50, offset = 0) {
-    return request(`/my/tasks?limit=${limit}&offset=${offset}`)
+    return request(`/tasks/my/tasks?limit=${limit}&offset=${offset}`)
   },
   myReviews() {
     return request('/me/reviews')
