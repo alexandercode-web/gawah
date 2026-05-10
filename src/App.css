@@ -8790,6 +8790,7 @@ td {
 .auth-page-wrapper.auth-atelier .auth-form-stack {
   width: min(560px, 100%);
   margin: 0 auto;
+  padding-top: 2.5rem;
 }
 
 .auth-page-wrapper.auth-atelier .auth-logo-link {
