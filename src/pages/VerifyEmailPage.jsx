@@ -71,177 +71,118 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <div className="verify-page">
-      <div className="verify-card">
-        <div className="verify-card__icon">✉️</div>
-        <h1 className="verify-card__title">Verify your email</h1>
-        <p className="verify-card__subtitle">
-          We sent a 6-character code to <strong>{email || 'your email'}</strong>. Enter it below to activate your account.
-        </p>
+    <div className="auth-page-wrapper auth-atelier">
+      <div className="auth-container auth-atelier-container">
+        <div className="auth-forms-container auth-atelier-forms">
+          <div className="auth-form-section auth-login-form">
+            <div className="auth-form-stack">
+              <div className="auth-logo-link">
+                <span className="auth-logo-dot" />
+                <span>GawaHelper</span>
+              </div>
 
-        <form onSubmit={handleVerify} className="verify-card__form">
-          {!loc.state?.email && (
-            <input
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="verify-card__input"
-              required
-            />
-          )}
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Enter verification code"
-            value={code}
-            onChange={e => setCode(e.target.value.toUpperCase())}
-            className="verify-card__input verify-card__input--code"
-            maxLength={6}
-            required
-          />
-          <button
-            type="submit"
-            className="verify-card__btn"
-            disabled={loading || !code || !email}
-          >
-            {loading ? 'Verifying...' : 'Verify Email'}
-          </button>
-        </form>
+              <div className="auth-header">
+                <h1>Verify Your Identity</h1>
+                <p>We've sent a 6-character secure code to <br /><strong>{email || 'your email'}</strong></p>
+              </div>
 
-        {error && <p className="verify-card__error">{error}</p>}
-        {message && <p className="verify-card__success">{message}</p>}
+              {error && (
+                <div className="auth-error-box" style={{ background: '#fef2f2', border: '1px solid #fee2e2', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <span className="error-icon" style={{ background: '#ef4444', color: 'white', width: '20px', height: '20px', borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: '0.75rem', fontWeight: 'bold', flexShrink: 0 }}>!</span>
+                  <span className="error-message" style={{ color: '#991b1b', fontSize: '0.875rem', fontWeight: '500' }}>{error}</span>
+                </div>
+              )}
 
-        <div className="verify-card__resend">
-          <button
-            onClick={handleResend}
-            disabled={resending || cooldown > 0}
-            className="verify-card__resend-btn"
-          >
-            {cooldown > 0 ? `Resend in ${cooldown}s` : resending ? 'Sending...' : 'Resend code'}
-          </button>
+              {message && (
+                <div className="auth-success-box" style={{ background: '#f0fdf4', border: '1px solid #dcfce7', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <span className="success-icon" style={{ background: '#22c55e', color: 'white', width: '20px', height: '20px', borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: '0.75rem', fontWeight: 'bold', flexShrink: 0 }}>✓</span>
+                  <span className="success-message" style={{ color: '#166534', fontSize: '0.875rem', fontWeight: '500' }}>{message}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleVerify} className="auth-form">
+                {!loc.search.includes('email=') && !loc.state?.email && (
+                  <div className="form-group">
+                    <label className="form-label">Email Address</label>
+                    <input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      className="form-input"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label className="form-label">Verification Code</label>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    placeholder="E N T E R - C O D E"
+                    value={code}
+                    onChange={e => setCode(e.target.value.toUpperCase())}
+                    className="form-input"
+                    style={{ textAlign: 'center', letterSpacing: '4px', fontWeight: '800', fontSize: '1.2rem' }}
+                    maxLength={6}
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="auth-submit-btn"
+                  disabled={loading || !code || !email}
+                  style={{ marginTop: '1rem' }}
+                >
+                  {loading ? 'Verifying Account...' : 'Verify & Continue'}
+                </button>
+              </form>
+
+              <div className="auth-footer" style={{ marginTop: '2rem' }}>
+                <p>Didn't receive the code?</p>
+                <button
+                  onClick={handleResend}
+                  disabled={resending || cooldown > 0}
+                  style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: '700', cursor: 'pointer', fontSize: '0.9rem', padding: '10px', textDecoration: 'underline' }}
+                >
+                  {cooldown > 0 ? `Resend in ${cooldown}s` : resending ? 'Sending...' : 'Resend Code Now'}
+                </button>
+              </div>
+
+              <div className="auth-footer" style={{ marginTop: '1rem' }}>
+                <button
+                  onClick={() => navigate('/login')}
+                  style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '0.85rem' }}
+                >
+                  ← Back to Login
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <button
-          onClick={() => navigate('/login')}
-          className="verify-card__back"
-        >
-          ← Back to Login
-        </button>
-      </div>
+        <aside className="auth-visual-section auth-atelier-visual" aria-hidden="true" style={{ background: 'linear-gradient(135deg, #0f6b3a 0%, #1a9956 100%)' }}>
+          <div className="atelier-grid" />
+          <div className="atelier-content">
+            <span className="atelier-kicker" style={{ color: 'rgba(255,255,255,0.7)' }}>SECURE ACCESS</span>
+            <h2 style={{ color: 'white' }}>One step away from your community</h2>
+            <p style={{ color: 'rgba(255,255,255,0.9)' }}>Verify your email to ensure account safety and start connecting with local helpers.</p>
 
-      <style>{`
-        .verify-page {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #f0faf4, #e8f5e9);
-          padding: 20px;
-        }
-        .verify-card {
-          background: #fff;
-          border-radius: 16px;
-          padding: 40px 32px;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-          max-width: 420px;
-          width: 100%;
-          text-align: center;
-        }
-        .verify-card__icon {
-          font-size: 48px;
-          margin-bottom: 16px;
-        }
-        .verify-card__title {
-          font-size: 24px;
-          font-weight: 700;
-          color: #1a1a2e;
-          margin: 0 0 8px;
-        }
-        .verify-card__subtitle {
-          font-size: 14px;
-          color: #6b7280;
-          margin: 0 0 28px;
-          line-height: 1.5;
-        }
-        .verify-card__form {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        .verify-card__input {
-          padding: 12px 16px;
-          border: 1px solid #d1d5db;
-          border-radius: 10px;
-          font-size: 15px;
-          outline: none;
-          transition: border-color 0.2s;
-        }
-        .verify-card__input:focus {
-          border-color: #0f6b3a;
-          box-shadow: 0 0 0 3px rgba(15,107,58,0.1);
-        }
-        .verify-card__input--code {
-          text-align: center;
-          font-family: 'Courier New', monospace;
-          font-size: 22px;
-          font-weight: 700;
-          letter-spacing: 6px;
-        }
-        .verify-card__btn {
-          padding: 14px;
-          background: linear-gradient(135deg, #0f6b3a, #1a9956);
-          color: #fff;
-          border: none;
-          border-radius: 10px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: opacity 0.2s;
-        }
-        .verify-card__btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .verify-card__error {
-          color: #dc2626;
-          font-size: 14px;
-          margin: 16px 0 0;
-        }
-        .verify-card__success {
-          color: #0f6b3a;
-          font-size: 14px;
-          margin: 16px 0 0;
-          font-weight: 600;
-        }
-        .verify-card__resend {
-          margin-top: 20px;
-        }
-        .verify-card__resend-btn {
-          background: none;
-          border: none;
-          color: #0f6b3a;
-          font-size: 14px;
-          cursor: pointer;
-          text-decoration: underline;
-        }
-        .verify-card__resend-btn:disabled {
-          color: #9ca3af;
-          cursor: not-allowed;
-          text-decoration: none;
-        }
-        .verify-card__back {
-          background: none;
-          border: none;
-          color: #6b7280;
-          font-size: 13px;
-          margin-top: 16px;
-          cursor: pointer;
-        }
-        .verify-card__back:hover {
-          color: #374151;
-        }
-      `}</style>
+            <div className="atelier-metrics">
+              <div className="atelier-metric-card" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                <strong style={{ color: 'white' }}>Safe</strong>
+                <span style={{ color: 'rgba(255,255,255,0.7)' }}>2FA Enabled</span>
+              </div>
+              <div className="atelier-metric-card" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                <strong style={{ color: 'white' }}>Fast</strong>
+                <span style={{ color: 'rgba(255,255,255,0.7)' }}>Instant Approval</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
     </div>
   )
 }
