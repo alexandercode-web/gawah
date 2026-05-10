@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { startRegistration } from '@simplewebauthn/browser'
 import { api } from '../api'
 
-function SettingsPage({ user, onLogout }) {
+function SettingsPage({user, onLogout}) {
   const navigate = useNavigate()
   const [pushNotifications, setPushNotifications] = useState(true)
   const [emailUpdates, setEmailUpdates] = useState(true)

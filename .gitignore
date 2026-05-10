@@ -26,3 +26,4 @@ dist-ssr
 # Debug Scripts
 verify-pass.js
 server/check-db.js
+.env

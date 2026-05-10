@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { api } from './api'
+import { useAuth } from './context/AuthContext'
 import LandingPage from './pages/LandingPage'
 import HomePage from './pages/HomePage'
 import MyTasksPage from './pages/MyTasksPage'
@@ -16,6 +17,8 @@ import LoginPage from './pages/LoginPage'
 import AdminLoginPage from './pages/AdminLoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import BrowseTasksPage from './pages/BrowseTasksPage'
+import VerifyEmailPage from './pages/VerifyEmailPage'
 
 import SupportPage from './pages/SupportPage'
 import './App.css'
@@ -23,27 +26,14 @@ import './responsive.css'
 
 const lastMessageRouteKey = 'gh_last_message_route'
 
-function readStoredUser() {
-  const raw = localStorage.getItem('gh_user')
-  if (!raw) return null
-
-  try {
-    return JSON.parse(raw)
-  } catch {
-    localStorage.removeItem('gh_user')
-    return null
-  }
-}
-
 function App() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [token, setToken] = useState(localStorage.getItem('gh_token') || '')
-  const [user, setUser] = useState(() => readStoredUser())
+  const { user, login: loginUser, logout, register: registerUser, updateUser: updateCurrentUser, loading: authLoading } = useAuth()
   const [message, setMessage] = useState('')
+  const token = user ? true : false
   const [error, setError] = useState('')
-  const [authLoading, setAuthLoading] = useState(false)
   const [taskPosting, setTaskPosting] = useState(false)
   const [homeSummary, setHomeSummary] = useState(null)
   const [homeLoading, setHomeLoading] = useState(true)
@@ -149,41 +139,32 @@ function App() {
 
     loadUnreadNotificationState()
 
-    const interval = setInterval(() => {
-      loadUnreadNotificationState()
-    }, 60000)
+    const sseUrl = api.getSseUrl(token)
+    const eventSource = new EventSource(sseUrl)
 
-    return () => clearInterval(interval)
-  }, [location.pathname, token])
-
-  // Unified User Initialization & Profile Refresh
-  useEffect(() => {
-    if (!token) {
-      setUser(null)
-      return
-    }
-
-    async function initAndRefreshUser() {
+    eventSource.addEventListener('notification', (event) => {
       try {
-                const freshUser = await api.getMe()
+        const data = JSON.parse(event.data)
+        window.dispatchEvent(new CustomEvent('gh_sse_notification', { detail: data }))
+      } catch (e) {}
+      setHasUnreadNotifications(true)
+      loadUnreadNotificationState()
+    })
 
-        if (freshUser) {
-          const userVal = freshUser.IsAdmin ?? freshUser.isAdmin
-          const isAdmin = Number(userVal) === 1 || userVal === true || String(userVal) === '1'
-          
-          setUser(freshUser)
-          localStorage.setItem('gh_user', JSON.stringify(freshUser))
-        }
-      } catch (err) {
-        console.error('App: Failed to refresh user profile:', err.message)
-        // If we fail to refresh but have a local user, use it as fallback
-        const stored = readStoredUser()
-        if (stored && !user) setUser(stored)
+    eventSource.addEventListener('message', (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        window.dispatchEvent(new CustomEvent('gh_sse_message', { detail: data }))
+      } catch (e) {}
+      if (!location.pathname.startsWith('/messages')) {
+        setHasUnreadNotifications(true)
       }
-    }
+    })
 
-    initAndRefreshUser()
-  }, [token])
+    return () => {
+      eventSource.close()
+    }
+  }, [location.pathname, token])
 
   // Auto-redirect admin users to /admin dashboard
   useEffect(() => {
@@ -200,80 +181,6 @@ function App() {
             navigate('/admin', { replace: true })
     }
   }, [user, token, navigate, location.pathname])
-
-  async function loginUser(credentials) {
-    setAuthLoading(true)
-    setMessage('')
-    setError('')
-
-    try {
-      const response = await api.login(credentials)
-
-      localStorage.setItem('gh_token', response.token)
-      localStorage.setItem('gh_user', JSON.stringify(response.user))
-      setToken(response.token)
-      setUser(response.user)
-      setMessage(`Welcome, ${response.user.FullName}`)
-
-      // Note: Redirect will be handled by the auto-redirect useEffect above
-      // For regular users, redirect to home or restore route
-      const userVal = response.user.IsAdmin ?? response.user.isAdmin
-      const isAdmin = Number(userVal) === 1 || userVal === true || String(userVal) === '1'
-            
-      if (isAdmin) {
-                navigate('/admin', { replace: true })
-      } else {
-                await refreshTaskData()
-        const restoreRoute = localStorage.getItem(lastMessageRouteKey)
-        if (restoreRoute && restoreRoute.startsWith('/messages/')) {
-          localStorage.removeItem(lastMessageRouteKey)
-          navigate(restoreRoute, { replace: true })
-        } else {
-          navigate('/home', { replace: true })
-        }
-      }
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setAuthLoading(false)
-    }
-  }
-
-  async function registerUser(payload) {
-    setAuthLoading(true)
-    setMessage('')
-    setError('')
-
-    try {
-      await api.register(payload)
-      setMessage('Account created successfully. Please sign in.')
-      navigate('/login')
-      return true
-    } catch (err) {
-      setError(err.message)
-      return false
-    } finally {
-      setAuthLoading(false)
-    }
-  }
-
-  async function forgotPassword(payload) {
-    setAuthLoading(true)
-    setMessage('')
-    setError('')
-
-    try {
-      await api.forgotPassword(payload)
-      setMessage('Password reset successful. Please sign in with your new password.')
-      navigate('/login')
-      return true
-    } catch (err) {
-      setError(err.message)
-      return false
-    } finally {
-      setAuthLoading(false)
-    }
-  }
 
   async function postTask(payload) {
     setTaskPosting(true)
@@ -293,39 +200,6 @@ function App() {
     }
   }
 
-  function updateCurrentUser(nextUser) {
-    if (!nextUser) return
-    setUser(nextUser)
-    localStorage.setItem('gh_user', JSON.stringify(nextUser))
-  }
-
-  function logout(eventOrOptions = {}) {
-    const isDomEvent = Boolean(eventOrOptions && typeof eventOrOptions === 'object' && 'preventDefault' in eventOrOptions)
-    const preserveRoute = !isDomEvent && Boolean(eventOrOptions?.preserveRoute)
-
-    // Capture admin status before clearing state
-    // Use both state and localStorage as a fallback to ensure accuracy
-    const storedUser = readStoredUser()
-    const userVal = user?.IsAdmin ?? user?.isAdmin ?? storedUser?.IsAdmin ?? storedUser?.isAdmin
-    const isAdmin = Number(userVal) === 1 || userVal === true || String(userVal) === '1'
-
-    localStorage.removeItem('gh_token')
-    localStorage.removeItem('gh_user')
-    if (!preserveRoute) {
-      localStorage.removeItem(lastMessageRouteKey)
-    }
-    setToken('')
-    setUser(null)
-    setMyTasks([])
-    setMessage('Logged out')
-
-    if (isAdmin) {
-      window.location.href = '/admin-login'
-    } else {
-      navigate('/login')
-    }
-  }
-
   useEffect(() => {
     if (message || error) {
       const timer = setTimeout(() => {
@@ -339,6 +213,14 @@ function App() {
   const bannerText = String(error || message || '').trim()
   const showBanner = bannerText.length > 0
 
+  if (authLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f5f5f5' }}>
+        <div className="loading-spinner"></div>
+      </div>
+    )
+  }
+
   return (
     <main className="app-shell">
       {showBanner && (
@@ -348,18 +230,18 @@ function App() {
       )}
 
       <Routes>
-        <Route path="/" element={<LandingPage user={user} />} />
+        <Route path="/" element={<LandingPage />} />
         <Route
           path="/home"
           element={
             token ? (
               <HomePage
-                user={user}
+               
                 summary={homeSummary}
                 loading={homeLoading}
                 error={homeError}
                 myTasks={myTasks}
-                onLogout={logout}
+               
                 hasUnreadNotifications={hasUnreadNotifications}
               />
             ) : (
@@ -372,13 +254,13 @@ function App() {
           element={
             token ? (
               <MyTasksPage
-                user={user}
+               
                 summary={homeSummary}
                 loading={myTasksLoading}
                 error={myTasksError || homeError}
                 myTasks={myTasks}
                 hasUnreadNotifications={hasUnreadNotifications}
-                onLogout={logout}
+               
               />
             ) : (
               <Navigate to="/login" replace />
@@ -390,11 +272,11 @@ function App() {
           element={
             token ? (
               <PostTaskPage
-                user={user}
+               
                 onSubmitTask={postTask}
                 posting={taskPosting}
                 hasUnreadNotifications={hasUnreadNotifications}
-                onLogout={logout}
+               
               />
             ) : (
               <Navigate to="/login" replace />
@@ -406,13 +288,13 @@ function App() {
           element={
             token ? (
               <MyTasksPage
-                user={user}
+               
                 summary={homeSummary}
                 loading={myTasksLoading}
                 error={myTasksError || homeError}
                 myTasks={myTasks}
                 hasUnreadNotifications={hasUnreadNotifications}
-                onLogout={logout}
+               
               />
             ) : (
               <Navigate to="/login" replace />
@@ -424,9 +306,9 @@ function App() {
           element={
             token ? (
               <TaskDetailsPage
-                user={user}
+               
                 hasUnreadNotifications={hasUnreadNotifications}
-                onLogout={logout}
+               
                 onTaskUpdated={refreshTaskData}
               />
             ) : (
@@ -441,9 +323,9 @@ function App() {
               <NotificationsPage
                 summary={homeSummary}
                 myTasks={myTasks}
-                user={user}
+               
                 onNotificationsRead={() => setHasUnreadNotifications(false)}
-                onLogout={logout}
+               
               />
             ) : (
               <Navigate to="/login" replace />
@@ -455,9 +337,9 @@ function App() {
           element={
             token ? (
               <MessagesPage
-                user={user}
+               
                 hasUnreadNotifications={hasUnreadNotifications}
-                onLogout={logout}
+               
               />
             ) : (
               <Navigate to="/login" replace />
@@ -469,11 +351,11 @@ function App() {
           element={
             token ? (
               <ProfilePage
-                user={user}
+               
                 summary={homeSummary}
                 myTasks={myTasks}
-                onUserUpdate={updateCurrentUser}
-                onLogout={logout}
+               
+               
                 hasUnreadNotifications={hasUnreadNotifications}
               />
             ) : (
@@ -486,8 +368,8 @@ function App() {
           element={
             token ? (
               <SettingsPage
-                user={user}
-                onLogout={logout}
+               
+               
               />
             ) : (
               <Navigate to="/login" replace />
@@ -499,9 +381,9 @@ function App() {
           element={
             token ? (
               <ReportsPage
-                user={user}
+               
                 hasUnreadNotifications={hasUnreadNotifications}
-                onLogout={logout}
+               
               />
             ) : (
               <Navigate to="/login" replace />
@@ -523,7 +405,7 @@ function App() {
           path="/admin"
           element={
             token && (Number(user?.IsAdmin) === 1 || user?.IsAdmin === true || String(user?.IsAdmin) === '1') ? (
-              <AdminPage user={user} onLogout={logout} />
+              <AdminPage />
             ) : token ? (
               <Navigate to="/home" replace />
             ) : (
@@ -547,7 +429,7 @@ function App() {
             token ? (
               <Navigate to="/home" replace />
             ) : (
-              <LoginPage onLogin={loginUser} loading={authLoading} error={error} />
+              <LoginPage loading={authLoading} error={error} />
             )
           }
         />
@@ -557,7 +439,7 @@ function App() {
             token ? (
               <Navigate to="/home" replace />
             ) : (
-              <RegisterPage onRegister={registerUser} loading={authLoading} error={error} />
+              <RegisterPage loading={authLoading} error={error} />
             )
           }
         />
@@ -568,6 +450,30 @@ function App() {
               <Navigate to="/home" replace />
             ) : (
               <ForgotPasswordPage />
+            )
+          }
+        />
+        <Route
+          path="/verify-email"
+          element={
+            token ? (
+              <Navigate to="/home" replace />
+            ) : (
+              <VerifyEmailPage />
+            )
+          }
+        />
+        <Route
+          path="/browse"
+          element={
+            !token ? (
+              <Navigate to="/login" replace />
+            ) : (
+              <BrowseTasksPage
+               
+                hasUnreadNotifications={hasUnreadNotifications}
+               
+              />
             )
           }
         />

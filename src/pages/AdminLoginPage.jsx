@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { useNavigate, Link } from 'react-router-dom'
 import { api } from '../api'
 
@@ -8,6 +9,10 @@ function AdminLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [mustChangePassword, setMustChangePassword] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [tempUser, setTempUser] = useState(null)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -17,12 +22,43 @@ function AdminLoginPage() {
     try {
       const res = await api.adminLogin(form)
       localStorage.setItem('gh_token', res.token)
+      
+      if (res.mustChangePassword) {
+        setMustChangePassword(true)
+        setTempUser({ ...res.admin, IsAdmin: 1 })
+        return
+      }
+
       localStorage.setItem('gh_user', JSON.stringify({ ...res.admin, IsAdmin: 1 }))
       
       // Force reload to update app state
       window.location.href = '/admin'
     } catch (err) {
       setError(err.message || 'Login failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleChangePassword(e) {
+    e.preventDefault()
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    try {
+      await api.adminChangePassword(newPassword)
+      localStorage.setItem('gh_user', JSON.stringify(tempUser))
+      window.location.href = '/admin'
+    } catch (err) {
+      setError(err.message || 'Failed to change password')
     } finally {
       setLoading(false)
     }
@@ -45,8 +81,8 @@ function AdminLoginPage() {
               </Link>
 
               <div className="auth-header">
-                <h1>Welcome Back</h1>
-                <p>Sign in to manage the GawaHelper platform.</p>
+                <h1>{mustChangePassword ? 'Change Required' : 'Welcome Back'}</h1>
+                <p>{mustChangePassword ? 'You must change your default password before continuing.' : 'Sign in to manage the GawaHelper platform.'}</p>
               </div>
 
               {error && (
@@ -56,71 +92,101 @@ function AdminLoginPage() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="auth-form">
-                <div className="form-group">
-                  <label htmlFor="admin-username" className="form-label">Admin Username</label>
-                  <input
-                    id="admin-username"
-                    type="text"
-                    name="username"
-                    placeholder="Enter admin username"
-                    value={form.username}
-                    onChange={(e) => setForm({ ...form, username: e.target.value })}
-                    className="form-input"
-                    required
-                    autoComplete="username"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <div className="password-label">
-                    <label htmlFor="admin-password" className="form-label">Password</label>
-                  </div>
-                  <div className="password-input-wrapper">
+              {mustChangePassword ? (
+                <form onSubmit={handleChangePassword} className="auth-form">
+                  <div className="form-group">
+                    <label className="form-label">New Password</label>
                     <input
-                      id="admin-password"
-                      type={showPassword ? 'text' : 'password'}
-                      name="password"
-                      placeholder="Enter your password"
-                      value={form.password}
-                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      type="password"
+                      placeholder="Enter new password (min. 8 characters)"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
                       className="form-input"
                       required
-                      autoComplete="current-password"
                     />
-                    <button
-                      type="button"
-                      className="password-toggle"
-                      onClick={() => setShowPassword(!showPassword)}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? (
-                        <svg className="password-eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                          <line x1="1" y1="1" x2="23" y2="23"></line>
-                        </svg>
-                      ) : (
-                        <svg className="password-eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                          <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                      )}
-                    </button>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Confirm Password</label>
+                    <input
+                      type="password"
+                      placeholder="Confirm new password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="form-input"
+                      required
+                    />
+                  </div>
+                  <button className="auth-submit-btn admin-theme-btn" type="submit" disabled={loading}>
+                    {loading ? 'Updating...' : 'Update Password'}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleSubmit} className="auth-form">
+                  <div className="form-group">
+                    <label htmlFor="admin-username" className="form-label">Admin Username</label>
+                    <input
+                      id="admin-username"
+                      type="text"
+                      name="username"
+                      placeholder="Enter admin username"
+                      value={form.username}
+                      onChange={(e) => setForm({ ...form, username: e.target.value })}
+                      className="form-input"
+                      required
+                      autoComplete="username"
+                    />
                   </div>
 
-                  <div className="auth-options-row">
-                    <label className="remember-option">
-                      <input type="checkbox" />
-                      <span>Keep me signed in on this device</span>
-                    </label>
-                    <span className="forgot-password-placeholder">Secure Portal</span>
-                  </div>
-                </div>
+                  <div className="form-group">
+                    <div className="password-label">
+                      <label htmlFor="admin-password" className="form-label">Password</label>
+                    </div>
+                    <div className="password-input-wrapper">
+                      <input
+                        id="admin-password"
+                        type={showPassword ? 'text' : 'password'}
+                        name="password"
+                        placeholder="Enter your password"
+                        value={form.password}
+                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        className="form-input"
+                        required
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? (
+                          <svg className="password-eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                          </svg>
+                        ) : (
+                          <svg className="password-eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>
+                        )}
+                      </button>
+                    </div>
 
-                <button className="auth-submit-btn admin-theme-btn" type="submit" disabled={loading}>
-                  {loading ? 'Authenticating...' : 'Sign In'}
-                </button>
-              </form>
+                    <div className="auth-options-row">
+                      <label className="remember-option">
+                        <input type="checkbox" />
+                        <span>Keep me signed in on this device</span>
+                      </label>
+                      <span className="forgot-password-placeholder">Secure Portal</span>
+                    </div>
+                  </div>
+
+                  <button className="auth-submit-btn admin-theme-btn" type="submit" disabled={loading}>
+                    {loading ? 'Authenticating...' : 'Sign In'}
+                  </button>
+                </form>
+              )}
 
 
 

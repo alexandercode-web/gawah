@@ -1,14 +1,9 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
 async function request(path, options = {}) {
-  const token = localStorage.getItem('gh_token')
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
-  }
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`
   }
 
   let response
@@ -17,6 +12,7 @@ async function request(path, options = {}) {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...options,
       headers,
+      credentials: 'include',
     })
   } catch {
     throw new Error('Cannot connect to API server. Start app with npm run dev.')
@@ -104,6 +100,11 @@ export const api = {
       body: JSON.stringify(payload),
     })
   },
+  logout() {
+    return request('/auth/logout', {
+      method: 'POST',
+    })
+  },
   changePassword(payload) {
     return request('/auth/change-password', {
       method: 'POST',
@@ -126,6 +127,19 @@ export const api = {
     return request('/auth/forgot-password/reset', {
       method: 'POST',
       body: JSON.stringify({ email, code, newPassword }),
+    })
+  },
+  // Email verification
+  verifyEmail(email, code) {
+    return request('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ email, code }),
+    })
+  },
+  resendVerification(email) {
+    return request('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
     })
   },
   listUsers() {
@@ -151,8 +165,23 @@ export const api = {
       method: 'DELETE',
     })
   },
+  // Enhanced task browsing
   listTasks(limit = 50, offset = 0) {
     return request(`/tasks?limit=${limit}&offset=${offset}`)
+  },
+  browseTasks({ search, categoryId, location, sort, limit = 20, offset = 0 } = {}) {
+    const params = new URLSearchParams()
+    params.set('status', 'Open')
+    if (search) params.set('search', search)
+    if (categoryId) params.set('categoryId', categoryId)
+    if (location) params.set('location', location)
+    if (sort) params.set('sort', sort)
+    params.set('limit', String(limit))
+    params.set('offset', String(offset))
+    return request(`/tasks?${params.toString()}`)
+  },
+  getTaskCountsByCategory() {
+    return request('/tasks/counts-by-category')
   },
   getTask(taskId) {
     return request(`/tasks/${taskId}`)
@@ -213,16 +242,39 @@ export const api = {
       method: 'PATCH',
     })
   },
+  rejectTaskProof(taskId, reason = '') {
+    return request(`/tasks/${taskId}/reject-proof`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    })
+  },
   sendFeedbackMessage(taskId, message) {
     return request(`/tasks/${taskId}/feedback`, {
       method: 'POST',
       body: JSON.stringify({ message }),
     })
   },
+  // Payment flow — two-sided handshake
+  confirmPaymentSent(taskId) {
+    return request(`/tasks/${taskId}/confirm-payment-sent`, {
+      method: 'POST',
+    })
+  },
   confirmPaymentReceived(taskId) {
     return request(`/tasks/${taskId}/payment-received`, {
       method: 'POST',
     })
+  },
+  // Disputes
+  raiseDispute(taskId, reason) {
+    return request(`/tasks/${taskId}/dispute`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    })
+  },
+  // User profile
+  getUserProfile(userId) {
+    return request(`/users/${userId}/profile`)
   },
   myTasks(limit = 50, offset = 0) {
     return request(`/my/tasks?limit=${limit}&offset=${offset}`)
@@ -284,6 +336,15 @@ export const api = {
       body: JSON.stringify(payload),
     })
   },
+  adminChangePassword(newPassword) {
+    return request('/auth/admin-change-password', {
+      method: 'POST',
+      body: JSON.stringify({ newPassword }),
+    })
+  },
+  getSseUrl(token) {
+    return `${API_BASE_URL}/sse/stream?token=${token}`
+  },
   adminCreateUser(payload) {
     return request('/admin/users', {
       method: 'POST',
@@ -304,6 +365,9 @@ export const api = {
   },
   adminDeleteTask(taskId) {
     return request(`/admin/tasks/${taskId}`, { method: 'DELETE' })
+  },
+  getAdminAuditLog(limit = 50, offset = 0) {
+    return request(`/admin/audit-log?limit=${limit}&offset=${offset}`)
   },
   getCurrentUser() {
     return request('/me')

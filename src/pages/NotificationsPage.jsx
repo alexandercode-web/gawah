@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 
-function NotificationGlyph({ type }) {
+function NotificationGlyph({type}) {
   if (type === 'success') {
     return (
       <svg viewBox="0 0 24 24" role="presentation" focusable="false">

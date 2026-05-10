@@ -1,6 +1,7 @@
 import pg from 'pg'
 import dotenv from 'dotenv'
 import bcrypt from 'bcryptjs'
+import { notifyUser } from './sse.js'
 
 dotenv.config()
 
@@ -49,26 +50,19 @@ export async function initDatabase() {
       FullName VARCHAR(100) NOT NULL,
       Email VARCHAR(100) NOT NULL UNIQUE,
       PasswordHash VARCHAR(255) NOT NULL,
-      Rating DECIMAL(3,1) NOT NULL DEFAULT 5.0,
+      Rating DECIMAL(3,1) NULL DEFAULT NULL,
       WalletBalance DECIMAL(12,2) NOT NULL DEFAULT 0.00,
       ProfileImage VARCHAR(255) NULL,
       CurrentChallenge VARCHAR(255) NULL,
       IsAdmin SMALLINT NOT NULL DEFAULT 0,
       IsDeactivated SMALLINT NOT NULL DEFAULT 0,
+      EmailVerified SMALLINT NOT NULL DEFAULT 0,
+      CancellationCount INT NOT NULL DEFAULT 0,
       CreatedAt TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `)
 
-    // Admins Table
-    await pool.query(`
-    CREATE TABLE IF NOT EXISTS Admins (
-      AdminID SERIAL PRIMARY KEY,
-      Username VARCHAR(50) NOT NULL UNIQUE,
-      PasswordHash VARCHAR(255) NOT NULL,
-      FullName VARCHAR(100) NOT NULL DEFAULT 'Administrator',
-      CreatedAt TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `)
+
 
     // Categories Table
     await pool.query(`
@@ -80,24 +74,25 @@ export async function initDatabase() {
 
     console.log('PostgreSQL: Tables created, seeding defaults...')
     // Seed default admin
-    const admins = await pool.query('SELECT AdminID FROM Admins LIMIT 1')
+    const adminInitPassword = process.env.ADMIN_INITIAL_PASSWORD || 'gawahelper'
+    const admins = await pool.query('SELECT UserID FROM Users WHERE Email = $1 LIMIT 1', ['admin@gawahelper.com'])
     if (admins.rows.length === 0) {
       const salt = await bcrypt.genSalt(10)
-      const hash = await bcrypt.hash('gawahelper', salt)
+      const hash = await bcrypt.hash(adminInitPassword, salt)
       await pool.query(
-        'INSERT INTO Admins (Username, PasswordHash, FullName) VALUES ($1, $2, $3)',
-        ['gawahelper-admin', hash, 'Main Administrator']
+        'INSERT INTO Users (FullName, Email, PasswordHash, IsAdmin, EmailVerified) VALUES ($1, $2, $3, $4, $5)',
+        ['Main Administrator', 'admin@gawahelper.com', hash, 1, 1]
       )
-      console.log('Default admin account created: gawahelper-admin / gawahelper')
+      console.log('Default admin account created: admin@gawahelper.com (change password on first login)')
     }
 
     console.log('PostgreSQL: Admin seeded, seeding categories...')
-    // Seed Categories (safe check instead of ON CONFLICT)
+    // Seed Categories — aligned with frontend (Errands, Delivery, Tutoring, Moving, Other)
     const catCheck = await pool.query('SELECT COUNT(*) FROM Categories');
     if (parseInt(catCheck.rows[0].count) === 0) {
       await pool.query(`
         INSERT INTO Categories (CategoryName) 
-        VALUES ('Cleaning'), ('Delivery'), ('Tutoring'), ('Repairs'), ('Shopping')
+        VALUES ('Errands'), ('Delivery'), ('Tutoring'), ('Moving'), ('Other')
       `);
     }
 
@@ -165,6 +160,7 @@ export async function initDatabase() {
       Status VARCHAR(20) NOT NULL DEFAULT 'Pending',
       PayerUserID INT NULL,
       PayeeUserID INT NULL,
+      PosterPaymentConfirmed SMALLINT NOT NULL DEFAULT 0,
       CompletedAt TIMESTAMPTZ NULL,
       CreatedAt TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
@@ -224,6 +220,32 @@ export async function initDatabase() {
     )
   `)
 
+    // Disputes Table
+    await pool.query(`
+    CREATE TABLE IF NOT EXISTS Disputes (
+      DisputeID SERIAL PRIMARY KEY,
+      TaskID INT NOT NULL REFERENCES Tasks(TaskID),
+      RaisedByUserID INT NOT NULL REFERENCES Users(UserID),
+      Reason TEXT NOT NULL,
+      Status VARCHAR(20) NOT NULL DEFAULT 'Open',
+      ResolvedAt TIMESTAMPTZ NULL,
+      CreatedAt TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `)
+
+    // AuditLogs Table
+    await pool.query(`
+    CREATE TABLE IF NOT EXISTS AuditLogs (
+      LogID SERIAL PRIMARY KEY,
+      AdminID INT NOT NULL,
+      Action VARCHAR(50) NOT NULL,
+      TargetType VARCHAR(30) NOT NULL,
+      TargetID INT NULL,
+      Details TEXT NULL,
+      CreatedAt TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `)
+
     // Repair: Ensure all tasks have a payment record (fixes orphaned tasks from migration)
     await pool.query(`
     INSERT INTO Payments (TaskID, Amount, PaymentMethod, Status, PayerUserID)
@@ -263,6 +285,69 @@ export async function initDatabase() {
         END IF;
       END $$;
     `)
+
+    // Migration: Add EmailVerified column to Users
+    await pool.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'users' AND column_name = 'emailverified'
+        ) THEN
+          ALTER TABLE Users ADD COLUMN EmailVerified SMALLINT NOT NULL DEFAULT 0;
+          -- Mark existing users as verified to avoid locking them out
+          UPDATE Users SET EmailVerified = 1;
+          RAISE NOTICE 'Added EmailVerified column to Users table';
+        END IF;
+      END $$;
+    `)
+
+    // Migration: Add CancellationCount column to Users
+    await pool.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'users' AND column_name = 'cancellationcount'
+        ) THEN
+          ALTER TABLE Users ADD COLUMN CancellationCount INT NOT NULL DEFAULT 0;
+          RAISE NOTICE 'Added CancellationCount column to Users table';
+        END IF;
+      END $$;
+    `)
+
+
+
+    // Migration: Add PosterPaymentConfirmed column to Payments
+    await pool.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'payments' AND column_name = 'posterpaymentconfirmed'
+        ) THEN
+          ALTER TABLE Payments ADD COLUMN PosterPaymentConfirmed SMALLINT NOT NULL DEFAULT 0;
+          RAISE NOTICE 'Added PosterPaymentConfirmed column to Payments table';
+        END IF;
+      END $$;
+    `)
+
+    // Migration: Change Rating default from 5.0 to NULL for unrated users
+    await pool.query(`
+      DO $$ BEGIN
+        UPDATE Users SET Rating = NULL
+        WHERE Rating = 5.0
+          AND NOT EXISTS (SELECT 1 FROM Reviews WHERE ReviewedUserID = Users.UserID);
+      END $$;
+    `)
+
+    // Migration: Rename old category seeds to match frontend
+    await pool.query(`
+      DO $$ BEGIN
+        UPDATE Categories SET CategoryName = 'Errands' WHERE CategoryName = 'Cleaning' AND NOT EXISTS (SELECT 1 FROM Categories WHERE CategoryName = 'Errands');
+        UPDATE Categories SET CategoryName = 'Moving' WHERE CategoryName = 'Repairs' AND NOT EXISTS (SELECT 1 FROM Categories WHERE CategoryName = 'Moving');
+        UPDATE Categories SET CategoryName = 'Other' WHERE CategoryName = 'Shopping' AND NOT EXISTS (SELECT 1 FROM Categories WHERE CategoryName = 'Other');
+      END $$;
+    `)
+
+    console.log('PostgreSQL: All migrations applied.')
     initialized = true
     initializingPromise = null
   })()
@@ -394,7 +479,24 @@ const keyMap = {
   sendername: 'SenderName',
   recipientname: 'RecipientName',
   helpername: 'HelperName',
-  unreadcount: 'UnreadCount'
+  unreadcount: 'UnreadCount',
+  emailverified: 'EmailVerified',
+  cancellationcount: 'CancellationCount',
+  mustchangepassword: 'MustChangePassword',
+  posterpaymentconfirmed: 'PosterPaymentConfirmed',
+  disputeid: 'DisputeID',
+  raisedbyuserid: 'RaisedByUserID',
+  resolvedat: 'ResolvedAt',
+  logid: 'LogID',
+  action: 'Action',
+  targettype: 'TargetType',
+  targetid: 'TargetID',
+  details: 'Details',
+  posterreviewcount: 'PosterReviewCount',
+  helperreviewcount: 'HelperReviewCount',
+  completionrate: 'CompletionRate',
+  searchmatch: 'SearchMatch',
+  type: 'Type'
 };
 
 /**
@@ -409,6 +511,12 @@ export async function query(sql, params = []) {
 
   try {
     const res = await pool.query(postgresSql, params)
+
+    if (postgresSql.includes('INSERT INTO Notifications') && params.length >= 4) {
+      notifyUser(params[0], 'notification', { message: params[3], taskId: params[2], senderId: params[1] })
+    } else if (postgresSql.includes('INSERT INTO Messages') && params.length >= 4) {
+      notifyUser(params[2], 'message', { content: params[3], taskId: params[0], senderId: params[1] })
+    }
 
     // Map lowercase keys back to PascalCase
     return res.rows.map(row => {
@@ -446,6 +554,12 @@ export async function getDbPool() {
           let index = 1;
           const postgresSql = sql.replace(/\?/g, () => `$${index++}`);
           const res = await client.query(postgresSql, params);
+
+          if (postgresSql.includes('INSERT INTO Notifications') && params.length >= 4) {
+            notifyUser(params[0], 'notification', { message: params[3], taskId: params[2], senderId: params[1] })
+          } else if (postgresSql.includes('INSERT INTO Messages') && params.length >= 4) {
+            notifyUser(params[2], 'message', { content: params[3], taskId: params[0], senderId: params[1] })
+          }
 
           // Apply keyMap to restore PascalCase
           const mappedRows = res.rows.map(row => {

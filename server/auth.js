@@ -12,13 +12,23 @@ export function signToken(payload) {
 }
 
 export function requireAuth(req, res, next) {
-  const header = req.headers.authorization
+  let token = null;
 
-  if (!header || !header.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Unauthorized' })
+  if (req.cookies && req.cookies.gh_token) {
+    token = req.cookies.gh_token
+  } else {
+    // Fallback for non-browser clients or transition period
+    const header = req.headers.authorization
+    if (header && header.startsWith('Bearer ')) {
+      token = header.slice(7)
+    } else if (req.query.token) {
+      token = req.query.token
+    }
   }
 
-  const token = header.slice(7)
+  if (!token) {
+    return res.status(401).json({ message: 'Unauthorized' })
+  }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET)
@@ -33,9 +43,8 @@ export function requireAdmin(req, res, next) {
   requireAuth(req, res, () => {
     const val = req.user?.isAdmin ?? req.user?.IsAdmin
     const isAdminFlag = Number(val) === 1 || val === true || String(val) === '1'
-    const isDedicatedAdmin = req.user?.role === 'admin'
     
-    if (isAdminFlag || isDedicatedAdmin) {
+    if (isAdminFlag) {
       return next()
     }
     return res.status(403).json({ message: 'Forbidden: Admin access required' })

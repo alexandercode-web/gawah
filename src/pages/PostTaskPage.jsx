@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 
@@ -160,7 +161,7 @@ function formatPesoRange(minValue, maxValue) {
   return `₱${Number(minValue).toLocaleString()}–₱${Number(maxValue).toLocaleString()}`
 }
 
-function PostTaskPage({ user, onSubmitTask, posting, hasUnreadNotifications = false, onLogout }) {
+function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = false, onLogout}) {
   const navigate = useNavigate()
   const navRef = useRef(null)
   const [error, setError] = useState('')
@@ -338,11 +339,6 @@ function PostTaskPage({ user, onSubmitTask, posting, hasUnreadNotifications = fa
     const midpoint = (totalEstimatedPaymentRange.min + totalEstimatedPaymentRange.max) / 2
     return Math.max(20, roundToNearestFive(midpoint))
   }, [totalEstimatedPaymentRange])
-
-  useEffect(() => {
-    const nextBudget = String(suggestedBudget)
-    setForm((prev) => (prev.budget === nextBudget ? prev : { ...prev, budget: nextBudget }))
-  }, [suggestedBudget])
 
   const isReadyToPost = filledFields === requiredFieldCount && !posting
 
@@ -732,58 +728,10 @@ function PostTaskPage({ user, onSubmitTask, posting, hasUnreadNotifications = fa
               />
             </article>
 
-            <article className="post-card">
-              <label htmlFor="task-budget">Budget (Auto)</label>
-              <p className="post-card-hint">Automatically recalculated from the current estimate.</p>
-              <input
-                id="task-budget"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="0"
-                value={form.budget}
-                readOnly
-                required
-              />
-            </article>
-
-            <article className="post-card payment-method-card">
-              <p className="field-label">Payment Method</p>
-              <p className="post-card-hint">Let helpers know how you plan to pay.</p>
-              <div className="chip-grid two-col">
-                {['Cash', 'GCash'].map((method) => (
-                  <button
-                    key={method}
-                    type="button"
-                    className={`chip payment-chip ${method === 'GCash' ? 'payment-chip-gcash' : 'payment-chip-cash'} ${form.paymentMethod === method ? 'active' : ''}`}
-                    onClick={() => updateField('paymentMethod', method)}
-                  >
-                    {method === 'GCash' ? (
-                      <span className="payment-chip-content">
-                        <span className="payment-chip-badge" aria-hidden="true">GC</span>
-                        <span className="payment-chip-copy">
-                          <strong>GCash</strong>
-                          <span>Send through wallet</span>
-                        </span>
-                      </span>
-                    ) : (
-                      <span className="payment-chip-content">
-                        <span className="payment-chip-badge payment-chip-badge-cash" aria-hidden="true">₱</span>
-                        <span className="payment-chip-copy">
-                          <strong>Cash</strong>
-                          <span>Pay on handoff</span>
-                        </span>
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </article>
-
             <article className="post-card price-suggestion-card" aria-label="Estimated task price">
               <div className="price-suggestion-header">
                 <div>
-                  <p className="field-label">Student campus estimate</p>
+                  <p className="field-label">Suggested Starting Price</p>
                   <p className="post-card-hint">Campus walking-distance pricing only. Always shown as a range.</p>
                 </div>
                 <strong className="price-suggestion-value">{formatPesoRange(totalEstimatedPaymentRange.min, totalEstimatedPaymentRange.max)}</strong>
@@ -827,7 +775,65 @@ function PostTaskPage({ user, onSubmitTask, posting, hasUnreadNotifications = fa
                 </div>
               </div>
               <div className="price-suggestion-actions">
-                <span className="price-suggestion-note">Budget auto-updates from the midpoint of the estimated payment range. Final amount can be adjusted after the actual receipt is submitted.</span>
+                <span className="price-suggestion-note">Final amount can be adjusted after the actual receipt is submitted.</span>
+              </div>
+            </article>
+
+            <article className="post-card">
+              <label htmlFor="task-budget">Budget</label>
+              <p className="post-card-hint">Set your exact task budget. The engine suggests: <strong>₱{suggestedBudget}</strong></p>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  id="task-budget"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="0"
+                  value={form.budget}
+                  onChange={(e) => updateField('budget', e.target.value)}
+                  required
+                  style={{ flex: 1 }}
+                />
+                <button 
+                  type="button" 
+                  className="home-export-btn" 
+                  onClick={() => updateField('budget', String(suggestedBudget))}
+                >
+                  Use Suggestion
+                </button>
+              </div>
+            </article>
+
+            <article className="post-card payment-method-card">
+              <p className="field-label">Payment Method</p>
+              <p className="post-card-hint">Let helpers know how you plan to pay.</p>
+              <div className="chip-grid two-col">
+                {['Cash', 'GCash'].map((method) => (
+                  <button
+                    key={method}
+                    type="button"
+                    className={`chip payment-chip ${method === 'GCash' ? 'payment-chip-gcash' : 'payment-chip-cash'} ${form.paymentMethod === method ? 'active' : ''}`}
+                    onClick={() => updateField('paymentMethod', method)}
+                  >
+                    {method === 'GCash' ? (
+                      <span className="payment-chip-content">
+                        <span className="payment-chip-badge" aria-hidden="true">GC</span>
+                        <span className="payment-chip-copy">
+                          <strong>GCash</strong>
+                          <span>Send through wallet</span>
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="payment-chip-content">
+                        <span className="payment-chip-badge payment-chip-badge-cash" aria-hidden="true">₱</span>
+                        <span className="payment-chip-copy">
+                          <strong>Cash</strong>
+                          <span>Pay on handoff</span>
+                        </span>
+                      </span>
+                    )}
+                  </button>
+                ))}
               </div>
             </article>
           </div>

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
+import { AuthProvider } from './context/AuthContext'
 
 class RootErrorBoundary extends Component {
   constructor(props) {
@@ -33,7 +34,9 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <RootErrorBoundary>
       <BrowserRouter>
-        <App />
+        <AuthProvider>
+          <App />
+        </AuthProvider>
       </BrowserRouter>
     </RootErrorBoundary>
   </StrictMode>,

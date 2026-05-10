@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 function formatDisplayTime(value) {
@@ -40,7 +41,7 @@ function toStatusMeta(status, taskType) {
   return { label: 'Waiting for helper', className: 'waiting' }
 }
 
-function MyTasksPage({ user, myTasks, loading, error, hasUnreadNotifications = false, onLogout }) {
+function MyTasksPage({user, myTasks, loading, error, hasUnreadNotifications = false, onLogout}) {
   const navigate = useNavigate()
   const { taskId } = useParams()
   const location = useLocation()
@@ -76,7 +77,8 @@ function MyTasksPage({ user, myTasks, loading, error, hasUnreadNotifications = f
         location: task.Location || 'No location',
         schedule: formatDisplayTime(task.TaskTime),
         displayName: task.DisplayName || user?.FullName || 'User',
-        displayRating: Number(task.DisplayRating || 5),
+        displayRating: task.DisplayRating != null ? Number(task.DisplayRating) : null,
+        displayReviewCount: task.DisplayReviewCount || 0,
         status: task.Status || 'Open',
         taskType: task.TaskType || 'Posted',
         tab: bucket,
@@ -254,7 +256,11 @@ function MyTasksPage({ user, myTasks, loading, error, hasUnreadNotifications = f
                   </div>
 
                   <p className="mytask-meta-line">
-                    <span className="mytask-rating-inline">★ {Number(task.displayRating || 0).toFixed(1)}</span>
+                    <span className="mytask-rating-inline">
+                      {task.displayRating != null 
+                        ? `★ ${task.displayRating.toFixed(1)} (${task.displayReviewCount})`
+                        : <span style={{fontStyle: 'italic', color: '#9ca3af'}}>New user</span>}
+                    </span>
                     <span className="mytask-meta-separator" aria-hidden="true">•</span>
                     <span className="mytask-owner-name">{task.displayName}</span>
                   </p>
