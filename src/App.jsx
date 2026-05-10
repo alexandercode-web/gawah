@@ -176,7 +176,20 @@ function App() {
         }
       } catch (err) {
         console.error('App: Failed to refresh user profile:', err.message)
-        // If we fail to refresh but have a local user, use it as fallback
+        
+        // If authentication failed (401 or 403), clear the invalid token
+        const isAuthError = err.message.includes('401') || err.message.includes('403') || err.message.toLowerCase().includes('unauthorized') || err.message.toLowerCase().includes('invalid token')
+        
+        if (isAuthError) {
+          console.warn('App: Clearing invalid token')
+          localStorage.removeItem('gh_token')
+          localStorage.removeItem('gh_user')
+          setToken('')
+          setUser(null)
+          return
+        }
+
+        // For other errors, if we have a local user, use it as fallback
         const stored = readStoredUser()
         if (stored && !user) setUser(stored)
       }
@@ -263,9 +276,11 @@ function App() {
     setError('')
 
     try {
-      await api.forgotPassword(payload)
-      setMessage('Password reset successful. Please sign in with your new password.')
-      navigate('/login')
+      // The API uses requestPasswordResetCode instead of forgotPassword
+      const email = typeof payload === 'string' ? payload : payload.email
+      await api.requestPasswordResetCode(email)
+      setMessage('Reset code sent to your email! Redirecting...')
+      navigate('/forgot-password', { state: { email } })
       return true
     } catch (err) {
       setError(err.message)

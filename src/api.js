@@ -38,7 +38,7 @@ async function request(path, options = {}) {
       response.status >= 500
         ? 'Server error. Make sure backend is running and database is reachable.'
         : `Request failed (${response.status})`
-    throw new Error(data.message || fallback)
+    throw new Error((data && data.message) || fallback)
   }
 
   return data

@@ -55,6 +55,12 @@ function RegisterPage({ onRegister, loading, error }) {
       return
     }
 
+    if (typeof onRegister !== 'function') {
+      setLocalError('Registration service is currently unavailable. Please refresh.')
+      console.error('RegisterPage: onRegister prop is not a function', onRegister)
+      return
+    }
+
     const success = await onRegister({
       name: cleanName,
       fullName: cleanName,
