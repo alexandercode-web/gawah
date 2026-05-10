@@ -123,12 +123,12 @@ function AdminLoginPage() {
               ) : (
                 <form onSubmit={handleSubmit} className="auth-form">
                   <div className="form-group">
-                    <label htmlFor="admin-username" className="form-label">Admin Username</label>
+                    <label htmlFor="admin-username" className="form-label">Admin Email or Username</label>
                     <input
                       id="admin-username"
                       type="text"
                       name="username"
-                      placeholder="Enter admin username"
+                      placeholder="e.g. admin@gawahelper.com or admin"
                       value={form.username}
                       onChange={(e) => setForm({ ...form, username: e.target.value })}
                       className="form-input"

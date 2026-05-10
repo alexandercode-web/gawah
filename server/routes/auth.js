@@ -749,14 +749,31 @@ router.post('/admin-login', authLimiter, async (req, res) => {
   const password = req.body.password || ''
 
   if (!username || !password) {
-    return res.status(400).json({ message: 'Email and password are required' })
+    return res.status(400).json({ message: 'Email/username and password are required' })
   }
 
   try {
-    const result = await query(
-      'SELECT UserID, FullName, Email, PasswordHash, IsAdmin FROM Users WHERE Email = ? AND IsAdmin = 1',
+    // Try exact email match first
+    let result = await query(
+      'SELECT UserID, FullName, Email, PasswordHash, IsAdmin FROM Users WHERE LOWER(Email) = ? AND IsAdmin = 1 LIMIT 1',
       [username]
     )
+
+    // If no match and input looks like a username (no @), try matching by email prefix or FullName
+    if (result.length === 0 && !username.includes('@')) {
+      // Normalize hyphens/underscores to spaces for FullName matching
+      const normalized = username.replace(/[-_]+/g, ' ').trim()
+      result = await query(
+        `SELECT UserID, FullName, Email, PasswordHash, IsAdmin FROM Users
+         WHERE IsAdmin = 1
+         AND (
+           LOWER(SPLIT_PART(Email, '@', 1)) = ?
+           OR LOWER(REPLACE(REPLACE(FullName, '-', ' '), '_', ' ')) = ?
+         )
+         LIMIT 1`,
+        [username, normalized]
+      )
+    }
 
     if (result.length === 0) {
       return res.status(401).json({ message: 'Invalid admin credentials' })
