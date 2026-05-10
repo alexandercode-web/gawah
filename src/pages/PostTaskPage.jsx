@@ -79,7 +79,8 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
     gateNumber: '',
     annexNumber: '',
     landmark: '',
-    budget: '',
+    budget: '45',
+    productPrice: '0',
     paymentMethod: 'Cash',
   })
 
@@ -104,23 +105,39 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
     }
   }, [])
 
-  // Automatic pricing suggestions
-  useEffect(() => {
+  // Automatic pricing logic
+  const budgetDetails = useMemo(() => {
     const cat = normalizeCategory(form.category)
-    let suggestedPrice = ''
+    let baseFee = 25
+    let complexityFee = 10
+    const prodPrice = Number(form.productPrice) || 0
 
-    if (cat.includes('delivery')) suggestedPrice = '35'
-    else if (cat.includes('tutor')) suggestedPrice = '100'
-    else if (cat.includes('errand')) suggestedPrice = '50'
-    else if (cat.includes('moving')) suggestedPrice = '150'
-    else if (cat.includes('other')) suggestedPrice = '40'
+    if (cat.includes('delivery')) {
+      baseFee = 20
+      complexityFee = 10 + (Number(form.itemQuantity) - 1) * 5
+    } else if (cat.includes('tutor')) {
+      baseFee = 70
+      complexityFee = 30
+      if (form.tutoringYear.includes('3') || form.tutoringYear.includes('4')) complexityFee += 20
+    } else if (cat.includes('moving')) {
+      baseFee = 100
+      complexityFee = 50
+    } else if (cat.includes('errand')) {
+      baseFee = 30
+      complexityFee = 15
+      if (form.errandType === 'Queueing') complexityFee += 20
+    }
 
-    // Only auto-fill if the user hasn't typed anything yet or if switching from one default to another
-    setForm(prev => ({
-      ...prev,
-      budget: prev.budget === '' || ['25','35','40','50','100','150'].includes(prev.budget) ? suggestedPrice : prev.budget
-    }))
-  }, [form.category])
+    const serviceTotal = baseFee + complexityFee
+    const protectionFee = Math.ceil((serviceTotal + prodPrice) * 0.1)
+    const total = serviceTotal + prodPrice + protectionFee
+
+    return { baseFee, complexityFee, prodPrice, protectionFee, total }
+  }, [form.category, form.itemQuantity, form.tutoringYear, form.errandType, form.productPrice])
+
+  useEffect(() => {
+    setForm(prev => ({ ...prev, budget: String(budgetDetails.total) }))
+  }, [budgetDetails.total])
 
   const categoryNames = useMemo(() => {
     const fromApi = categories
@@ -489,6 +506,17 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
                 value={form.itemQuantity}
                 onChange={(event) => updateField('itemQuantity', event.target.value)}
               />
+              <label htmlFor="task-product-price">Estimated Item Cost (₱)</label>
+              <p className="post-card-hint">The helper will use this for the purchase. This is added to the total budget.</p>
+              <input
+                id="task-product-price"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="e.g. 150"
+                value={form.productPrice}
+                onChange={(event) => updateField('productPrice', event.target.value)}
+              />
             </article>
           )}
 
@@ -564,51 +592,38 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
             </article>
 
             <article className="post-card">
-              <label htmlFor="task-budget">Budget (₱)</label>
-              <p className="post-card-hint">Select a suggested amount or type your own. Prices are auto-calculated for fairness.</p>
+              <label htmlFor="task-budget">Final Budget (₱)</label>
+              <p className="post-card-hint">Calculated automatically for your safety and fairness. This field cannot be manually edited.</p>
               
-              <div className="budget-input-wrapper">
-                <input
-                  id="task-budget"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="Enter or select amount"
-                  value={form.budget}
-                  onChange={(e) => updateField('budget', e.target.value)}
-                  onFocus={(e) => {
-                    // Optional: auto-select text on focus
-                    e.target.select()
-                  }}
-                  list="budget-options"
-                  required
-                />
-                <datalist id="budget-options">
-                  <option value="25" label="Quick Errand" />
-                  <option value="35" label="Standard Delivery" />
-                  <option value="55" label="Complex Task" />
-                  <option value="100" label="Tutoring / Specialty" />
-                  <option value="150" label="Moving / Heavy" />
-                </datalist>
-                <div className="budget-currency-symbol">₱</div>
+              <div className="budget-input-wrapper read-only">
+                <div className="budget-display-value">₱{form.budget}</div>
+                <div className="budget-status-tag">Auto-Calculated</div>
               </div>
 
-              {form.budget && !isNaN(form.budget) && (
-                <div className="price-breakdown-box">
-                  <div className="price-row">
-                    <span>Helper Earnings</span>
-                    <span>₱{Math.floor(Number(form.budget) * 0.9)}</span>
-                  </div>
-                  <div className="price-row">
-                    <span>Protection Fee</span>
-                    <span>₱{Math.ceil(Number(form.budget) * 0.1)}</span>
-                  </div>
-                  <div className="price-total-row">
-                    <span>Total Payment</span>
-                    <strong>₱{form.budget}</strong>
-                  </div>
+              <div className="price-breakdown-box premium">
+                <div className="price-row">
+                  <span><i className="icon">🏷️</i> Base Service Fee</span>
+                  <span>₱{budgetDetails.baseFee}</span>
                 </div>
-              )}
+                <div className="price-row">
+                  <span><i className="icon">⏳</i> Time & Complexity</span>
+                  <span>₱{budgetDetails.complexityFee}</span>
+                </div>
+                {budgetDetails.prodPrice > 0 && (
+                  <div className="price-row highlight">
+                    <span><i className="icon">🛍️</i> Estimated Product Price</span>
+                    <span>₱{budgetDetails.prodPrice}</span>
+                  </div>
+                )}
+                <div className="price-row">
+                  <span><i className="icon">🛡️</i> Protection Fee</span>
+                  <span>₱{budgetDetails.protectionFee}</span>
+                </div>
+                <div className="price-total-row">
+                  <span>Total Amount to Pay</span>
+                  <strong>₱{form.budget}</strong>
+                </div>
+              </div>
             </article>
 
             <article className="post-card payment-method-card">
