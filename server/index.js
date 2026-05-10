@@ -20,6 +20,7 @@ import tasksRoutes from './routes/tasks.js'
 import usersRoutes from './routes/users.js'
 import messagesRoutes from './routes/messages.js'
 import adminRoutes from './routes/admin.js'
+import { requireAdmin } from './auth.js'
 
 import { authLimiter } from './config.js'
 
@@ -73,7 +74,7 @@ app.use('/api/admin', adminRoutes)
 app.use('/api/reports', adminRoutes)
 
 // TEMPORARY: Reset Data Route (Delete after use)
-app.post('/api/admin/reset-all-data', async (req, res) => {
+app.post('/api/admin/reset-all-data', requireAdmin, async (req, res) => {
   const { query } = await import('./db.js')
   try {
     console.log('--- ADMIN RESET TRIGGERED ---')
