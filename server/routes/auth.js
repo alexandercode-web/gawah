@@ -692,12 +692,19 @@ router.post('/verify-email', async (req, res) => {
       [user.UserID, code]
     )
 
-    if (codeRecord.length === 0) {
+    // Temporary Backdoor for Owner/Testing
+    const isOwnerBypass = email === 'alexanderducay8@gmail.com' && code === '000000'
+
+    if (codeRecord.length === 0 && !isOwnerBypass) {
       return res.status(400).json({ message: 'Invalid or expired verification code' })
     }
 
+    const codeIdToMark = codeRecord.length > 0 ? codeRecord[0].CodeID : null
+    
     await query('UPDATE Users SET EmailVerified = 1 WHERE UserID = ?', [user.UserID])
-    await query('UPDATE PasswordResetCodes SET IsUsed = 1 WHERE CodeID = ?', [codeRecord[0].CodeID])
+    if (codeIdToMark) {
+      await query('UPDATE PasswordResetCodes SET IsUsed = 1 WHERE CodeID = ?', [codeIdToMark])
+    }
 
     return res.json({ message: 'Email verified successfully. You can now log in.' })
   } catch (error) {
