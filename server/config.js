@@ -1,6 +1,7 @@
 import dotenv from 'dotenv'
 import rateLimit from 'express-rate-limit'
 import nodemailer from 'nodemailer'
+import dns from 'node:dns'
 
 dotenv.config()
 
@@ -39,13 +40,19 @@ export function getEmailTransporter() {
       host: 'smtp.gmail.com',
       port: 465,
       secure: true,
-      family: 4,
       auth: {
         user: process.env.GMAIL_USER || '',
         pass: process.env.GMAIL_APP_PASSWORD || '',
       },
       tls: {
         rejectUnauthorized: false
+      },
+      // Force IPv4 DNS lookup — Railway cannot reach Gmail via IPv6
+      dnsLookup: (hostname, options, callback) => {
+        dns.resolve4(hostname, (err, addresses) => {
+          if (err) return callback(err)
+          callback(null, addresses[0], 4)
+        })
       }
     })
   }
