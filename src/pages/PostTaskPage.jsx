@@ -154,12 +154,22 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
       'water': '20',
       'school supplies': '50',
       'photocopy': '10',
+      'print': '5',
+      'scanning': '15',
+      'laundry': '150',
+      'medicine': '100',
     }
 
     const foundPrice = Object.entries(commonItems).find(([key]) => item.includes(key))?.[1]
     if (foundPrice) {
       setForm(prev => ({ ...prev, productPrice: foundPrice }))
     }
+  }, [form.itemName])
+
+  const isItemRecognized = useMemo(() => {
+    const item = form.itemName.trim().toLowerCase()
+    const keys = ['pares', 'siomai rice', 'chicken meal', 'milk tea', 'corndog', 'burger', 'coke', 'water', 'school supplies', 'photocopy', 'print', 'scanning', 'laundry', 'medicine']
+    return keys.some(key => item.includes(key))
   }, [form.itemName])
 
   const categoryNames = useMemo(() => {
@@ -544,11 +554,30 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
               />
 
               <label htmlFor="task-product-price">Estimated Item Cost (₱)</label>
-              <p className="post-card-hint">Automatically set based on item name. You can still edit if needed.</p>
-              <div className="budget-input-wrapper read-only mini">
-                 <div className="budget-display-value mini">₱{form.productPrice || '0'}</div>
-                 <div className="budget-status-tag">Locked</div>
-              </div>
+              <p className="post-card-hint">
+                {isItemRecognized 
+                  ? "Smart price detected! This field is now locked for accuracy."
+                  : "Item not recognized. Please enter an estimated cost for the helper."
+                }
+              </p>
+              
+              {isItemRecognized ? (
+                <div className="budget-input-wrapper read-only mini">
+                   <div className="budget-display-value mini">₱{form.productPrice || '0'}</div>
+                   <div className="budget-status-tag">Verified</div>
+                </div>
+              ) : (
+                <input
+                  id="task-product-price"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="Enter estimated price"
+                  value={form.productPrice}
+                  onChange={(event) => updateField('productPrice', event.target.value)}
+                  required
+                />
+              )}
             </article>
           )}
 
