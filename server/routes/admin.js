@@ -73,7 +73,7 @@ router.get('/stats', requireAdmin, async (req, res) => {
   try {
     const result = await query(`
       SELECT
-        (SELECT COUNT(*) FROM Users) AS totalUsers,
+        (SELECT COUNT(*) FROM Users WHERE Email != 'admin@gawahelper.com') AS totalUsers,
         (SELECT COUNT(*) FROM Tasks WHERE LOWER(Status) NOT IN ('completed','cancelled')) AS activeTasks,
         (SELECT COUNT(*) FROM Tasks WHERE Status = 'Completed') AS completedTasks,
         (SELECT COALESCE(SUM(Budget), 0) FROM Tasks) AS totalValue,
@@ -102,6 +102,7 @@ router.get('/users', requireAdmin, async (req, res) => {
         (SELECT COUNT(*) FROM Tasks WHERE UserID = u.UserID) AS TasksPosted,
         (SELECT COUNT(*) FROM TaskAssignments ta INNER JOIN Tasks t ON ta.TaskID = t.TaskID WHERE ta.HelperID = u.UserID AND t.Status = 'Completed') AS TasksCompleted
       FROM Users u
+      WHERE u.Email != 'admin@gawahelper.com'
       ORDER BY u.CreatedAt DESC LIMIT ? OFFSET ?
     `, [limit, offset])
     return res.json(result)
@@ -222,7 +223,7 @@ router.get('/summary', requireAdmin, async (req, res) => {
     const [statsResult] = await Promise.all([
       query(`
         SELECT
-          (SELECT COUNT(*) FROM Users) AS totalUsers,
+          (SELECT COUNT(*) FROM Users WHERE Email != 'admin@gawahelper.com') AS totalUsers,
           (SELECT COUNT(*) FROM Tasks) AS totalTasks,
           (SELECT COUNT(*) FROM Tasks WHERE Status = 'Open') AS openTasks,
           (SELECT COUNT(*) FROM Tasks WHERE Status = 'Assigned') AS assignedTasks,
