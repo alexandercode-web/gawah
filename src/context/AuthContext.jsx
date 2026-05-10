@@ -75,7 +75,7 @@ export function AuthProvider({ children }) {
       localStorage.removeItem('gh_user')
       localStorage.removeItem('gh_token') // clear legacy token if exists
       // SSE token cleanup is tricky without reloading, so a reload might be needed in some flows
-      window.location.href = '/'
+      window.location.href = '/login'
     }
   }
 
