@@ -6,7 +6,15 @@ import { api } from '../api'
 export default function VerifyEmailPage() {
   const navigate = useNavigate()
   const loc = useLocation()
-  const [email, setEmail] = useState(loc.state?.email || '')
+  
+  // Try to get email from state OR from URL query params (?email=...)
+  const getInitialEmail = () => {
+    if (loc.state?.email) return loc.state.email
+    const params = new URLSearchParams(loc.search)
+    return params.get('email') || ''
+  }
+
+  const [email, setEmail] = useState(getInitialEmail())
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
