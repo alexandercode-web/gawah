@@ -330,7 +330,8 @@ const ACTIVITY_LABELS = {
 
 /* ──────────────────────────── Component ──────────────────────────── */
 
-function ReportsPage({user, hasUnreadNotifications = false, onLogout}) {
+function ReportsPage({hasUnreadNotifications = false}) {
+  const { user, logout: onLogout } = useAuth()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('summary')
   const [loading, setLoading] = useState(true)
