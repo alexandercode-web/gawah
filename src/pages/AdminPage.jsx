@@ -3,7 +3,8 @@ import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 
-function AdminPage({user, onLogout}) {
+function AdminPage() {
+  const { user, logout: onLogout } = useAuth()
   const navigate = useNavigate()
   const [adminData, setAdminData] = useState({
     stats: {},
