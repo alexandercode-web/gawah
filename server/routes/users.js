@@ -15,25 +15,25 @@ router.get('/home/summary', requireAuth, async (req, res) => {
     const metricsResult = await query(`
       SELECT
         (SELECT COUNT(*) FROM Users) AS TotalUsers,
-        (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND LOWER(Status) = 'open') AS OpenTasks,
-        (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND LOWER(Status) = 'completed') AS CompletedTasks,
-        (SELECT COALESCE(SUM(Budget), 0) FROM Tasks WHERE UserID = ? AND LOWER(Status) = 'completed') AS CompletedValue,
+        (SELECT COUNT(*) FROM Tasks WHERE UserID = ?::int AND LOWER(Status) = 'open') AS OpenTasks,
+        (SELECT COUNT(*) FROM Tasks WHERE UserID = ?::int AND LOWER(Status) = 'completed') AS CompletedTasks,
+        (SELECT COALESCE(SUM(Budget), 0) FROM Tasks WHERE UserID = ?::int AND LOWER(Status) = 'completed') AS CompletedValue,
         (SELECT COUNT(*)
          FROM TaskAssignments ta
          INNER JOIN Tasks t ON ta.TaskID = t.TaskID
-         WHERE ta.HelperID = ? AND LOWER(t.Status) = 'completed') AS HelperCompletedTasks,
+         WHERE ta.HelperID = ?::int AND LOWER(t.Status) = 'completed') AS HelperCompletedTasks,
         (SELECT COALESCE(SUM(t.Budget), 0)
          FROM TaskAssignments ta
          INNER JOIN Tasks t ON ta.TaskID = t.TaskID
-         WHERE ta.HelperID = ? AND LOWER(t.Status) = 'completed') AS HelperCompletedValue,
-        (SELECT COUNT(*) FROM TaskAssignments WHERE HelperID = ?) AS HelperAcceptedTasks,
+         WHERE ta.HelperID = ?::int AND LOWER(t.Status) = 'completed') AS HelperCompletedValue,
+        (SELECT COUNT(*) FROM TaskAssignments WHERE HelperID = ?::int) AS HelperAcceptedTasks,
         (SELECT COUNT(*) FROM Categories) AS TotalCategories,
-        (SELECT COUNT(*) FROM Tasks WHERE UserID = ?) AS MyPostedTasks,
-        (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND LOWER(Status) = 'completed') AS MyCompletedTasks,
+        (SELECT COUNT(*) FROM Tasks WHERE UserID = ?::int) AS MyPostedTasks,
+        (SELECT COUNT(*) FROM Tasks WHERE UserID = ?::int AND LOWER(Status) = 'completed') AS MyCompletedTasks,
         (
-          (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND LOWER(Status) = 'completed')
+          (SELECT COUNT(*) FROM Tasks WHERE UserID = ?::int AND LOWER(Status) = 'completed')
           +
-          (SELECT COUNT(*) FROM TaskAssignments ta INNER JOIN Tasks t ON ta.TaskID = t.TaskID WHERE ta.HelperID = ? AND LOWER(t.Status) = 'completed')
+          (SELECT COUNT(*) FROM TaskAssignments ta INNER JOIN Tasks t ON ta.TaskID = t.TaskID WHERE ta.HelperID = ?::int AND LOWER(t.Status) = 'completed')
         ) AS AllCompletedTasks
       `, [req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id])
 
@@ -47,7 +47,7 @@ router.get('/home/summary', requireAuth, async (req, res) => {
       LEFT JOIN Categories c ON t.CategoryID = c.CategoryID
       LEFT JOIN TaskAssignments ta ON ta.TaskID = t.TaskID AND ta.HelperID = ?
       WHERE LOWER(t.Status) NOT IN ('completed', 'cancelled')
-        AND (t.Status = 'Open' OR t.UserID = ? OR ta.HelperID = ?)
+        AND (LOWER(t.Status) = 'open' OR t.UserID = ? OR ta.HelperID = ?)
       ORDER BY t.CreatedAt DESC
       LIMIT 6
     `, [req.user.id, req.user.id, req.user.id])
@@ -96,6 +96,16 @@ router.get('/:userId/profile', requireAuth, async (req, res) => {
   } catch (error) {
     logger.error('API Error:', error.message)
     return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+
+router.get('/home/debug', requireAuth, async (req, res) => {
+  try {
+    const user = req.user
+    const tasksCount = await query('SELECT COUNT(*) AS count FROM Tasks WHERE UserID = ?', [user.id])
+    return res.json({ user, tasksCount: tasksCount[0] })
+  } catch (error) {
+    return res.status(500).json({ error: error.message })
   }
 })
 

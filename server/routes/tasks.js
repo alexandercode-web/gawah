@@ -202,12 +202,12 @@ router.get('/my/tasks', requireAuth, async (req, res) => {
         t.TaskID, t.Title, t.Description, t.Location, t.TaskTime, t.Budget, t.Status, t.CreatedAt,
         u.FullName AS PosterName, u.ProfileImage AS PosterProfileImage,
         c.CategoryName,
-        CASE WHEN t.UserID = ? THEN 'Posted' ELSE 'Applied' END AS TaskType
+        CASE WHEN t.UserID = ?::int THEN 'Posted' ELSE 'Applied' END AS TaskType
       FROM Tasks t
       INNER JOIN Users u ON t.UserID = u.UserID
       LEFT JOIN Categories c ON t.CategoryID = c.CategoryID
       LEFT JOIN TaskAssignments ta ON ta.TaskID = t.TaskID
-      WHERE t.UserID = ? OR ta.HelperID = ?
+      WHERE t.UserID = ?::int OR ta.HelperID = ?::int
       ORDER BY t.CreatedAt DESC
     `, [req.user.id, req.user.id, req.user.id])
     return res.json(result)
