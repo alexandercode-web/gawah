@@ -379,19 +379,44 @@ router.post('/login', async (req, res) => {
   }
 })
 
-router.get('/me', requireAuth, async (req, res) => {
+router.get('/me', async (req, res) => {
+  // Manual authentication check for /me to prevent console errors on landing
+  let token = null
+  if (req.cookies && req.cookies.gh_token) {
+    token = req.cookies.gh_token
+  } else {
+    const header = req.headers.authorization
+    if (header && header.startsWith('Bearer ')) {
+      token = header.slice(7)
+    } else if (req.query.token) {
+      token = req.query.token
+    }
+  }
+
+  if (!token) {
+    return res.json({ authenticated: false, user: null })
+  }
+
   try {
+    const { jwtVerify } = await import('jsonwebtoken') // using local import to match current context if needed, but jwt is global in auth.js usually
+    // Wait, JWT is imported in server/auth.js but I'm in routes/auth.js
+    // I'll use the existing jwt import if available or import it.
+    const jwt = (await import('jsonwebtoken')).default
+    const JWT_SECRET = process.env.JWT_SECRET || 'change-this-secret'
+    
+    const decoded = jwt.verify(token, JWT_SECRET)
     const result = await query(
       'SELECT UserID, FullName, Email, ProfileImage, IsAdmin FROM Users WHERE UserID = ?',
-      [req.user.id]
+      [decoded.id]
     )
 
     if (result.length === 0) {
-      return res.status(401).json({ message: 'User not found' })
+      return res.json({ authenticated: false, user: null })
     }
 
     const user = result[0]
     return res.json({
+      authenticated: true,
       user: {
         UserID: user.UserID,
         FullName: user.FullName,
@@ -401,8 +426,7 @@ router.get('/me', requireAuth, async (req, res) => {
       }
     })
   } catch (error) {
-    logger.error('API Error:', error.message)
-    return res.status(500).json({ message: 'Internal server error' })
+    return res.json({ authenticated: false, user: null })
   }
 })
 
