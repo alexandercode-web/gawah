@@ -19,8 +19,8 @@ const router = express.Router()
 
 router.get('/:otherUserId/:taskId', requireAuth, async (req, res) => {
   try {
-    const taskId = Number(req.params.taskId)
-    const otherUserId = Number(req.params.otherUserId)
+    const taskId = Number(req.params.taskId) || 0
+    const otherUserId = Number(req.params.otherUserId) || 0
     const userId = req.user.id
 
     const rows = await query(`

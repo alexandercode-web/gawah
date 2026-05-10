@@ -511,16 +511,19 @@ const keyMap = {
 export async function query(sql, params = []) {
   if (!initialized) await initDatabase()
 
+  // Ensure all params are PG-compatible (no NaN)
+  const safeParams = params.map(p => (typeof p === 'number' && isNaN(p)) ? null : p)
+
   let index = 1
   const postgresSql = sql.replace(/\?/g, () => `$${index++}`)
 
   try {
-    const res = await pool.query(postgresSql, params)
+    const res = await pool.query(postgresSql, safeParams)
 
-    if (postgresSql.includes('INSERT INTO Notifications') && params.length >= 4) {
-      notifyUser(params[0], 'notification', { message: params[3], taskId: params[2], senderId: params[1] })
-    } else if (postgresSql.includes('INSERT INTO Messages') && params.length >= 4) {
-      notifyUser(params[2], 'message', { content: params[3], taskId: params[0], senderId: params[1] })
+    if (postgresSql.includes('INSERT INTO Notifications') && safeParams.length >= 4) {
+      notifyUser(safeParams[0], 'notification', { message: safeParams[3], taskId: safeParams[2], senderId: safeParams[1] })
+    } else if (postgresSql.includes('INSERT INTO Messages') && safeParams.length >= 4) {
+      notifyUser(safeParams[2], 'message', { content: safeParams[3], taskId: safeParams[0], senderId: safeParams[1] })
     }
 
     // Map lowercase keys back to PascalCase
@@ -536,7 +539,11 @@ export async function query(sql, params = []) {
       return newRow;
     });
   } catch (err) {
-    console.error('PostgreSQL Query Error:', { sql: postgresSql, error: err.message })
+    logger.error('PostgreSQL Query Error:', { 
+      sql: postgresSql, 
+      params: safeParams,
+      error: err.message 
+    })
     throw err
   }
 }
