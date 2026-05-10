@@ -200,6 +200,22 @@ function App() {
     }
   }
 
+  async function forgotPassword(payload) {
+    setMessage('')
+    setError('')
+
+    try {
+      const email = typeof payload === 'string' ? payload : payload.email
+      await api.requestPasswordResetCode(email)
+      setMessage('Reset code sent to your email! Redirecting...')
+      navigate('/forgot-password', { state: { email } })
+      return true
+    } catch (err) {
+      setError(err.message)
+      return false
+    }
+  }
+
   useEffect(() => {
     if (message || error) {
       const timer = setTimeout(() => {
@@ -429,7 +445,7 @@ function App() {
             token ? (
               <Navigate to="/home" replace />
             ) : (
-              <LoginPage loading={authLoading} error={error} />
+              <LoginPage onLogin={loginUser} loading={authLoading} error={error} />
             )
           }
         />
@@ -439,7 +455,7 @@ function App() {
             token ? (
               <Navigate to="/home" replace />
             ) : (
-              <RegisterPage loading={authLoading} error={error} />
+              <RegisterPage onRegister={registerUser} loading={authLoading} error={error} />
             )
           }
         />
@@ -449,7 +465,7 @@ function App() {
             token ? (
               <Navigate to="/home" replace />
             ) : (
-              <ForgotPasswordPage />
+              <ForgotPasswordPage onForgotPassword={forgotPassword} />
             )
           }
         />
