@@ -320,6 +320,8 @@ export async function initDatabase() {
     // Migration: Change Rating default from 5.0 to NULL for unrated users
     await pool.query(`
       DO $$ BEGIN
+        ALTER TABLE Users ALTER COLUMN Rating DROP NOT NULL;
+        ALTER TABLE Users ALTER COLUMN Rating DROP DEFAULT;
         UPDATE Users SET Rating = NULL
         WHERE Rating = 5.0
           AND NOT EXISTS (SELECT 1 FROM Reviews WHERE ReviewedUserID = Users.UserID);
