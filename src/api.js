@@ -315,13 +315,13 @@ export const api = {
   },
   // Reports & Data Visualization
   getReportsSummary() {
-    return request('/reports/summary')
+    return request('/admin/summary')
   },
   getTransactions() {
-    return request('/reports/transactions')
+    return request('/admin/transactions')
   },
   getActivityLogs() {
-    return request('/reports/activity')
+    return request('/admin/activity')
   },
   // Admin Methods
   getAdminStats() {

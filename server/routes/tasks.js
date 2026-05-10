@@ -195,6 +195,27 @@ router.get('/', async (req, res) => {
   }
 })
 
+router.get('/my/tasks', requireAuth, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT DISTINCT
+        t.TaskID, t.Title, t.Description, t.Location, t.TaskTime, t.Budget, t.Status, t.CreatedAt,
+        u.FullName AS PosterName, u.ProfileImage AS PosterProfileImage,
+        c.CategoryName
+      FROM Tasks t
+      INNER JOIN Users u ON t.UserID = u.UserID
+      LEFT JOIN Categories c ON t.CategoryID = c.CategoryID
+      LEFT JOIN TaskAssignments ta ON ta.TaskID = t.TaskID
+      WHERE t.UserID = ? OR ta.HelperID = ?
+      ORDER BY t.CreatedAt DESC
+    `, [req.user.id, req.user.id])
+    return res.json(result)
+  } catch (error) {
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+
 router.get('/counts-by-category', async (_req, res) => {
   try {
     const result = await query(`

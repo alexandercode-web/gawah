@@ -70,6 +70,7 @@ app.use('/api/tasks', tasksRoutes)
 app.use('/api/users', usersRoutes)
 app.use('/api/messages', messagesRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/reports', adminRoutes)
 
 // Fallback mountings for legacy/non-prefixed paths used by the frontend
 // Specific routes MUST come before generic /:id routes
@@ -78,6 +79,15 @@ app.use('/api', messagesRoutes) // For /notifications
 app.use('/api', adminRoutes)    // For /public/stats
 app.use('/api', usersRoutes)    // For /home/summary
 app.use('/api', tasksRoutes)    // For /tasks, /categories
+
+// 404 Handler - Ensure CORS headers for unknown routes
+app.use((req, res) => {
+  res.status(404).json({ 
+    message: 'API Route not found', 
+    path: req.path,
+    method: req.method
+  })
+})
 
 app.use((error, req, res, _next) => {
   logger.error('API Error:', {
