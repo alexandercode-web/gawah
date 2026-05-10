@@ -331,11 +331,7 @@ function HomePage({user, summary, myTasks = [], loading, error, hasUnreadNotific
           <h2>Tasks near you</h2>
           <p>Find tasks posted by fellow students</p>
         </div>
-        <div className="home-dashboard-actions">
-          <button type="button" className="home-export-btn" onClick={() => navigate('/browse')}>
-            Browse All
-          </button>
-        </div>
+
       </div>
 
       <section className="task-cards">
@@ -487,15 +483,7 @@ function HomePage({user, summary, myTasks = [], loading, error, hasUnreadNotific
           </span>
           <span>Home</span>
         </button>
-        <button type="button" className="nav-item" onClick={() => navigate('/browse')}>
-          <span className="nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-              <circle cx="11" cy="11" r="8" fill="none" stroke="currentColor" strokeWidth="2" />
-              <path d="m21 21-4.3-4.3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </span>
-          <span>Browse</span>
-        </button>
+
         <button type="button" className="nav-item" onClick={() => navigate('/tasks')}>
           <span className="nav-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" role="presentation" focusable="false">

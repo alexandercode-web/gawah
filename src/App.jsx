@@ -17,7 +17,7 @@ import LoginPage from './pages/LoginPage'
 import AdminLoginPage from './pages/AdminLoginPage'
 import RegisterPage from './pages/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
-import BrowseTasksPage from './pages/BrowseTasksPage'
+
 import VerifyEmailPage from './pages/VerifyEmailPage'
 
 import SupportPage from './pages/SupportPage'
@@ -479,20 +479,7 @@ function App() {
             )
           }
         />
-        <Route
-          path="/browse"
-          element={
-            !token ? (
-              <Navigate to="/login" replace />
-            ) : (
-              <BrowseTasksPage
-               
-                hasUnreadNotifications={hasUnreadNotifications}
-               
-              />
-            )
-          }
-        />
+
         <Route path="*" element={<Navigate to={token ? '/home' : '/'} replace />} />
       </Routes>
     </main>
