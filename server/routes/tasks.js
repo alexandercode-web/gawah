@@ -19,8 +19,8 @@ router.get('/public/stats', async (_, res) => {
     const result = await query(`
       SELECT
         (SELECT COUNT(*) FROM Users) AS TotalUsers,
-        (SELECT COUNT(*) FROM Tasks WHERE Status = 'Completed') AS CompletedTasks,
-        (SELECT COALESCE(SUM(Budget), 0) FROM Tasks WHERE Status = 'Completed') AS TotalValue
+        (SELECT COUNT(*) FROM Tasks WHERE LOWER(Status) = 'completed') AS CompletedTasks,
+        (SELECT COALESCE(SUM(Budget), 0) FROM Tasks WHERE LOWER(Status) = 'completed') AS TotalValue
     `)
 
     return res.json(result[0])
@@ -156,8 +156,8 @@ router.get('/', async (req, res) => {
     `
 
     if (status) {
-      sqlQuery += ' AND t.Status = ?'
-      params.push(status)
+      sqlQuery += ' AND LOWER(t.Status) = ?'
+      params.push(status.toLowerCase())
     }
 
     if (categoryId) {
@@ -222,7 +222,7 @@ router.get('/counts-by-category', async (_req, res) => {
     const result = await query(`
       SELECT c.CategoryID, c.CategoryName, COUNT(t.TaskID) AS TaskCount
       FROM Categories c
-      LEFT JOIN Tasks t ON t.CategoryID = c.CategoryID AND t.Status = 'Open'
+      LEFT JOIN Tasks t ON t.CategoryID = c.CategoryID AND LOWER(t.Status) = 'open'
       GROUP BY c.CategoryID, c.CategoryName
       ORDER BY c.CategoryName
     `)

@@ -75,7 +75,7 @@ router.get('/stats', requireAdmin, async (req, res) => {
       SELECT
         (SELECT COUNT(*) FROM Users WHERE Email != 'admin@gawahelper.com') AS totalUsers,
         (SELECT COUNT(*) FROM Tasks WHERE LOWER(Status) NOT IN ('completed','cancelled')) AS activeTasks,
-        (SELECT COUNT(*) FROM Tasks WHERE Status = 'Completed') AS completedTasks,
+        (SELECT COUNT(*) FROM Tasks WHERE LOWER(Status) = 'completed') AS completedTasks,
         (SELECT COALESCE(SUM(Budget), 0) FROM Tasks) AS totalValue,
         (SELECT COUNT(*) FROM Messages) AS totalMessages,
         (SELECT COUNT(DISTINCT ta.HelperID) FROM TaskAssignments ta INNER JOIN Tasks t ON ta.TaskID = t.TaskID WHERE LOWER(t.Status) NOT IN ('cancelled')) AS activeHelpers

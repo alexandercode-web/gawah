@@ -15,25 +15,25 @@ router.get('/home/summary', requireAuth, async (req, res) => {
     const metricsResult = await query(`
       SELECT
         (SELECT COUNT(*) FROM Users) AS TotalUsers,
-        (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND Status = 'Open') AS OpenTasks,
-        (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND Status = 'Completed') AS CompletedTasks,
-        (SELECT COALESCE(SUM(Budget), 0) FROM Tasks WHERE UserID = ? AND Status = 'Completed') AS CompletedValue,
+        (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND LOWER(Status) = 'open') AS OpenTasks,
+        (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND LOWER(Status) = 'completed') AS CompletedTasks,
+        (SELECT COALESCE(SUM(Budget), 0) FROM Tasks WHERE UserID = ? AND LOWER(Status) = 'completed') AS CompletedValue,
         (SELECT COUNT(*)
          FROM TaskAssignments ta
          INNER JOIN Tasks t ON ta.TaskID = t.TaskID
-         WHERE ta.HelperID = ? AND t.Status = 'Completed') AS HelperCompletedTasks,
+         WHERE ta.HelperID = ? AND LOWER(t.Status) = 'completed') AS HelperCompletedTasks,
         (SELECT COALESCE(SUM(t.Budget), 0)
          FROM TaskAssignments ta
          INNER JOIN Tasks t ON ta.TaskID = t.TaskID
-         WHERE ta.HelperID = ? AND t.Status = 'Completed') AS HelperCompletedValue,
+         WHERE ta.HelperID = ? AND LOWER(t.Status) = 'completed') AS HelperCompletedValue,
         (SELECT COUNT(*) FROM TaskAssignments WHERE HelperID = ?) AS HelperAcceptedTasks,
         (SELECT COUNT(*) FROM Categories) AS TotalCategories,
         (SELECT COUNT(*) FROM Tasks WHERE UserID = ?) AS MyPostedTasks,
-        (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND Status = 'Completed') AS MyCompletedTasks,
+        (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND LOWER(Status) = 'completed') AS MyCompletedTasks,
         (
-          (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND Status = 'Completed')
+          (SELECT COUNT(*) FROM Tasks WHERE UserID = ? AND LOWER(Status) = 'completed')
           +
-          (SELECT COUNT(*) FROM TaskAssignments ta INNER JOIN Tasks t ON ta.TaskID = t.TaskID WHERE ta.HelperID = ? AND t.Status = 'Completed')
+          (SELECT COUNT(*) FROM TaskAssignments ta INNER JOIN Tasks t ON ta.TaskID = t.TaskID WHERE ta.HelperID = ? AND LOWER(t.Status) = 'completed')
         ) AS AllCompletedTasks
       `, [req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id])
 
