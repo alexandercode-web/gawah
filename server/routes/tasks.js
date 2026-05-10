@@ -40,7 +40,7 @@ router.get('/categories', async (_, res) => {
   }
 })
 
-router.post('/', requireAuth, async (req, res) => {
+router.post('/categories', requireAuth, async (req, res) => {
   const { categoryName } = req.body
 
   if (!categoryName) {
