@@ -262,32 +262,45 @@ router.post('/register', async (req, res) => {
       [newUserId, verifyCode, codeExpiry]
     )
 
-    // Send verification email in background so we don't block the response
-    const transporter = getEmailTransporter()
-    transporter.sendMail({
-      from: `"GawaHelper" <${process.env.GMAIL_USER}>`,
-      to: email,
-      subject: 'Verify your GawaHelper account',
-      html: `
-        <div style="max-width:480px;margin:0 auto;font-family:'Segoe UI',Arial,sans-serif;background:#ffffff;border:1px solid #e8e8e8;border-radius:12px;overflow:hidden;">
-          <div style="background:linear-gradient(135deg,#0f6b3a 0%,#1a9956 100%);padding:28px 24px;text-align:center;">
-            <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">GawaHelper</h1>
-            <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Email Verification</p>
-          </div>
-          <div style="padding:32px 24px;">
-            <p style="margin:0 0 16px;color:#333;font-size:15px;">Welcome to GawaHelper!</p>
-            <p style="margin:0 0 24px;color:#555;font-size:14px;line-height:1.6;">Enter this code to verify your email. It's valid for <strong>15 minutes</strong>.</p>
-            <div style="background:#f0faf4;border:2px dashed #1a9956;border-radius:10px;padding:20px;text-align:center;margin:0 0 24px;">
-              <p style="margin:0 0 6px;color:#777;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Verification Code</p>
-              <h2 style="margin:0;font-family:'Courier New',monospace;font-size:36px;letter-spacing:6px;color:#0f6b3a;font-weight:800;">${verifyCode}</h2>
+    // Send verification email — await so we can report failures
+    const gmailUser = process.env.GMAIL_USER
+    const gmailPass = process.env.GMAIL_APP_PASSWORD
+    let emailSent = false
+
+    if (!gmailUser || !gmailPass) {
+      logger.error('GMAIL_USER or GMAIL_APP_PASSWORD not configured — cannot send verification email')
+    } else {
+      try {
+        const transporter = getEmailTransporter()
+        await transporter.sendMail({
+          from: `"GawaHelper" <${gmailUser}>`,
+          to: email,
+          subject: 'Verify your GawaHelper account',
+          html: `
+            <div style="max-width:480px;margin:0 auto;font-family:'Segoe UI',Arial,sans-serif;background:#ffffff;border:1px solid #e8e8e8;border-radius:12px;overflow:hidden;">
+              <div style="background:linear-gradient(135deg,#0f6b3a 0%,#1a9956 100%);padding:28px 24px;text-align:center;">
+                <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">GawaHelper</h1>
+                <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Email Verification</p>
+              </div>
+              <div style="padding:32px 24px;">
+                <p style="margin:0 0 16px;color:#333;font-size:15px;">Welcome to GawaHelper!</p>
+                <p style="margin:0 0 24px;color:#555;font-size:14px;line-height:1.6;">Enter this code to verify your email. It's valid for <strong>15 minutes</strong>.</p>
+                <div style="background:#f0faf4;border:2px dashed #1a9956;border-radius:10px;padding:20px;text-align:center;margin:0 0 24px;">
+                  <p style="margin:0 0 6px;color:#777;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Verification Code</p>
+                  <h2 style="margin:0;font-family:'Courier New',monospace;font-size:36px;letter-spacing:6px;color:#0f6b3a;font-weight:800;">${verifyCode}</h2>
+                </div>
+              </div>
+              <div style="background:#fafafa;border-top:1px solid #eee;padding:16px 24px;text-align:center;">
+                <p style="margin:0;color:#aaa;font-size:11px;">© ${new Date().getFullYear()} GawaHelper • Task Marketplace</p>
+              </div>
             </div>
-          </div>
-          <div style="background:#fafafa;border-top:1px solid #eee;padding:16px 24px;text-align:center;">
-            <p style="margin:0;color:#aaa;font-size:11px;">© ${new Date().getFullYear()} GawaHelper • Task Marketplace</p>
-          </div>
-        </div>
-      `,
-    }).catch(err => logger.error('Verification email background failure:', err.message));
+          `,
+        })
+        emailSent = true
+      } catch (err) {
+        logger.error('Verification email send failure:', err.message)
+      }
+    }
 
     const user = {
       UserID: newUserId,
@@ -298,9 +311,12 @@ router.post('/register', async (req, res) => {
     }
 
     return res.status(201).json({
-      message: 'Registration successful. Please verify your email.',
+      message: emailSent
+        ? 'Registration successful. Please check your email for the verification code.'
+        : 'Registration successful. Email delivery may be delayed — try "Resend Code" on the verification page.',
       user,
       requiresVerification: true,
+      emailSent,
     })
   } catch (error) {
     if (error.code === '23505') {
@@ -742,30 +758,42 @@ router.post('/resend-verification', async (req, res) => {
       [user.UserID, verifyCode, codeExpiry]
     )
 
-    // Send verification email in background
-    const transporter = getEmailTransporter()
-    transporter.sendMail({
-      from: `"GawaHelper" <${process.env.GMAIL_USER}>`,
-      to: email,
-      subject: 'Verify your GawaHelper account',
-      html: `
-        <div style="max-width:480px;margin:0 auto;font-family:'Segoe UI',Arial,sans-serif;background:#ffffff;border:1px solid #e8e8e8;border-radius:12px;overflow:hidden;">
-          <div style="background:linear-gradient(135deg,#0f6b3a 0%,#1a9956 100%);padding:28px 24px;text-align:center;">
-            <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">GawaHelper</h1>
-            <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Email Verification</p>
-          </div>
-          <div style="padding:32px 24px;">
-            <p style="margin:0 0 24px;color:#555;font-size:14px;">Enter this code to verify your email. Valid for <strong>15 minutes</strong>.</p>
-            <div style="background:#f0faf4;border:2px dashed #1a9956;border-radius:10px;padding:20px;text-align:center;">
-              <p style="margin:0 0 6px;color:#777;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Verification Code</p>
-              <h2 style="margin:0;font-family:'Courier New',monospace;font-size:36px;letter-spacing:6px;color:#0f6b3a;font-weight:800;">${verifyCode}</h2>
+    // Send verification email — await so we can report failures
+    const gmailUser = process.env.GMAIL_USER
+    const gmailPass = process.env.GMAIL_APP_PASSWORD
+
+    if (!gmailUser || !gmailPass) {
+      logger.error('GMAIL_USER or GMAIL_APP_PASSWORD not configured — cannot send verification email')
+      return res.status(500).json({ message: 'Email service is not configured. Please contact the administrator.' })
+    }
+
+    try {
+      const transporter = getEmailTransporter()
+      await transporter.sendMail({
+        from: `"GawaHelper" <${gmailUser}>`,
+        to: email,
+        subject: 'Verify your GawaHelper account',
+        html: `
+          <div style="max-width:480px;margin:0 auto;font-family:'Segoe UI',Arial,sans-serif;background:#ffffff;border:1px solid #e8e8e8;border-radius:12px;overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#0f6b3a 0%,#1a9956 100%);padding:28px 24px;text-align:center;">
+              <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">GawaHelper</h1>
+              <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Email Verification</p>
+            </div>
+            <div style="padding:32px 24px;">
+              <p style="margin:0 0 24px;color:#555;font-size:14px;">Enter this code to verify your email. Valid for <strong>15 minutes</strong>.</p>
+              <div style="background:#f0faf4;border:2px dashed #1a9956;border-radius:10px;padding:20px;text-align:center;">
+                <p style="margin:0 0 6px;color:#777;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Verification Code</p>
+                <h2 style="margin:0;font-family:'Courier New',monospace;font-size:36px;letter-spacing:6px;color:#0f6b3a;font-weight:800;">${verifyCode}</h2>
+              </div>
             </div>
           </div>
-        </div>
-      `,
-    }).catch(err => logger.error('Resend verification background failure:', err.message));
-
-    return res.json({ message: 'Verification code resent to your email' })
+        `,
+      })
+      return res.json({ message: 'Verification code resent to your email' })
+    } catch (err) {
+      logger.error('Resend verification email failure:', err.message)
+      return res.status(500).json({ message: 'Failed to send verification email. Please try again later.' })
+    }
   } catch (error) {
     logger.error('API Error:', error.message)
     return res.status(500).json({ message: 'An internal server error occurred.' })
