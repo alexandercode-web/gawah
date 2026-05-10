@@ -6,7 +6,7 @@ dotenv.config()
 
 export const rpName = 'GawaHelper'
 export const rpID = process.env.RP_ID || 'localhost'
-export const origin = process.env.CLIENT_ORIGIN || \`http://\${rpID}:5173\`
+export const origin = process.env.CLIENT_ORIGIN || `http://${rpID}:5173`
 
 const authRateLimitMax = Number(
   process.env.AUTH_RATE_LIMIT_MAX || (process.env.NODE_ENV === 'production' ? 10 : 1000)
