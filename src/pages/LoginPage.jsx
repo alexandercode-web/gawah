@@ -117,9 +117,9 @@ function LoginPage({onLogin, loading, error: authError}) {
               </div>
 
               {error && (
-                <div className="auth-error-box">
-                  <span className="error-icon">!</span>
-                  <span className="error-message">{error}</span>
+                <div className="auth-error-box" style={{ background: '#fef2f2', border: '1px solid #fee2e2', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <span className="error-icon" style={{ background: '#ef4444', color: 'white', width: '20px', height: '20px', borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: '0.75rem', fontWeight: 'bold', flexShrink: 0 }}>!</span>
+                  <span className="error-message" style={{ color: '#991b1b', fontSize: '0.875rem', fontWeight: '500' }}>{error}</span>
                 </div>
               )}
 

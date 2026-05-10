@@ -1,3 +1,35 @@
+/* Feedback Banner */
+.feedback {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  z-index: 9999;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  animation: slideDown 0.3s ease-out;
+  max-width: 90%;
+  text-align: center;
+}
+
+@keyframes slideDown {
+  from { top: -50px; opacity: 0; }
+  to { top: 20px; opacity: 1; }
+}
+
+.feedback.ok {
+  background: #10b981;
+  color: white;
+}
+
+.feedback.error {
+  background: #ef4444;
+  color: white;
+}
+
 /* v1.0.1 - Profile Fix */
 .app-shell {
   --tone-dark: #ffffff;

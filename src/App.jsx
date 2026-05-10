@@ -205,6 +205,32 @@ function App() {
     }
   }
 
+  async function handleLogin(payload) {
+    setError('')
+    try {
+      await loginUser(payload)
+      return true
+    } catch (err) {
+      setError(err.message)
+      return false
+    }
+  }
+
+  async function handleRegister(payload) {
+    setError('')
+    setMessage('')
+    try {
+      const data = await registerUser(payload)
+      if (data && data.user) {
+        setMessage('Account created successfully! Please verify your email.')
+      }
+      return data
+    } catch (err) {
+      setError(err.message)
+      return false
+    }
+  }
+
   async function forgotPassword(payload) {
     setMessage('')
     setError('')
@@ -449,7 +475,7 @@ function App() {
             token ? (
               <Navigate to="/home" replace />
             ) : (
-              <LoginPage onLogin={loginUser} loading={authLoading} error={error} />
+              <LoginPage onLogin={handleLogin} loading={authLoading} error={error} />
             )
           }
         />
@@ -459,7 +485,7 @@ function App() {
             token ? (
               <Navigate to="/home" replace />
             ) : (
-              <RegisterPage onRegister={registerUser} loading={authLoading} error={error} />
+              <RegisterPage onRegister={handleRegister} loading={authLoading} error={error} />
             )
           }
         />

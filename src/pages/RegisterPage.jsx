@@ -22,8 +22,10 @@ function RegisterPage({onRegister, loading, error}) {
   const cleanEmail = form.email.trim()
   const passwordsMatch = form.password && form.password === form.confirmPassword
   const meetsPasswordMinimum = passwordScore >= 2
-  const canSubmit = Boolean(cleanName && cleanEmail && passwordsMatch && meetsPasswordMinimum && acceptedTerms && !loading)
+  const [successMessage, setSuccessMessage] = useState('')
   const displayError = localError || error
+  const canSubmit = Boolean(cleanName && cleanEmail && passwordsMatch && meetsPasswordMinimum && acceptedTerms && !loading && !successMessage)
+  const displaySuccess = successMessage
 
   function onChange(event) {
     const { name, value } = event.target
@@ -71,6 +73,8 @@ function RegisterPage({onRegister, loading, error}) {
 
     if (!success) return
 
+    setSuccessMessage('Account created successfully! Redirecting to verification...')
+
     // Remove any previous face-login enrollment from this device on new registrations.
     localStorage.removeItem('gh_face_login_opt_in')
     localStorage.removeItem('gh_face_login_email')
@@ -96,9 +100,16 @@ function RegisterPage({onRegister, loading, error}) {
               </div>
 
               {displayError && (
-                <div className="auth-error-box">
-                  <span className="error-icon">!</span>
-                  <span className="error-message">{displayError}</span>
+                <div className="auth-error-box" style={{ background: '#fef2f2', border: '1px solid #fee2e2', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <span className="error-icon" style={{ background: '#ef4444', color: 'white', width: '20px', height: '20px', borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: '0.75rem', fontWeight: 'bold', flexShrink: 0 }}>!</span>
+                  <span className="error-message" style={{ color: '#991b1b', fontSize: '0.875rem', fontWeight: '500' }}>{displayError}</span>
+                </div>
+              )}
+
+              {displaySuccess && (
+                <div className="auth-success-box" style={{ background: '#f0fdf4', border: '1px solid #dcfce7', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <span className="success-icon" style={{ background: '#22c55e', color: 'white', width: '20px', height: '20px', borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: '0.75rem', fontWeight: 'bold', flexShrink: 0 }}>✓</span>
+                  <span className="success-message" style={{ color: '#166534', fontSize: '0.875rem', fontWeight: '500' }}>{displaySuccess}</span>
                 </div>
               )}
 
