@@ -427,7 +427,11 @@ router.get('/me', async (req, res) => {
 })
 
 router.post('/logout', (req, res) => {
-  res.clearCookie('gh_token')
+  res.clearCookie('gh_token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'none',
+  })
   return res.json({ success: true, message: 'Logged out successfully' })
 })
 
