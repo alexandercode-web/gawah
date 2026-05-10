@@ -33,7 +33,7 @@ const __dirname = path.dirname(__filename)
 
 app.use(helmet({ crossOriginResourcePolicy: false }))
 app.use(cors({
-  origin: true,
+  origin: ['https://gawah.vercel.app', 'https://backend-production-073c.up.railway.app', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
@@ -79,9 +79,18 @@ app.use('/api', adminRoutes)    // For /public/stats
 app.use('/api', usersRoutes)    // For /home/summary
 app.use('/api', tasksRoutes)    // For /tasks, /categories
 
-app.use((error, _req, res, _next) => {
-  logger.error('API Error:', error.message)
-  res.status(500).json({ message: 'An internal server error occurred.' })
+app.use((error, req, res, _next) => {
+  logger.error('API Error:', {
+    message: error.message,
+    stack: error.stack,
+    path: req.path,
+    method: req.method
+  })
+  res.status(500).json({ 
+    message: 'An internal server error occurred.', 
+    error: error.message,
+    path: req.path
+  })
 })
 
 async function startServer(retries = 5) {
