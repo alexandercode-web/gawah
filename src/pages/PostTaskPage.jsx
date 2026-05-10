@@ -104,6 +104,24 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
     }
   }, [])
 
+  // Automatic pricing suggestions
+  useEffect(() => {
+    const cat = normalizeCategory(form.category)
+    let suggestedPrice = ''
+
+    if (cat.includes('delivery')) suggestedPrice = '35'
+    else if (cat.includes('tutor')) suggestedPrice = '100'
+    else if (cat.includes('errand')) suggestedPrice = '50'
+    else if (cat.includes('moving')) suggestedPrice = '150'
+    else if (cat.includes('other')) suggestedPrice = '40'
+
+    // Only auto-fill if the user hasn't typed anything yet or if switching from one default to another
+    setForm(prev => ({
+      ...prev,
+      budget: prev.budget === '' || ['25','35','40','50','100','150'].includes(prev.budget) ? suggestedPrice : prev.budget
+    }))
+  }, [form.category])
+
   const categoryNames = useMemo(() => {
     const fromApi = categories
       .map((category) => category.CategoryName)
@@ -546,18 +564,51 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
             </article>
 
             <article className="post-card">
-              <label htmlFor="task-budget">Budget</label>
-              <p className="post-card-hint">Set your task budget. This is the amount you're willing to pay the helper.</p>
-              <input
-                id="task-budget"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="Enter amount (e.g. 50)"
-                value={form.budget}
-                onChange={(e) => updateField('budget', e.target.value)}
-                required
-              />
+              <label htmlFor="task-budget">Budget (₱)</label>
+              <p className="post-card-hint">Select a suggested amount or type your own. Prices are auto-calculated for fairness.</p>
+              
+              <div className="budget-input-wrapper">
+                <input
+                  id="task-budget"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="Enter or select amount"
+                  value={form.budget}
+                  onChange={(e) => updateField('budget', e.target.value)}
+                  onFocus={(e) => {
+                    // Optional: auto-select text on focus
+                    e.target.select()
+                  }}
+                  list="budget-options"
+                  required
+                />
+                <datalist id="budget-options">
+                  <option value="25" label="Quick Errand" />
+                  <option value="35" label="Standard Delivery" />
+                  <option value="55" label="Complex Task" />
+                  <option value="100" label="Tutoring / Specialty" />
+                  <option value="150" label="Moving / Heavy" />
+                </datalist>
+                <div className="budget-currency-symbol">₱</div>
+              </div>
+
+              {form.budget && !isNaN(form.budget) && (
+                <div className="price-breakdown-box">
+                  <div className="price-row">
+                    <span>Helper Earnings</span>
+                    <span>₱{Math.floor(Number(form.budget) * 0.9)}</span>
+                  </div>
+                  <div className="price-row">
+                    <span>Protection Fee</span>
+                    <span>₱{Math.ceil(Number(form.budget) * 0.1)}</span>
+                  </div>
+                  <div className="price-total-row">
+                    <span>Total Payment</span>
+                    <strong>₱{form.budget}</strong>
+                  </div>
+                </div>
+              )}
             </article>
 
             <article className="post-card payment-method-card">

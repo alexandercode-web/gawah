@@ -23,15 +23,15 @@ function drawBarChart(canvas, labels, datasets, title) {
 
   ctx.clearRect(0, 0, w, h)
 
-  const padding = { top: 40, right: 20, bottom: 60, left: 60 }
+  const padding = { top: 45, right: 20, bottom: 40, left: 50 }
   const chartW = w - padding.left - padding.right
   const chartH = h - padding.top - padding.bottom
 
   // Title
-  ctx.fillStyle = '#e2e8f0'
-  ctx.font = 'bold 14px Inter, system-ui, sans-serif'
+  ctx.fillStyle = '#f8fafc'
+  ctx.font = 'bold 15px Inter, system-ui, sans-serif'
   ctx.textAlign = 'center'
-  ctx.fillText(title, w / 2, 24)
+  ctx.fillText(title, w / 2, 28)
 
   if (!labels.length) {
     ctx.fillStyle = '#64748b'
@@ -43,27 +43,27 @@ function drawBarChart(canvas, labels, datasets, title) {
   const allValues = datasets.flatMap(d => d.data)
   const maxVal = Math.max(...allValues, 1)
 
-  // Grid lines
-  const gridCount = Math.min(Math.ceil(maxVal), 5)
-  ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)'
+  // Grid
+  const gridCount = 4
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.08)'
   ctx.lineWidth = 1
-  ctx.fillStyle = '#94a3b8'
-  ctx.font = '11px Inter, system-ui, sans-serif'
+  ctx.fillStyle = '#64748b'
+  ctx.font = '500 10px Inter, system-ui, sans-serif'
   ctx.textAlign = 'right'
 
   for (let i = 0; i <= gridCount; i++) {
     const y = padding.top + chartH - (i / gridCount) * chartH
-    const val = (i / gridCount) * Math.ceil(maxVal)
+    const val = (i / gridCount) * maxVal
     ctx.beginPath()
     ctx.moveTo(padding.left, y)
     ctx.lineTo(w - padding.right, y)
     ctx.stroke()
-    ctx.fillText(Number(val.toFixed(1)).toLocaleString(), padding.left - 8, y + 4)
+    ctx.fillText(Math.round(val).toLocaleString(), padding.left - 10, y + 4)
   }
 
   // Bars
   const groupWidth = chartW / labels.length
-  const barWidth = Math.min(groupWidth * 0.6 / datasets.length, 40)
+  const barWidth = Math.min(groupWidth * 0.7 / datasets.length, 32)
   const totalBarsWidth = barWidth * datasets.length
   const groupOffset = (groupWidth - totalBarsWidth) / 2
 
@@ -73,49 +73,32 @@ function drawBarChart(canvas, labels, datasets, title) {
       const x = padding.left + i * groupWidth + groupOffset + di * barWidth
       const y = padding.top + chartH - barH
 
-      // Bar gradient
       const gradient = ctx.createLinearGradient(x, y, x, y + barH)
       gradient.addColorStop(0, dataset.color || CHART_COLORS[di])
-      gradient.addColorStop(1, (dataset.color || CHART_COLORS[di]) + '80')
+      gradient.addColorStop(1, (dataset.color || CHART_COLORS[di]) + '90')
       ctx.fillStyle = gradient
 
-      // Rounded top
-      const radius = Math.min(4, barWidth / 2)
+      const r = Math.min(6, barWidth / 2)
       ctx.beginPath()
       ctx.moveTo(x, y + barH)
-      ctx.lineTo(x, y + radius)
-      ctx.quadraticCurveTo(x, y, x + radius, y)
-      ctx.lineTo(x + barWidth - radius, y)
-      ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + radius)
+      ctx.lineTo(x, y + r)
+      ctx.quadraticCurveTo(x, y, x + r, y)
+      ctx.lineTo(x + barWidth - r, y)
+      ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + r)
       ctx.lineTo(x + barWidth, y + barH)
       ctx.closePath()
       ctx.fill()
     })
   })
 
-  // X labels
+  // Labels
   ctx.fillStyle = '#94a3b8'
-  ctx.font = '10px Inter, system-ui, sans-serif'
+  ctx.font = '500 10px Inter, system-ui, sans-serif'
   ctx.textAlign = 'center'
   labels.forEach((label, i) => {
     const x = padding.left + i * groupWidth + groupWidth / 2
-    ctx.fillText(label, x, h - padding.bottom + 18)
+    ctx.fillText(label, x, h - 12)
   })
-
-  // Legend
-  if (datasets.length > 1) {
-    let legendX = padding.left
-    const legendY = h - 12
-    ctx.font = '10px Inter, system-ui, sans-serif'
-    datasets.forEach((ds, i) => {
-      ctx.fillStyle = ds.color || CHART_COLORS[i]
-      ctx.fillRect(legendX, legendY - 8, 10, 10)
-      ctx.fillStyle = '#94a3b8'
-      ctx.textAlign = 'left'
-      ctx.fillText(ds.label, legendX + 14, legendY)
-      legendX += ctx.measureText(ds.label).width + 30
-    })
-  }
 }
 
 function drawDoughnutChart(canvas, labels, data, colors, title) {
@@ -132,10 +115,10 @@ function drawDoughnutChart(canvas, labels, data, colors, title) {
   ctx.clearRect(0, 0, w, h)
 
   // Title
-  ctx.fillStyle = '#e2e8f0'
-  ctx.font = 'bold 14px Inter, system-ui, sans-serif'
+  ctx.fillStyle = '#f8fafc'
+  ctx.font = 'bold 15px Inter, system-ui, sans-serif'
   ctx.textAlign = 'center'
-  ctx.fillText(title, w / 2, 24)
+  ctx.fillText(title, w / 2, 28)
 
   const total = data.reduce((s, v) => s + v, 0)
   if (!total) {
@@ -146,46 +129,83 @@ function drawDoughnutChart(canvas, labels, data, colors, title) {
   }
 
   const cx = w / 2
-  const cy = (h / 2) + 10
-  const outerR = Math.min(cx, cy) - 50
-  const innerR = outerR * 0.55
+  const cy = (h / 2) - 10
+  const outerR = Math.min(cx, cy) - 40
+  const innerR = outerR * 0.65
 
   let startAngle = -Math.PI / 2
   data.forEach((val, i) => {
     const sliceAngle = (val / total) * Math.PI * 2
+    
+    // Slice path
     ctx.beginPath()
     ctx.arc(cx, cy, outerR, startAngle, startAngle + sliceAngle)
     ctx.arc(cx, cy, innerR, startAngle + sliceAngle, startAngle, true)
     ctx.closePath()
-    ctx.fillStyle = colors[i % colors.length]
+    
+    // Gradient fill
+    const sliceMidAngle = startAngle + sliceAngle / 2
+    const gradient = ctx.createLinearGradient(
+      cx + Math.cos(startAngle) * innerR,
+      cy + Math.sin(startAngle) * innerR,
+      cx + Math.cos(startAngle + sliceAngle) * outerR,
+      cy + Math.sin(startAngle + sliceAngle) * outerR
+    )
+    gradient.addColorStop(0, colors[i % colors.length])
+    gradient.addColorStop(1, colors[i % colors.length] + 'dd')
+    
+    ctx.fillStyle = gradient
     ctx.fill()
+    
+    // Slice border (for separation)
+    ctx.strokeStyle = '#0f172a'
+    ctx.lineWidth = 2
+    ctx.stroke()
+    
     startAngle += sliceAngle
   })
 
+  // Center visual
+  // Outer circle for the hole
+  ctx.beginPath()
+  ctx.arc(cx, cy, innerR - 2, 0, Math.PI * 2)
+  ctx.fillStyle = '#1e293b'
+  ctx.fill()
+
   // Center text
-  ctx.fillStyle = '#e2e8f0'
-  ctx.font = 'bold 20px Inter, system-ui, sans-serif'
+  ctx.fillStyle = '#f8fafc'
+  ctx.font = 'bold 24px Inter, system-ui, sans-serif'
   ctx.textAlign = 'center'
-  ctx.fillText(total.toLocaleString(), cx, cy + 2)
+  ctx.fillText(total.toLocaleString(), cx, cy + 5)
+  
   ctx.fillStyle = '#94a3b8'
-  ctx.font = '11px Inter, system-ui, sans-serif'
-  ctx.fillText('Total', cx, cy + 18)
+  ctx.font = '600 10px Inter, system-ui, sans-serif'
+  ctx.fillText('TASKS', cx, cy + 20)
 
   // Legend
-  const legendStartY = h - 30
-  const itemW = w / Math.min(labels.length, 4)
+  const legendY = h - 45
+  const itemsPerRow = Math.min(labels.length, 3)
+  const itemW = (w - 40) / itemsPerRow
+  
   labels.forEach((label, i) => {
-    if (i >= 8) return
-    const row = Math.floor(i / 4)
-    const col = i % 4
-    const lx = 12 + col * itemW
-    const ly = legendStartY + row * 18
+    if (i >= 6) return
+    const row = Math.floor(i / itemsPerRow)
+    const col = i % itemsPerRow
+    const lx = 20 + col * itemW
+    const ly = legendY + row * 22
+    
+    // Color dot
+    ctx.beginPath()
+    ctx.arc(lx + 5, ly - 4, 4, 0, Math.PI * 2)
     ctx.fillStyle = colors[i % colors.length]
-    ctx.fillRect(lx, ly - 8, 8, 8)
-    ctx.fillStyle = '#94a3b8'
-    ctx.font = '10px Inter, system-ui, sans-serif'
+    ctx.fill()
+    
+    // Label
+    const cleanLabel = label.replace(/([A-Z])/g, ' $1').trim()
+    ctx.fillStyle = '#cbd5e1'
+    ctx.font = '500 11px Inter, system-ui, sans-serif'
     ctx.textAlign = 'left'
-    ctx.fillText(`${label} (${data[i]})`, lx + 12, ly)
+    ctx.fillText(`${cleanLabel} (${data[i]})`, lx + 15, ly)
   })
 }
 
@@ -202,15 +222,15 @@ function drawLineChart(canvas, labels, data, color, title) {
 
   ctx.clearRect(0, 0, w, h)
 
-  const padding = { top: 40, right: 20, bottom: 50, left: 50 }
+  const padding = { top: 45, right: 30, bottom: 40, left: 50 }
   const chartW = w - padding.left - padding.right
   const chartH = h - padding.top - padding.bottom
 
   // Title
-  ctx.fillStyle = '#e2e8f0'
-  ctx.font = 'bold 14px Inter, system-ui, sans-serif'
+  ctx.fillStyle = '#f8fafc'
+  ctx.font = 'bold 15px Inter, system-ui, sans-serif'
   ctx.textAlign = 'center'
-  ctx.fillText(title, w / 2, 24)
+  ctx.fillText(title, w / 2, 28)
 
   if (!data.length) {
     ctx.fillStyle = '#64748b'
@@ -222,69 +242,79 @@ function drawLineChart(canvas, labels, data, color, title) {
   const maxVal = Math.max(...data, 1)
 
   // Grid
-  const gridCount = Math.min(Math.ceil(maxVal), 4)
-  ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)'
+  const gridCount = 4
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.08)'
   ctx.lineWidth = 1
-  ctx.fillStyle = '#94a3b8'
-  ctx.font = '11px Inter, system-ui, sans-serif'
+  ctx.fillStyle = '#64748b'
+  ctx.font = '500 10px Inter, system-ui, sans-serif'
   ctx.textAlign = 'right'
 
   for (let i = 0; i <= gridCount; i++) {
     const y = padding.top + chartH - (i / gridCount) * chartH
-    const val = (i / gridCount) * Math.ceil(maxVal)
     ctx.beginPath()
     ctx.moveTo(padding.left, y)
     ctx.lineTo(w - padding.right, y)
     ctx.stroke()
-    ctx.fillText(Number(val.toFixed(1)).toLocaleString(), padding.left - 8, y + 4)
+    ctx.fillText(Math.round((i / gridCount) * maxVal).toLocaleString(), padding.left - 10, y + 4)
   }
 
-  // Area fill
   const points = data.map((val, i) => ({
     x: padding.left + (i / Math.max(data.length - 1, 1)) * chartW,
     y: padding.top + chartH - (val / maxVal) * chartH,
   }))
 
-  const gradient = ctx.createLinearGradient(0, padding.top, 0, padding.top + chartH)
-  gradient.addColorStop(0, color + '40')
-  gradient.addColorStop(1, color + '05')
-
+  // Area
+  const areaGradient = ctx.createLinearGradient(0, padding.top, 0, padding.top + chartH)
+  areaGradient.addColorStop(0, color + '30')
+  areaGradient.addColorStop(1, color + '00')
+  
   ctx.beginPath()
   ctx.moveTo(points[0].x, padding.top + chartH)
-  points.forEach(p => ctx.lineTo(p.x, p.y))
+  points.forEach((p, i) => {
+    if (i === 0) ctx.lineTo(p.x, p.y)
+    else {
+      const prev = points[i - 1]
+      const cp1x = prev.x + (p.x - prev.x) / 2
+      ctx.bezierCurveTo(cp1x, prev.y, cp1x, p.y, p.x, p.y)
+    }
+  })
   ctx.lineTo(points[points.length - 1].x, padding.top + chartH)
   ctx.closePath()
-  ctx.fillStyle = gradient
+  ctx.fillStyle = areaGradient
   ctx.fill()
 
   // Line
   ctx.beginPath()
+  points.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(p.x, p.y)
+    else {
+      const prev = points[i - 1]
+      const cp1x = prev.x + (p.x - prev.x) / 2
+      ctx.bezierCurveTo(cp1x, prev.y, cp1x, p.y, p.x, p.y)
+    }
+  })
   ctx.strokeStyle = color
-  ctx.lineWidth = 2.5
-  ctx.lineJoin = 'round'
-  ctx.lineCap = 'round'
-  points.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)))
+  ctx.lineWidth = 3
   ctx.stroke()
 
-  // Dots
+  // Points
   points.forEach(p => {
     ctx.beginPath()
-    ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2)
-    ctx.fillStyle = color
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2)
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2)
     ctx.fillStyle = '#0f172a'
     ctx.fill()
+    ctx.strokeStyle = color
+    ctx.lineWidth = 2
+    ctx.stroke()
   })
 
-  // X labels
+  // Labels
   ctx.fillStyle = '#94a3b8'
-  ctx.font = '10px Inter, system-ui, sans-serif'
+  ctx.font = '500 10px Inter, system-ui, sans-serif'
   ctx.textAlign = 'center'
   labels.forEach((label, i) => {
     const x = padding.left + (i / Math.max(labels.length - 1, 1)) * chartW
-    ctx.fillText(label, x, h - padding.bottom + 18)
+    ctx.fillText(label, x, h - 12)
   })
 }
 
