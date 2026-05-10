@@ -61,6 +61,7 @@ function isPurchaseRelatedTask(categoryName, title, description) {
 
 
 function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = false, onLogout}) {
+  // VERSION: 2.1.0-AUTO-PRICING
   const navigate = useNavigate()
   const navRef = useRef(null)
   const [error, setError] = useState('')
@@ -138,6 +139,28 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
   useEffect(() => {
     setForm(prev => ({ ...prev, budget: String(budgetDetails.total) }))
   }, [budgetDetails.total])
+
+  // Automatic item pricing
+  useEffect(() => {
+    const item = form.itemName.trim().toLowerCase()
+    const commonItems = {
+      'pares': '65',
+      'siomai rice': '50',
+      'chicken meal': '135',
+      'milk tea': '120',
+      'corndog': '60',
+      'burger': '45',
+      'coke': '25',
+      'water': '20',
+      'school supplies': '50',
+      'photocopy': '10',
+    }
+
+    const foundPrice = Object.entries(commonItems).find(([key]) => item.includes(key))?.[1]
+    if (foundPrice) {
+      setForm(prev => ({ ...prev, productPrice: foundPrice }))
+    }
+  }, [form.itemName])
 
   const categoryNames = useMemo(() => {
     const fromApi = categories
@@ -487,15 +510,28 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
           {isPurchaseTask && (
             <article className="post-card">
               <label htmlFor="task-item-name">Item Name (for delivery tasks)</label>
-              <p className="post-card-hint">Example: chicken meal, milk tea, school supplies. We use this to estimate item cost as a range.</p>
+              <p className="post-card-hint">Try typing "Pares", "Milk Tea", or "Chicken Meal" for automatic pricing.</p>
               <input
                 id="task-item-name"
                 type="text"
                 placeholder="Enter item name"
                 value={form.itemName}
                 onChange={(event) => updateField('itemName', event.target.value)}
+                list="common-items-list"
                 maxLength={100}
               />
+              <datalist id="common-items-list">
+                <option value="Pares" />
+                <option value="Siomai Rice" />
+                <option value="Chicken Meal" />
+                <option value="Milk Tea" />
+                <option value="Corndog" />
+                <option value="Burger" />
+                <option value="Coke / Sprite" />
+                <option value="Bottled Water" />
+                <option value="School Supplies" />
+              </datalist>
+
               <label htmlFor="task-item-quantity">Quantity</label>
               <input
                 id="task-item-quantity"
@@ -506,17 +542,13 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
                 value={form.itemQuantity}
                 onChange={(event) => updateField('itemQuantity', event.target.value)}
               />
+
               <label htmlFor="task-product-price">Estimated Item Cost (₱)</label>
-              <p className="post-card-hint">The helper will use this for the purchase. This is added to the total budget.</p>
-              <input
-                id="task-product-price"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="e.g. 150"
-                value={form.productPrice}
-                onChange={(event) => updateField('productPrice', event.target.value)}
-              />
+              <p className="post-card-hint">Automatically set based on item name. You can still edit if needed.</p>
+              <div className="budget-input-wrapper read-only mini">
+                 <div className="budget-display-value mini">₱{form.productPrice || '0'}</div>
+                 <div className="budget-status-tag">Locked</div>
+              </div>
             </article>
           )}
 
