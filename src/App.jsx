@@ -32,8 +32,20 @@ function App() {
 
   const { user, login: loginUser, logout, register: registerUser, updateUser: updateCurrentUser, loading: authLoading } = useAuth()
   const [message, setMessage] = useState('')
-  const token = user ? true : false
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    // Show welcome banner once per session when user is logged in
+    if (user && !sessionStorage.getItem('gh_welcome_shown')) {
+      setMessage(`Welcome back, ${user.FullName.split(' ')[0]}!`)
+      sessionStorage.setItem('gh_welcome_shown', '1')
+      // Banner stays for 4 seconds
+      const timer = setTimeout(() => setMessage(''), 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [user])
+
+  const token = user ? true : false
   const [taskPosting, setTaskPosting] = useState(false)
   const [homeSummary, setHomeSummary] = useState(null)
   const [homeLoading, setHomeLoading] = useState(true)
@@ -278,7 +290,7 @@ function App() {
   return (
     <main className="app-shell">
       {showBanner && (
-        <div className={`feedback ${error ? 'error' : 'ok'}`}>
+        <div className={`feedback ${error ? 'error' : (bannerText.includes('Welcome') ? 'welcome' : 'ok')}`}>
           {bannerText}
         </div>
       )}

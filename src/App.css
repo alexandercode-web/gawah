@@ -28,6 +28,13 @@
   color: white;
 }
 
+.feedback.welcome {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 15px 35px rgba(99, 102, 241, 0.3);
+}
+
 .feedback.error {
   background: rgba(239, 68, 68, 0.95);
   color: white;
