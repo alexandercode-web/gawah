@@ -207,11 +207,18 @@ function App() {
 
   async function handleLogin(payload) {
     setError('')
+    setMessage('')
     try {
       await loginUser(payload)
       return true
     } catch (err) {
       setError(err.message)
+      if (err.message.toLowerCase().includes('verify your email')) {
+        // Automatically redirect to verification page after a short delay
+        setTimeout(() => {
+          navigate(`/verify-email?email=${encodeURIComponent(payload.email)}`)
+        }, 2000)
+      }
       return false
     }
   }
@@ -222,7 +229,7 @@ function App() {
     try {
       const data = await registerUser(payload)
       if (data && data.user) {
-        setMessage('Account created successfully! Please verify your email.')
+        setMessage('Account created! Please check your email for the verification code.')
       }
       return data
     } catch (err) {
