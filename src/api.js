@@ -21,7 +21,7 @@ async function request(path, options = {}) {
       credentials: 'include',
     })
   } catch {
-    throw new Error('Cannot connect to API server. Start app with npm run dev.')
+    throw new Error('Unable to reach the server. Please check your internet connection or try again in a few moments.')
   }
 
   const raw = await response.text()
