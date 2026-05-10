@@ -201,14 +201,15 @@ router.get('/my/tasks', requireAuth, async (req, res) => {
       SELECT DISTINCT
         t.TaskID, t.Title, t.Description, t.Location, t.TaskTime, t.Budget, t.Status, t.CreatedAt,
         u.FullName AS PosterName, u.ProfileImage AS PosterProfileImage,
-        c.CategoryName
+        c.CategoryName,
+        CASE WHEN t.UserID = ? THEN 'Posted' ELSE 'Applied' END AS TaskType
       FROM Tasks t
       INNER JOIN Users u ON t.UserID = u.UserID
       LEFT JOIN Categories c ON t.CategoryID = c.CategoryID
       LEFT JOIN TaskAssignments ta ON ta.TaskID = t.TaskID
       WHERE t.UserID = ? OR ta.HelperID = ?
       ORDER BY t.CreatedAt DESC
-    `, [req.user.id, req.user.id])
+    `, [req.user.id, req.user.id, req.user.id])
     return res.json(result)
   } catch (error) {
     logger.error('API Error:', error.message)
