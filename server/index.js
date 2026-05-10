@@ -72,11 +72,12 @@ app.use('/api/messages', messagesRoutes)
 app.use('/api/admin', adminRoutes)
 
 // Fallback mountings for legacy/non-prefixed paths used by the frontend
-app.use('/api', authRoutes)     // For /me
-app.use('/api', tasksRoutes)    // For /tasks, /categories
-app.use('/api', usersRoutes)    // For /home/summary
+// Specific routes MUST come before generic /:id routes
+app.use('/api', authRoutes)     // For /me, /login, etc.
 app.use('/api', messagesRoutes) // For /notifications
 app.use('/api', adminRoutes)    // For /public/stats
+app.use('/api', usersRoutes)    // For /home/summary
+app.use('/api', tasksRoutes)    // For /tasks, /categories
 
 app.use((error, _req, res, _next) => {
   logger.error('API Error:', error.message)

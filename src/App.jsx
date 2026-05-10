@@ -139,8 +139,8 @@ function App() {
 
     loadUnreadNotificationState()
 
-    const sseUrl = api.getSseUrl(token)
-    const eventSource = new EventSource(sseUrl)
+    const sseUrl = api.getSseUrl()
+    const eventSource = new EventSource(sseUrl, { withCredentials: true })
 
     eventSource.addEventListener('notification', (event) => {
       try {

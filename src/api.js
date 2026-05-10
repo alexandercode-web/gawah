@@ -342,8 +342,8 @@ export const api = {
       body: JSON.stringify({ newPassword }),
     })
   },
-  getSseUrl(token) {
-    return `${API_BASE_URL}/sse/stream?token=${token}`
+  getSseUrl() {
+    return `${API_BASE_URL}/sse/stream`
   },
   adminCreateUser(payload) {
     return request('/admin/users', {

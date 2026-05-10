@@ -188,8 +188,8 @@ router.post('/verify-authentication', async (req, res) => {
 
       res.cookie('gh_token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: true,
+        sameSite: 'none',
         maxAge: 86400000 // 1 day
       })
 
@@ -357,8 +357,8 @@ router.post('/login', async (req, res) => {
 
     res.cookie('gh_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'none',
       maxAge: 86400000 // 1 day
     })
 
@@ -778,8 +778,8 @@ router.post('/admin-login', authLimiter, async (req, res) => {
 
     res.cookie('gh_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'none',
       maxAge: 86400000 // 1 day
     })
 
