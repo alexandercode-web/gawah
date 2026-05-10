@@ -14,14 +14,15 @@ function AdminLoginPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [tempUser, setTempUser] = useState(null)
 
+  const { login } = useAuth()
+
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
     setError('')
 
     try {
-      const res = await api.adminLogin(form)
-      localStorage.setItem('gh_token', res.token)
+      const res = await login(form, true)
       
       if (res.mustChangePassword) {
         setMustChangePassword(true)
@@ -29,10 +30,8 @@ function AdminLoginPage() {
         return
       }
 
-      localStorage.setItem('gh_user', JSON.stringify({ ...res.admin, IsAdmin: 1 }))
-      
-      // Force reload to update app state
-      window.location.href = '/admin'
+      // Navigate to admin page — AuthContext already has the user set
+      navigate('/admin', { replace: true })
     } catch (err) {
       setError(err.message || 'Login failed')
     } finally {
@@ -56,7 +55,7 @@ function AdminLoginPage() {
     try {
       await api.adminChangePassword(newPassword)
       localStorage.setItem('gh_user', JSON.stringify(tempUser))
-      window.location.href = '/admin'
+      navigate('/admin', { replace: true })
     } catch (err) {
       setError(err.message || 'Failed to change password')
     } finally {
