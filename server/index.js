@@ -20,7 +20,6 @@ import tasksRoutes from './routes/tasks.js'
 import usersRoutes from './routes/users.js'
 import messagesRoutes from './routes/messages.js'
 import adminRoutes from './routes/admin.js'
-import { requireAdmin } from './auth.js'
 
 import { authLimiter } from './config.js'
 
@@ -72,30 +71,6 @@ app.use('/api/users', usersRoutes)
 app.use('/api/messages', messagesRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/reports', adminRoutes)
-
-// TEMPORARY: Reset Data Route (Delete after use)
-app.post('/api/admin/reset-all-data', requireAdmin, async (req, res) => {
-  const { query } = await import('./db.js')
-  try {
-    console.log('--- ADMIN RESET TRIGGERED ---')
-    await query('DELETE FROM Disputes')
-    await query('DELETE FROM Reports')
-    await query('DELETE FROM Notifications')
-    await query('DELETE FROM Reviews')
-    await query('DELETE FROM Messages')
-    await query('DELETE FROM Payments')
-    await query('DELETE FROM TaskAssignments')
-    await query('DELETE FROM Tasks')
-    await query('DELETE FROM PasswordResetCodes')
-    await query('DELETE FROM WebAuthnCredentials')
-    await query('DELETE FROM AuditLogs')
-    await query("DELETE FROM Users WHERE Email != 'admin@gawahelper.com'")
-    await query("UPDATE Users SET WalletBalance = 0, Rating = NULL, CancellationCount = 0 WHERE Email = 'admin@gawahelper.com'")
-    res.json({ message: 'All records cleared successfully!' })
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
 
 // Fallback mountings for legacy/non-prefixed paths used by the frontend
 // Specific routes MUST come before generic /:id routes
