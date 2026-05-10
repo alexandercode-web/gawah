@@ -139,7 +139,12 @@ function App() {
 
     loadUnreadNotificationState()
 
-    const sseUrl = api.getSseUrl()
+    let sseUrl = api.getSseUrl()
+    // EventSource doesn't support custom headers, so pass token as query param fallback
+    const storedToken = localStorage.getItem('gh_token')
+    if (storedToken && storedToken !== 'undefined') {
+      sseUrl += `?token=${encodeURIComponent(storedToken)}`
+    }
     const eventSource = new EventSource(sseUrl, { withCredentials: true })
 
     eventSource.addEventListener('notification', (event) => {

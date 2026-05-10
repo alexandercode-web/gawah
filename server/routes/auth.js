@@ -363,6 +363,7 @@ router.post('/login', async (req, res) => {
     })
 
     return res.json({
+      token,
       user: {
         UserID: user.UserID,
         FullName: user.FullName,
@@ -801,6 +802,7 @@ router.post('/admin-login', authLimiter, async (req, res) => {
     })
 
     return res.json({
+      token,
       admin: {
         AdminID: admin.UserID,
         Username: admin.Email,

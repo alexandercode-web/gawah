@@ -6,6 +6,12 @@ async function request(path, options = {}) {
     ...(options.headers || {}),
   }
 
+  // Fallback: use Bearer token from localStorage when cross-domain cookies are blocked (e.g. Incognito)
+  const storedToken = localStorage.getItem('gh_token')
+  if (storedToken && storedToken !== 'undefined') {
+    headers['Authorization'] = `Bearer ${storedToken}`
+  }
+
   let response
 
   try {

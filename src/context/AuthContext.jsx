@@ -31,6 +31,10 @@ export function AuthProvider({ children }) {
     let data
     if (isAdminRoute) {
       data = await api.adminLogin(payload)
+      // Store token for Bearer header fallback (cross-domain cookie may be blocked)
+      if (data && data.token) {
+        localStorage.setItem('gh_token', data.token)
+      }
       if (data && data.admin) {
         // Map Admin to user structure
         const mappedUser = {
@@ -45,6 +49,10 @@ export function AuthProvider({ children }) {
       return data
     } else {
       data = await api.login(payload)
+      // Store token for Bearer header fallback (cross-domain cookie may be blocked)
+      if (data && data.token) {
+        localStorage.setItem('gh_token', data.token)
+      }
       if (data && data.user) {
         setUser(data.user)
         localStorage.setItem('gh_user', JSON.stringify(data.user))
