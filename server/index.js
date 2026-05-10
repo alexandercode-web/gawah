@@ -64,12 +64,19 @@ app.get('/api/sse/stream', (req, res) => {
   }
 })
 
-// Mount modular routes
-app.use('/api', authRoutes)
-app.use('/api', tasksRoutes)
-app.use('/api', usersRoutes)
-app.use('/api', messagesRoutes)
-app.use('/api', adminRoutes)
+// Mount modular routes with prefixes
+app.use('/api/auth', authRoutes)
+app.use('/api/tasks', tasksRoutes)
+app.use('/api/users', usersRoutes)
+app.use('/api/messages', messagesRoutes)
+app.use('/api/admin', adminRoutes)
+
+// Fallback mountings for legacy/non-prefixed paths used by the frontend
+app.use('/api', authRoutes)     // For /me
+app.use('/api', tasksRoutes)    // For /tasks, /categories
+app.use('/api', usersRoutes)    // For /home/summary
+app.use('/api', messagesRoutes) // For /notifications
+app.use('/api', adminRoutes)    // For /public/stats
 
 app.use((error, _req, res, _next) => {
   logger.error('API Error:', error.message)

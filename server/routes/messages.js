@@ -134,7 +134,7 @@ router.patch('/mark-as-read/:taskId', requireAuth, async (req, res) => {
   }
 })
 
-router.get('/', requireAuth, async (req, res) => {
+router.get('/notifications', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id
 

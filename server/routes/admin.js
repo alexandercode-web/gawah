@@ -10,7 +10,7 @@ import logger from '../logger.js'
 
 const router = express.Router()
 
-router.get('/stats', async (_, res) => {
+router.get('/public/stats', async (_, res) => {
   try {
     const result = await query(`
       SELECT

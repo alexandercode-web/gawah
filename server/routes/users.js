@@ -10,7 +10,7 @@ import logger from '../logger.js'
 
 const router = express.Router()
 
-router.get('/summary', requireAuth, async (req, res) => {
+router.get('/home/summary', requireAuth, async (req, res) => {
   try {
     const metricsResult = await query(`
       SELECT

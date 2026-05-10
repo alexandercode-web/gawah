@@ -14,7 +14,7 @@ import { Buffer } from 'node:buffer'
 
 const router = express.Router()
 
-router.get('/', async (_, res) => {
+router.get('/categories', async (_, res) => {
   try {
     const result = await query('SELECT CategoryID, CategoryName FROM Categories ORDER BY CategoryName')
     return res.json(result)
