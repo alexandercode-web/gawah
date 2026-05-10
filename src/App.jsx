@@ -257,12 +257,12 @@ function App() {
           element={
             token ? (
               <HomePage
-               
+                user={user}
+                onLogout={logout}
                 summary={homeSummary}
                 loading={homeLoading}
                 error={homeError}
                 myTasks={myTasks}
-               
                 hasUnreadNotifications={hasUnreadNotifications}
               />
             ) : (
@@ -275,13 +275,13 @@ function App() {
           element={
             token ? (
               <MyTasksPage
-               
+                user={user}
+                onLogout={logout}
                 summary={homeSummary}
                 loading={myTasksLoading}
                 error={myTasksError || homeError}
                 myTasks={myTasks}
                 hasUnreadNotifications={hasUnreadNotifications}
-               
               />
             ) : (
               <Navigate to="/login" replace />
@@ -293,11 +293,11 @@ function App() {
           element={
             token ? (
               <PostTaskPage
-               
+                user={user}
+                onLogout={logout}
                 onSubmitTask={postTask}
                 posting={taskPosting}
                 hasUnreadNotifications={hasUnreadNotifications}
-               
               />
             ) : (
               <Navigate to="/login" replace />
@@ -309,13 +309,13 @@ function App() {
           element={
             token ? (
               <MyTasksPage
-               
+                user={user}
+                onLogout={logout}
                 summary={homeSummary}
                 loading={myTasksLoading}
                 error={myTasksError || homeError}
                 myTasks={myTasks}
                 hasUnreadNotifications={hasUnreadNotifications}
-               
               />
             ) : (
               <Navigate to="/login" replace />
@@ -327,9 +327,9 @@ function App() {
           element={
             token ? (
               <TaskDetailsPage
-               
+                user={user}
+                onLogout={logout}
                 hasUnreadNotifications={hasUnreadNotifications}
-               
                 onTaskUpdated={refreshTaskData}
               />
             ) : (
@@ -342,11 +342,11 @@ function App() {
           element={
             token ? (
               <NotificationsPage
+                user={user}
+                onLogout={logout}
                 summary={homeSummary}
                 myTasks={myTasks}
-               
                 onNotificationsRead={() => setHasUnreadNotifications(false)}
-               
               />
             ) : (
               <Navigate to="/login" replace />
@@ -358,9 +358,9 @@ function App() {
           element={
             token ? (
               <MessagesPage
-               
+                user={user}
+                onLogout={logout}
                 hasUnreadNotifications={hasUnreadNotifications}
-               
               />
             ) : (
               <Navigate to="/login" replace />
@@ -372,11 +372,10 @@ function App() {
           element={
             token ? (
               <ProfilePage
-               
+                user={user}
+                onLogout={logout}
                 summary={homeSummary}
                 myTasks={myTasks}
-               
-               
                 hasUnreadNotifications={hasUnreadNotifications}
               />
             ) : (
@@ -389,8 +388,8 @@ function App() {
           element={
             token ? (
               <SettingsPage
-               
-               
+                user={user}
+                onLogout={logout}
               />
             ) : (
               <Navigate to="/login" replace />
