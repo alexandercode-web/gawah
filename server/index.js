@@ -33,10 +33,18 @@ const __dirname = path.dirname(__filename)
 
 app.use(helmet({ crossOriginResourcePolicy: false }))
 app.use(cors({
-  origin: ['https://gawah.vercel.app', 'https://backend-production-073c.up.railway.app', 'http://localhost:5173'],
+  origin: (origin, callback) => {
+    const allowed = ['https://gawah.vercel.app', 'https://backend-production-073c.up.railway.app', 'http://localhost:5173']
+    if (!origin || allowed.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['set-cookie']
 }))
 app.use(express.json({ limit: '5mb' }))
 app.use(express.urlencoded({ limit: '5mb', extended: true }))
