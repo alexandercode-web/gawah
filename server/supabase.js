@@ -11,7 +11,20 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1)
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+import ws from 'ws'
+
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: false
+  },
+  global: {
+    fetch: fetch,
+    headers: { 'x-my-custom-header': 'gawah' }
+  },
+  realtime: {
+    transport: ws
+  }
+})
 
 // Ensure 'uploads' bucket exists
 supabase.storage.listBuckets().then(({ data: buckets }) => {
