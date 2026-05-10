@@ -501,6 +501,7 @@ const keyMap = {
   helperreviewcount: 'HelperReviewCount',
   completionrate: 'CompletionRate',
   searchmatch: 'SearchMatch',
+  tasktype: 'TaskType',
   type: 'Type'
 };
 
