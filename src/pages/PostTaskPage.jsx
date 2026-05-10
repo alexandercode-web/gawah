@@ -45,128 +45,26 @@ const campusLocationZones = [
 const campusGateNumbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9',]
 const annexBuildingNumbers = ['1', '2']
 
-const itemPriceRangeCatalog = [
-  { keywords: ['chicken meal', 'fried chicken', 'chicken'], min: 70, max: 120 },
-  { keywords: ['milk tea', 'milktea', 'boba'], min: 50, max: 100 },
-  { keywords: ['burger', 'burger meal'], min: 55, max: 110 },
-  { keywords: ['rice meal', 'meal'], min: 55, max: 105 },
-  { keywords: ['printing', 'print', 'printout', 'photocopy', 'xerox'], min: 5, max: 20 },
-  { keywords: ['coffee'], min: 35, max: 80 },
-  { keywords: ['water', 'mineral water'], min: 10, max: 25 },
-  { keywords: ['notebook', 'school supplies', 'supplies'], min: 20, max: 90 },
-]
 
-function roundToNearestFive(value) {
-  return Math.round(value / 5) * 5
-}
 
 function normalizeCategory(name) {
   return String(name || '').trim().toLowerCase()
 }
 
-function getCurrentTimeMultiplier() {
-  const hour = new Date().getHours()
-  const isPeakHour = (hour >= 7 && hour < 10) || (hour >= 11 && hour < 14) || (hour >= 17 && hour < 21)
-  return isPeakHour ? 1.15 : 1
-}
 
-function getTaskDurationMinutes(categoryName) {
-  const key = normalizeCategory(categoryName)
-
-  if (key.includes('moving')) return 85
-  if (key.includes('delivery')) return 45
-  if (key.includes('tech')) return 60
-  if (key.includes('tutor')) return 75
-  if (key.includes('clean')) return 70
-  if (key.includes('errand') || key.includes('purchas')) return 40
-  return 50
-}
-
-function getZoneTravelMinutes(zoneName, gateNumber = '', annexNumber = '') {
-  const baseMinutesByZone = {
-    'Gate': 4,
-    'Library Area': 2,
-    'Canteen Area': 3,
-    'Annex Building': 3,
-    'Basic Ed Building': 4,
-    'CBA Building': 3,
-    'Maritime Building': 4,
-    'Cashier Area': 3,
-    'Registrar Area': 3,
-    'Sao Office Area': 3,
-    'Gym': 4,
-    'Other Campus Spot': 6,
-  }
-
-  const base = baseMinutesByZone[zoneName] || 4
-  if (zoneName === 'Gate') {
-    if (gateNumber === '9') return base + 2
-    if (gateNumber === '1') return base - 1
-    return base
-  }
-
-  if (zoneName === 'Annex Building' && annexNumber === '2') {
-    return base + 1
-  }
-
-  return base
-}
-
-function formatDuration(totalMinutes) {
-  if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) return '0 min'
-
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-  if (hours === 0) return `${minutes} min`
-  if (minutes === 0) return `${hours} hr`
-  return `${hours} hr ${minutes} min`
-}
 
 function isPurchaseRelatedTask(categoryName, title, description) {
   const categoryKey = normalizeCategory(categoryName)
   return categoryKey.includes('delivery')
 }
 
-function isPrintRelatedTask(categoryName, title, description, itemName) {
-  const categoryKey = normalizeCategory(categoryName)
-  const text = normalizeCategory(`${title || ''} ${description || ''} ${itemName || ''}`)
 
-  return categoryKey.includes('print') || /print|printing|photocopy|xerox|document/.test(text)
-}
-
-function estimateItemCostRange(itemName) {
-  const text = normalizeCategory(itemName)
-  if (!text) return null
-
-  const matched = itemPriceRangeCatalog.find((entry) =>
-    entry.keywords.some((keyword) => text.includes(normalizeCategory(keyword)))
-  )
-
-  if (matched) {
-    return {
-      min: matched.min,
-      max: matched.max,
-      source: 'catalog',
-    }
-  }
-
-  return {
-    min: 40,
-    max: 140,
-    source: 'fallback',
-  }
-}
-
-function formatPesoRange(minValue, maxValue) {
-  return `₱${Number(minValue).toLocaleString()}–₱${Number(maxValue).toLocaleString()}`
-}
 
 function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = false, onLogout}) {
   const navigate = useNavigate()
   const navRef = useRef(null)
   const [error, setError] = useState('')
   const [categories, setCategories] = useState([])
-  const [showPricingHelp, setShowPricingHelp] = useState(false)
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -273,10 +171,6 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
     if (!Number.isFinite(parsed) || parsed <= 0) return 1
     return Math.min(parsed, 99)
   }, [form.itemQuantity])
-  const isPrintTask = useMemo(
-    () => isPrintRelatedTask(form.category, form.title, form.description, form.itemName),
-    [form.category, form.title, form.description, form.itemName]
-  )
   const combinedLocation = useMemo(() => {
     const zone = form.locationZone.trim()
     const gate = form.gateNumber.trim()
@@ -293,67 +187,7 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
     if (!landmark) return zoneLabel
     return `${zoneLabel} - ${landmark}`
   }, [form.locationZone, form.gateNumber, form.annexNumber, form.landmark])
-  const travelTimeMinutes = useMemo(() => {
-    if (!form.locationZone) return 0
-    return getZoneTravelMinutes(form.locationZone, form.gateNumber, form.annexNumber)
-  }, [form.locationZone, form.gateNumber, form.annexNumber])
-  const taskDurationMinutes = useMemo(() => getTaskDurationMinutes(form.category), [form.category])
-  const itemCostRange = useMemo(() => {
-    if (!isPurchaseTask || !form.itemName.trim()) return null
-    const baseRange = estimateItemCostRange(form.itemName)
-    if (!baseRange) return null
-
-    return {
-      ...baseRange,
-      min: baseRange.min * itemQuantity,
-      max: baseRange.max * itemQuantity,
-    }
-  }, [form.itemName, isPurchaseTask, itemQuantity])
-  const serviceFeeRange = useMemo(() => {
-    const timeMultiplier = getCurrentTimeMultiplier()
-    const studentMultiplier = isPrintTask ? 0.42 : 0.68
-    const baseFee = isPrintTask ? 8 : 15
-    const travelCost = travelTimeMinutes * (isPrintTask ? 0.5 : 1)
-    const durationCost = taskDurationMinutes * (isPrintTask ? 0.45 : 0.9)
-    const estimate = (baseFee + travelCost + durationCost) * timeMultiplier * studentMultiplier
-
-    return {
-      min: Math.max(isPrintTask ? 10 : 20, roundToNearestFive(estimate * 0.9)),
-      max: Math.max(isPrintTask ? 15 : 30, roundToNearestFive(estimate * 1.1)),
-    }
-  }, [isPrintTask, travelTimeMinutes, taskDurationMinutes])
-  const totalEstimatedPaymentRange = useMemo(() => {
-    if (itemCostRange) {
-      return {
-        min: itemCostRange.min + serviceFeeRange.min,
-        max: itemCostRange.max + serviceFeeRange.max,
-      }
-    }
-
-    return {
-      min: serviceFeeRange.min,
-      max: serviceFeeRange.max,
-    }
-  }, [itemCostRange, serviceFeeRange])
-  const suggestedBudget = useMemo(() => {
-    const midpoint = (totalEstimatedPaymentRange.min + totalEstimatedPaymentRange.max) / 2
-    return Math.max(20, roundToNearestFive(midpoint))
-  }, [totalEstimatedPaymentRange])
-
   const isReadyToPost = filledFields === requiredFieldCount && !posting
-
-  useEffect(() => {
-    if (!showPricingHelp) return
-
-    function handleKeyDown(event) {
-      if (event.key === 'Escape') {
-        setShowPricingHelp(false)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [showPricingHelp])
 
   useEffect(() => {
     if (navRef.current) {
@@ -449,17 +283,6 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
         budget: budgetValue,
         categoryId,
         paymentMethod: form.paymentMethod,
-        pricingEstimateMeta: {
-          errandType: form.errandType,
-          tutoringCourse: form.tutoringCourse.trim(),
-          tutoringYear: form.tutoringYear,
-          movingType: form.movingType.trim(),
-          itemName: form.itemName.trim(),
-          itemQuantity,
-          itemCostRange,
-          serviceFeeRange,
-          totalEstimatedPaymentRange,
-        },
       })
 
       // Reset form after successful submission
@@ -497,13 +320,7 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
           <span className="page-eyebrow">Create request</span>
           <h1>Post a Task</h1>
           <p>Share the job clearly so the right helper can act on it quickly.</p>
-          <button
-            type="button"
-            className="post-task-help-btn"
-            onClick={() => setShowPricingHelp(true)}
-          >
-            How pricing suggestions work
-          </button>
+
         </div>
 
         <div className="post-task-progress-card" aria-label="Task completion status">
@@ -728,80 +545,19 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
               />
             </article>
 
-            <article className="post-card price-suggestion-card" aria-label="Estimated task price">
-              <div className="price-suggestion-header">
-                <div>
-                  <p className="field-label">Suggested Starting Price</p>
-                  <p className="post-card-hint">Campus walking-distance pricing only. Always shown as a range.</p>
-                </div>
-                <strong className="price-suggestion-value">{formatPesoRange(totalEstimatedPaymentRange.min, totalEstimatedPaymentRange.max)}</strong>
-              </div>
-              <div className="price-suggestion-breakdown">
-                {isPurchaseTask && (
-                  <>
-                    <div>
-                      <span>Item name</span>
-                      <strong>{form.itemName.trim() || 'Not specified'}</strong>
-                    </div>
-                    <div>
-                      <span>Quantity</span>
-                      <strong>{itemQuantity}</strong>
-                    </div>
-                    <div>
-                      <span>Estimated Item Cost</span>
-                      <strong>{itemCostRange ? formatPesoRange(itemCostRange.min, itemCostRange.max) : 'Enter item name for estimate'}</strong>
-                    </div>
-                  </>
-                )}
-                <div>
-                  <span>Estimated Service Fee</span>
-                  <strong>{formatPesoRange(serviceFeeRange.min, serviceFeeRange.max)}</strong>
-                </div>
-                <div>
-                  <span>Total Estimated Payment</span>
-                  <strong>{formatPesoRange(totalEstimatedPaymentRange.min, totalEstimatedPaymentRange.max)}</strong>
-                </div>
-                <div>
-                  <span>Travel time</span>
-                  <strong>{formatDuration(travelTimeMinutes)}</strong>
-                </div>
-                <div>
-                  <span>Task duration</span>
-                  <strong>{formatDuration(taskDurationMinutes)}</strong>
-                </div>
-                <div>
-                  <span>Task time</span>
-                  <strong>Shown after helper accepts</strong>
-                </div>
-              </div>
-              <div className="price-suggestion-actions">
-                <span className="price-suggestion-note">Final amount can be adjusted after the actual receipt is submitted.</span>
-              </div>
-            </article>
-
             <article className="post-card">
               <label htmlFor="task-budget">Budget</label>
-              <p className="post-card-hint">Set your exact task budget. The engine suggests: <strong>₱{suggestedBudget}</strong></p>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input
-                  id="task-budget"
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="0"
-                  value={form.budget}
-                  onChange={(e) => updateField('budget', e.target.value)}
-                  required
-                  style={{ flex: 1 }}
-                />
-                <button 
-                  type="button" 
-                  className="home-export-btn" 
-                  onClick={() => updateField('budget', String(suggestedBudget))}
-                >
-                  Use Suggestion
-                </button>
-              </div>
+              <p className="post-card-hint">Set your task budget. This is the amount you're willing to pay the helper.</p>
+              <input
+                id="task-budget"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="Enter amount (e.g. 50)"
+                value={form.budget}
+                onChange={(e) => updateField('budget', e.target.value)}
+                required
+              />
             </article>
 
             <article className="post-card payment-method-card">
@@ -894,14 +650,7 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
                   </div>
                 </>
               )}
-              <div>
-                <dt>Task Time</dt>
-                <dd>Shown after helper accepts</dd>
-              </div>
-              <div>
-                <dt>Est. Payment Range</dt>
-                <dd>{formatPesoRange(totalEstimatedPaymentRange.min, totalEstimatedPaymentRange.max)}</dd>
-              </div>
+
               <div>
                 <dt>Budget</dt>
                 <dd>{previewBudget}</dd>
@@ -929,86 +678,7 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
         </aside>
       </div>
 
-      {showPricingHelp && (
-        <div
-          className="pricing-help-overlay"
-          role="presentation"
-          onClick={() => setShowPricingHelp(false)}
-        >
-          <section
-            className="pricing-help-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="pricing-help-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header className="pricing-help-header">
-              <div>
-                <span className="pricing-help-eyebrow">Task pricing</span>
-                <h2 id="pricing-help-title">How the system predicts pricing</h2>
-              </div>
-              <button
-                type="button"
-                className="pricing-help-close"
-                aria-label="Close pricing help"
-                onClick={() => setShowPricingHelp(false)}
-              >
-                ×
-              </button>
-            </header>
 
-            <div className="pricing-help-content">
-              <p>
-                The system can estimate a suggested task price using historical task data and a pricing model.
-                It looks at the task details and nearby demand to produce a fair starting point.
-              </p>
-
-              <div className="pricing-help-grid">
-                <article>
-                  <h3>Input features</h3>
-                  <ul>
-                    <li>Task type, such as printing, queuing, or purchasing</li>
-                    <li>Distance between the user and the task location</li>
-                    <li>Estimated time required to complete the task</li>
-                    <li>Time of day, including peak and off-peak periods</li>
-                    <li>Current demand, based on active tasks</li>
-                    <li>Helper rating or reputation</li>
-                  </ul>
-                </article>
-
-                <article>
-                  <h3>How it works</h3>
-                  <p>
-                    The model learns patterns from past tasks. Short tasks close by usually suggest a lower
-                    price, while longer tasks with greater distance or higher demand suggest a higher price.
-                  </p>
-                  <p>
-                    A simple baseline can start with a rule-based formula before machine learning is added:
-                  </p>
-                  <div className="pricing-help-formula">Price = Base Fee + (Time × Rate) + (Distance × Rate) + Demand Adjustment</div>
-                </article>
-
-                <article>
-                  <h3>User flow</h3>
-                  <ul>
-                    <li>The system suggests a task price automatically</li>
-                    <li>The user can accept the suggestion or edit it manually</li>
-                    <li>More task data makes future suggestions better over time</li>
-                  </ul>
-                </article>
-
-                <article>
-                  <h3>Goal</h3>
-                  <p>
-                    Build a pricing system that is fair for posters and helpers, adapts to real-time conditions,
-                    and keeps improving as more data is collected.
-                  </p>
-                </article>
-              </div>
-            </div>
-          </section>
-        </div>
-      )}
 
       <nav ref={navRef} className="nav-hint" aria-label="Bottom navigation">
         <div className="sidebar-header">
