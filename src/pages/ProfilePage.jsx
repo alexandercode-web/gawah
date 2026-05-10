@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 
@@ -26,7 +27,7 @@ function getProfileImageSrc(profileImage) {
   return `${origin}/${encodeURI(normalized.replace(/^\.\/?/, ''))}`
 }
 
-function ProfilePage({ user, summary, myTasks, onUserUpdate, onLogout, hasUnreadNotifications = false }) {
+function ProfilePage({user, summary, myTasks, onUserUpdate, onLogout, hasUnreadNotifications = false}) {
   const navigate = useNavigate()
   const [ratingSummary, setRatingSummary] = useState({ rating: 0, reviewCount: 0 })
   const [avatarBusy, setAvatarBusy] = useState(false)
@@ -107,10 +108,10 @@ function ProfilePage({ user, summary, myTasks, onUserUpdate, onLogout, hasUnread
     }
   }, [])
 
-  const userBaseRating = Number(user?.Rating || 5.0)
+  const hasRating = (ratingSummary.rating > 0) || (user?.Rating != null && Number(user.Rating) > 0)
   const displayedRating = (Number.isFinite(ratingSummary.rating) && ratingSummary.rating > 0)
     ? ratingSummary.rating
-    : (userBaseRating > 0 ? userBaseRating : 5.0)
+    : (user?.Rating != null ? Number(user.Rating) : null)
 
   useEffect(() => {
     if (!showCameraModal || !cameraStream || !videoRef.current) return
@@ -339,7 +340,9 @@ function ProfilePage({ user, summary, myTasks, onUserUpdate, onLogout, hasUnread
               <p className="admin-badge">Platform Administrator</p>
             ) : (
               <p>
-                <span className="star-icon full" style={{ fontSize: '1rem' }}>★</span> {displayedRating.toFixed(1)} • {ratingSummary.reviewCount} reviews • {stats.completedTasks} tasks completed
+                {hasRating && displayedRating != null
+                  ? <><span className="star-icon full" style={{ fontSize: '1rem' }}>★</span> {displayedRating.toFixed(1)} ({ratingSummary.reviewCount} reviews) • {stats.completedTasks} tasks completed</>
+                  : <><span style={{ fontStyle: 'italic', color: '#9ca3af' }}>New user</span> • {stats.completedTasks} tasks completed</>}
               </p>
             )}
             <p className="profile-email-line">{user?.Email || 'No email available'}</p>

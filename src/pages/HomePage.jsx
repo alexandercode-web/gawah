@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
-function HomePage({ user, summary, myTasks = [], loading, error, hasUnreadNotifications = false, onLogout }) {
+function HomePage({user, summary, myTasks = [], loading, error, hasUnreadNotifications = false, onLogout}) {
   const navigate = useNavigate()
   const [activeCategory, setActiveCategory] = useState('All')
   const [showStatusGuide, setShowStatusGuide] = useState(false)
@@ -53,7 +54,8 @@ function HomePage({ user, summary, myTasks = [], loading, error, hasUnreadNotifi
     return source.map((task, index) => ({
       id: task.TaskID || task.id || `task-${index}`,
       title: task.Title || task.title || 'Untitled Task',
-      rating: Number(task.AvgRating || task.rating || 5.0),
+      rating: task.PosterRating != null ? Number(task.PosterRating) : (task.AvgRating != null ? Number(task.AvgRating) : null),
+      reviewCount: task.PosterReviewCount || task.ReviewCount || 0,
       requester: task.PosterName || task.requester || user?.FullName || 'User',
       location: task.Location || task.location || 'No location',
       schedule: task.ScheduledTime || task.schedule || 'Today',
@@ -324,6 +326,18 @@ function HomePage({ user, summary, myTasks = [], loading, error, hasUnreadNotifi
         ))}
       </section>
 
+      <div className="home-dashboard-head" style={{ marginTop: '32px' }}>
+        <div>
+          <h2>Tasks near you</h2>
+          <p>Find tasks posted by fellow students</p>
+        </div>
+        <div className="home-dashboard-actions">
+          <button type="button" className="home-export-btn" onClick={() => navigate('/browse')}>
+            Browse All
+          </button>
+        </div>
+      </div>
+
       <section className="task-cards">
         {loading && <p className="loading">Loading tasks...</p>}
 
@@ -349,8 +363,15 @@ function HomePage({ user, summary, myTasks = [], loading, error, hasUnreadNotifi
                 </div>
 
                 <div className="task-rating">
-                  <span className="star">★</span>
-                  <span className="rating">{task.rating.toFixed(1)}</span>
+                  {task.rating != null ? (
+                    <>
+                      <span className="star">★</span>
+                      <span className="rating">{task.rating.toFixed(1)}</span>
+                      <span className="review-count" style={{color: '#9ca3af', fontSize: '12px', marginLeft: '2px'}}>({task.reviewCount})</span>
+                    </>
+                  ) : (
+                    <span className="rating" style={{fontStyle: 'italic', color: '#9ca3af'}}>New user</span>
+                  )}
                   <span className="requester">• {task.requester}</span>
                 </div>
 
@@ -465,6 +486,15 @@ function HomePage({ user, summary, myTasks = [], loading, error, hasUnreadNotifi
             </svg>
           </span>
           <span>Home</span>
+        </button>
+        <button type="button" className="nav-item" onClick={() => navigate('/browse')}>
+          <span className="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+              <circle cx="11" cy="11" r="8" fill="none" stroke="currentColor" strokeWidth="2" />
+              <path d="m21 21-4.3-4.3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </span>
+          <span>Browse</span>
         </button>
         <button type="button" className="nav-item" onClick={() => navigate('/tasks')}>
           <span className="nav-icon" aria-hidden="true">

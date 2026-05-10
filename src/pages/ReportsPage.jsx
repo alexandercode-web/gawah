@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 
@@ -329,7 +330,7 @@ const ACTIVITY_LABELS = {
 
 /* ──────────────────────────── Component ──────────────────────────── */
 
-function ReportsPage({ user, hasUnreadNotifications = false, onLogout }) {
+function ReportsPage({user, hasUnreadNotifications = false, onLogout}) {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('summary')
   const [loading, setLoading] = useState(true)

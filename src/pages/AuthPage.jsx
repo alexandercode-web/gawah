@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { Link } from 'react-router-dom'
 
-function AuthPage({ onLogin, loading, error }) {
+function AuthPage({onLogin, loading, error}) {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)

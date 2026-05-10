@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
 
-function MessagesPage({ user, onLogout }) {
+function MessagesPage({user, onLogout}) {
   const navigate = useNavigate()
   const { otherUserId, taskId } = useParams()
   const messagesEndRef = useRef(null)
@@ -124,24 +125,30 @@ function MessagesPage({ user, onLogout }) {
   }, [messages])
 
   useEffect(() => {
-    if (!task || !chatReady) return
+    if (!taskId) return
 
-    const interval = setInterval(async () => {
-      try {
-        const updatedTask = await api.getTask(taskId)
-        if (updatedTask) {
-          setTask((prevTask) => (prevTask && {
-            ...prevTask,
-            Status: updatedTask.Status,
-          }))
-        }
-      } catch (error) {
-        console.error('Failed to refresh task status:', error)
+    const handleSseMessage = (e) => {
+      const msg = e.detail
+      if (Number(msg.taskId) === Number(taskId)) {
+        loadData(false)
       }
-    }, 3000)
+    }
 
-    return () => clearInterval(interval)
-  }, [taskId, chatReady, task])
+    const handleSseNotification = (e) => {
+      const notif = e.detail
+      if (Number(notif.taskId) === Number(taskId)) {
+        loadData(false)
+      }
+    }
+
+    window.addEventListener('gh_sse_message', handleSseMessage)
+    window.addEventListener('gh_sse_notification', handleSseNotification)
+    
+    return () => {
+      window.removeEventListener('gh_sse_message', handleSseMessage)
+      window.removeEventListener('gh_sse_notification', handleSseNotification)
+    }
+  }, [taskId])
 
   const getSafeAttachmentUrl = (data) => {
     if (!data) return ''

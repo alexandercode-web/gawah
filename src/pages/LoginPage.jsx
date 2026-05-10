@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { Link } from 'react-router-dom'
 import { startAuthentication } from '@simplewebauthn/browser'
 import { api } from '../api'
 
-function LoginPage({ onLogin, loading, error: authError }) {
+function LoginPage({onLogin, loading, error: authError}) {
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)

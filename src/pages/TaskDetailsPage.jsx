@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
 
@@ -154,7 +155,7 @@ function formatCountdownTime(startTime, durationMinutes, now = Date.now()) {
   return `${minutes}:${String(seconds).padStart(2, '0')}`
 }
 
-function TaskDetailsPage({ user, hasUnreadNotifications = false, onLogout, onTaskUpdated }) {
+function TaskDetailsPage({user, hasUnreadNotifications = false, onLogout, onTaskUpdated}) {
   const navigate = useNavigate()
   const { taskId } = useParams()
   const proofInputRef = useRef(null)
@@ -176,6 +177,9 @@ function TaskDetailsPage({ user, hasUnreadNotifications = false, onLogout, onTas
   const [reviewComment, setReviewComment] = useState('')
   const [submittingReview, setSubmittingReview] = useState(false)
   const [approvingProof, setApprovingProof] = useState(false)
+  const [rejectingProof, setRejectingProof] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
+  const [showRejectForm, setShowRejectForm] = useState(false)
   const [confirmingPayment, setConfirmingPayment] = useState(false)
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
   const [clockTick, setClockTick] = useState(() => Date.now())
@@ -309,8 +313,14 @@ function TaskDetailsPage({ user, hasUnreadNotifications = false, onLogout, onTas
   )
   const runningCountdownLabel = useMemo(() => {
     const duration = getTaskDurationMinutes(task?.CategoryName)
-    return formatCountdownTime(task?.HelperAcceptedAt, duration, clockTick)
-  }, [task?.HelperAcceptedAt, task?.CategoryName, clockTick])
+    // Use the later of TaskTime and AcceptedAt as the countdown start
+    const acceptedMs = task?.HelperAcceptedAt ? new Date(task.HelperAcceptedAt).getTime() : 0
+    const taskTimeMs = task?.TaskTime ? new Date(task.TaskTime).getTime() : 0
+    const startRef = new Date(Math.max(acceptedMs, taskTimeMs)).toISOString()
+    return formatCountdownTime(startRef, duration, clockTick)
+  }, [task?.HelperAcceptedAt, task?.TaskTime, task?.CategoryName, clockTick])
+
+  const posterPaymentConfirmed = useMemo(() => Number(task?.PosterPaymentConfirmed || 0) === 1, [task?.PosterPaymentConfirmed])
 
   useEffect(() => {
     const completed = String(task?.Status || '').toLowerCase().includes('complete')
@@ -550,6 +560,25 @@ function TaskDetailsPage({ user, hasUnreadNotifications = false, onLogout, onTas
     }
   }
 
+  async function rejectProof() {
+    if (!task) return
+
+    setRejectingProof(true)
+    setError('')
+    setSuccess('')
+    try {
+      await api.rejectTaskProof(task.TaskID, rejectReason.trim())
+      setSuccess('Proof rejected. Helper has been notified to resubmit.')
+      setShowRejectForm(false)
+      setRejectReason('')
+      await loadTask()
+    } catch (err) {
+      setError(err.message || 'Unable to reject proof right now')
+    } finally {
+      setRejectingProof(false)
+    }
+  }
+
   async function confirmPaymentReceived() {
     if (!task || !isAssignedHelper || paymentConfirmed) return
 
@@ -578,6 +607,28 @@ function TaskDetailsPage({ user, hasUnreadNotifications = false, onLogout, onTas
       setTimeout(() => {
         navigate('/tasks?tab=Completed')
       }, 1500)
+    } catch (err) {
+      setError(err.message || 'Unable to confirm payment right now')
+    } finally {
+      setConfirmingPayment(false)
+    }
+  }
+
+  async function confirmPaymentSent() {
+    if (!task || !isOwnTask || posterPaymentConfirmed) return
+
+    setConfirmingPayment(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      await api.confirmPaymentSent(task.TaskID)
+      const refreshed = await api.getTask(task.TaskID)
+      setTask(refreshed)
+      setSuccess('Payment sent confirmed. Awaiting helper confirmation.')
+      if (typeof onTaskUpdated === 'function') {
+        await onTaskUpdated()
+      }
     } catch (err) {
       setError(err.message || 'Unable to confirm payment right now')
     } finally {
@@ -720,7 +771,11 @@ function TaskDetailsPage({ user, hasUnreadNotifications = false, onLogout, onTas
                 </div>
                 <div>
                   <p className="task-poster-name">{task.PosterName || user?.FullName || 'User'}</p>
-                  <p className="task-poster-rating">★ {Number(task.PosterRating || 5.0).toFixed(1)} rating</p>
+                  <p className="task-poster-rating">
+                    {task.PosterRating != null 
+                      ? `★ ${Number(task.PosterRating).toFixed(1)} (${task.PosterReviewCount || 0} reviews)`
+                      : <span style={{fontStyle: 'italic', color: '#9ca3af'}}>New user</span>}
+                  </p>
                 </div>
               </div>
             </article>
@@ -743,7 +798,11 @@ function TaskDetailsPage({ user, hasUnreadNotifications = false, onLogout, onTas
                   </div>
                   <div>
                     <p className="task-poster-name">{task.HelperName || user?.FullName || 'You'}</p>
-                    <p className="task-poster-rating">★ {Number(task.HelperRating || 5.0).toFixed(1)} rating</p>
+                    <p className="task-poster-rating">
+                      {task.HelperRating != null
+                        ? `★ ${Number(task.HelperRating).toFixed(1)} (${task.HelperReviewCount || 0} reviews)`
+                        : <span style={{fontStyle: 'italic', color: '#9ca3af'}}>New user</span>}
+                    </p>
                   </div>
                 </div>
               </article>
@@ -779,11 +838,70 @@ function TaskDetailsPage({ user, hasUnreadNotifications = false, onLogout, onTas
                     type="button"
                     className="task-approve-proof-btn"
                     onClick={approveProof}
-                    disabled={approvingProof}
+                    disabled={approvingProof || rejectingProof}
                   >
-                    {approvingProof ? '⏳ Approving...' : '✓ Proof Approved'}
+                    {approvingProof ? '⏳ Approving...' : '✓ Approve Proof'}
+                  </button>
+                  <button
+                    type="button"
+                    className="task-approve-proof-btn"
+                    style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', marginTop: '8px' }}
+                    onClick={() => setShowRejectForm(!showRejectForm)}
+                    disabled={approvingProof || rejectingProof}
+                  >
+                    ✗ Reject Proof
                   </button>
                 </div>
+                {showRejectForm && (
+                  <div style={{ marginTop: '12px' }}>
+                    <textarea
+                      placeholder="Optional: tell the helper why you're rejecting the proof..."
+                      value={rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                      rows={3}
+                      maxLength={255}
+                      style={{ width: '100%', borderRadius: '8px', padding: '10px', border: '1px solid #d1d5db', fontSize: '14px', resize: 'vertical' }}
+                    />
+                    <button
+                      type="button"
+                      className="task-approve-proof-btn"
+                      style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', marginTop: '8px' }}
+                      onClick={rejectProof}
+                      disabled={rejectingProof}
+                    >
+                      {rejectingProof ? '⏳ Rejecting...' : 'Confirm Rejection'}
+                    </button>
+                  </div>
+                )}
+              </article>
+            )}
+
+            {isOwnTask && isProofApproved && !posterPaymentConfirmed && (
+              <article className="task-details-card task-review-proof-card">
+                <div className="task-review-proof-header">
+                  <div className="task-review-proof-icon">💳</div>
+                  <div>
+                    <h3>Send Payment</h3>
+                    <p>Proof has been approved. Please send the payment of P{formattedBudget} via {task.PaymentMethod || 'Cash'} and confirm below.</p>
+                  </div>
+                </div>
+                <div className="proof-actions">
+                  <button
+                    type="button"
+                    className="task-approve-proof-btn"
+                    onClick={confirmPaymentSent}
+                    disabled={confirmingPayment}
+                  >
+                    {confirmingPayment ? '⏳ Confirming...' : 'Confirm Payment Sent'}
+                  </button>
+                </div>
+              </article>
+            )}
+
+            {isOwnTask && isProofApproved && posterPaymentConfirmed && !paymentConfirmed && (
+              <article className="task-details-card">
+                <h3>Payment Sent</h3>
+                <p>Waiting for the helper to confirm they received the payment.</p>
               </article>
             )}
 
@@ -916,15 +1034,17 @@ function TaskDetailsPage({ user, hasUnreadNotifications = false, onLogout, onTas
                         <div className="task-proof-approved-pill" role="status" aria-live="polite">
                           Proof Approved
                         </div>
-                        <p className="task-proof-approved-note">Awaiting payment confirmation.</p>
+                        <p className="task-proof-approved-note">
+                          {posterPaymentConfirmed ? 'The poster confirmed sending the payment. Please acknowledge receipt.' : 'Waiting for poster to send payment.'}
+                        </p>
                         {!paymentConfirmed && (
                           <button
                             type="button"
                             className="task-payment-btn"
                             onClick={confirmPaymentReceived}
-                            disabled={confirmingPayment}
+                            disabled={confirmingPayment || !posterPaymentConfirmed}
                           >
-                            {confirmingPayment ? 'Confirming...' : 'Payment Received'}
+                            {confirmingPayment ? 'Confirming...' : (posterPaymentConfirmed ? 'Payment Received' : 'Awaiting Payment')}
                           </button>
                         )}
                         {paymentConfirmed && (

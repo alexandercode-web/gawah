@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../api'
 
