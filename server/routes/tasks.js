@@ -14,6 +14,22 @@ import { Buffer } from 'node:buffer'
 
 const router = express.Router()
 
+router.get('/public/stats', async (_, res) => {
+  try {
+    const result = await query(`
+      SELECT
+        (SELECT COUNT(*) FROM Users) AS TotalUsers,
+        (SELECT COUNT(*) FROM Tasks WHERE Status = 'Completed') AS CompletedTasks,
+        (SELECT COALESCE(SUM(Budget), 0) FROM Tasks WHERE Status = 'Completed') AS TotalValue
+    `)
+
+    return res.json(result[0])
+  } catch (error) {
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+
 router.get('/categories', async (_, res) => {
   try {
     const result = await query('SELECT CategoryID, CategoryName FROM Categories ORDER BY CategoryName')

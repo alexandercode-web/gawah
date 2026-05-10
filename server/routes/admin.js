@@ -10,21 +10,7 @@ import logger from '../logger.js'
 
 const router = express.Router()
 
-router.get('/public/stats', async (_, res) => {
-  try {
-    const result = await query(`
-      SELECT
-        (SELECT COUNT(*) FROM Users) AS TotalUsers,
-        (SELECT COUNT(*) FROM Tasks WHERE Status = 'Completed') AS CompletedTasks,
-        (SELECT COALESCE(SUM(Budget), 0) FROM Tasks WHERE Status = 'Completed') AS TotalValue
-    `)
 
-    return res.json(result[0])
-  } catch (error) {
-    logger.error('API Error:', error.message);
-    return res.status(500).json({ message: 'An internal server error occurred.' })
-  }
-})
 
 router.post('/users', requireAdmin, async (req, res) => {
   const { fullName, email, password } = req.body
