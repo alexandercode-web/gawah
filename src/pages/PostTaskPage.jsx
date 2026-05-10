@@ -154,7 +154,7 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
       'water': '20',
       'school supplies': '50',
       'photocopy': '10',
-      'print': '5',
+      'print': '2',
       'scanning': '15',
       'laundry': '150',
       'medicine': '100',
