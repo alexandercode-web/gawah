@@ -342,7 +342,7 @@ function ProfilePage({user, summary, myTasks, onUserUpdate, onLogout, hasUnreadN
               <p>
                 {hasRating && displayedRating != null
                   ? <><span className="star-icon full" style={{ fontSize: '1rem' }}>★</span> {displayedRating.toFixed(1)} ({ratingSummary.reviewCount} reviews) • {stats.completedTasks} tasks completed</>
-                  : <><span style={{ fontStyle: 'italic', color: '#9ca3af' }}>New user</span> • {stats.completedTasks} tasks completed</>}
+                  : <><span className="star-icon full" style={{ fontSize: '1rem' }}>★</span> 5.0 (0 reviews) • {stats.completedTasks} tasks completed</>}
               </p>
             )}
             <p className="profile-email-line">{user?.Email || 'No email available'}</p>

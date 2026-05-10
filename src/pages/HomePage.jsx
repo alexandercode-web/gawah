@@ -366,7 +366,11 @@ function HomePage({user, summary, myTasks = [], loading, error, hasUnreadNotific
                       <span className="review-count" style={{color: '#9ca3af', fontSize: '12px', marginLeft: '2px'}}>({task.reviewCount})</span>
                     </>
                   ) : (
-                    <span className="rating" style={{fontStyle: 'italic', color: '#9ca3af'}}>New user</span>
+                    <>
+                      <span className="star">★</span>
+                      <span className="rating">5.0</span>
+                      <span className="review-count" style={{color: '#9ca3af', fontSize: '12px', marginLeft: '2px'}}>(0)</span>
+                    </>
                   )}
                   <span className="requester">• {task.requester}</span>
                 </div>

@@ -774,7 +774,7 @@ function TaskDetailsPage({user, hasUnreadNotifications = false, onLogout, onTask
                   <p className="task-poster-rating">
                     {task.PosterRating != null 
                       ? `★ ${Number(task.PosterRating).toFixed(1)} (${task.PosterReviewCount || 0} reviews)`
-                      : <span style={{fontStyle: 'italic', color: '#9ca3af'}}>New user</span>}
+                      : `★ 5.0 (0 reviews)`}
                   </p>
                 </div>
               </div>
@@ -801,7 +801,7 @@ function TaskDetailsPage({user, hasUnreadNotifications = false, onLogout, onTask
                     <p className="task-poster-rating">
                       {task.HelperRating != null
                         ? `★ ${Number(task.HelperRating).toFixed(1)} (${task.HelperReviewCount || 0} reviews)`
-                        : <span style={{fontStyle: 'italic', color: '#9ca3af'}}>New user</span>}
+                        : `★ 5.0 (0 reviews)`}
                     </p>
                   </div>
                 </div>

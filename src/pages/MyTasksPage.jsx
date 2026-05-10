@@ -259,7 +259,7 @@ function MyTasksPage({user, myTasks, loading, error, hasUnreadNotifications = fa
                     <span className="mytask-rating-inline">
                       {task.displayRating != null 
                         ? `★ ${task.displayRating.toFixed(1)} (${task.displayReviewCount})`
-                        : <span style={{fontStyle: 'italic', color: '#9ca3af'}}>New user</span>}
+                        : <span className="star-icon full" style={{ fontSize: '0.85rem' }}>★ 5.0 (0)</span>}
                     </span>
                     <span className="mytask-meta-separator" aria-hidden="true">•</span>
                     <span className="mytask-owner-name">{task.displayName}</span>
