@@ -45,9 +45,9 @@ router.get('/home/summary', requireAuth, async (req, res) => {
       FROM Tasks t
       INNER JOIN Users u ON t.UserID = u.UserID
       LEFT JOIN Categories c ON t.CategoryID = c.CategoryID
-      LEFT JOIN TaskAssignments ta ON ta.TaskID = t.TaskID AND ta.HelperID = ?
+      LEFT JOIN TaskAssignments ta ON ta.TaskID = t.TaskID AND ta.HelperID = ?::int
       WHERE LOWER(t.Status) NOT IN ('completed', 'cancelled')
-        AND (LOWER(t.Status) = 'open' OR t.UserID = ? OR ta.HelperID = ?)
+        AND (LOWER(t.Status) = 'open' OR t.UserID = ?::int OR ta.HelperID = ?::int)
       ORDER BY t.CreatedAt DESC
       LIMIT 50
     `, [req.user.id, req.user.id, req.user.id])
