@@ -84,11 +84,11 @@ function LandingPage() {
 
           <div className="hero-stats">
             <div className="stat">
-              <span className="stat-number">{loading ? '-' : `${stats.TotalUsers}+`}</span>
+              <span className="stat-number">{loading ? '-' : `${stats.TotalUsers || stats.totalUsers || 0}+`}</span>
               <span className="stat-label">active users</span>
             </div>
             <div className="stat">
-              <span className="stat-number">{loading ? '-' : `${stats.CompletedTasks}+`}</span>
+              <span className="stat-number">{loading ? '-' : `${stats.CompletedTasks || stats.completedTasks || 0}+`}</span>
               <span className="stat-label">completed tasks</span>
             </div>
 
