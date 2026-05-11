@@ -81,6 +81,11 @@ export function AuthProvider({ children }) {
   }
 
   const logout = async (redirectTo = '/login') => {
+    // If redirectTo is an event object (e.g. from onClick={onLogout}), default to '/login'
+    const finalRedirect = (redirectTo && typeof redirectTo === 'object' && redirectTo.type) 
+      ? '/login' 
+      : redirectTo;
+
     try {
       await api.logout()
     } catch (e) {
@@ -90,7 +95,7 @@ export function AuthProvider({ children }) {
       localStorage.removeItem('gh_user')
       localStorage.removeItem('gh_token') // clear legacy token if exists
       // SSE token cleanup is tricky without reloading, so a reload might be needed in some flows
-      window.location.href = redirectTo
+      window.location.href = finalRedirect || '/login'
     }
   }
 

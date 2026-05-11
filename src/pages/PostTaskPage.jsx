@@ -60,7 +60,7 @@ function isPurchaseRelatedTask(categoryName, title, description) {
 
 
 
-function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = false, onLogout}) {
+function PostTaskPage({ user, onSubmitTask, posting, hasUnreadNotifications = false, onLogout }) {
   // VERSION: 2.1.0-AUTO-PRICING
   const navigate = useNavigate()
   const navRef = useRef(null)
@@ -563,16 +563,16 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
 
               <label htmlFor="task-product-price">Estimated Item Cost (₱)</label>
               <p className="post-card-hint">
-                {isItemRecognized 
+                {isItemRecognized
                   ? "Smart price detected! This field is now locked for accuracy."
                   : "Item not recognized. Please enter an estimated cost for the helper."
                 }
               </p>
-              
+
               {isItemRecognized ? (
                 <div className="budget-input-wrapper read-only mini">
-                   <div className="budget-display-value mini">₱{form.productPrice || '0'}</div>
-                   <div className="budget-status-tag">Verified</div>
+                  <div className="budget-display-value mini">₱{form.productPrice || '0'}</div>
+                  <div className="budget-status-tag">Verified</div>
                 </div>
               ) : (
                 <input
@@ -663,7 +663,7 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
             <article className="post-card">
               <label htmlFor="task-budget">Final Budget (₱)</label>
               <p className="post-card-hint">Calculated automatically for your safety and fairness. This field cannot be manually edited.</p>
-              
+
               <div className="budget-input-wrapper read-only">
                 <div className="budget-display-value">₱{form.budget}</div>
                 <div className="budget-status-tag student">Student Rate Applied</div>
@@ -818,10 +818,7 @@ function PostTaskPage({user, onSubmitTask, posting, hasUnreadNotifications = fal
       <nav ref={navRef} className="nav-hint" aria-label="Bottom navigation">
         <div className="sidebar-header">
           <span className="sidebar-brand-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-              <path d="M12 4 4 9v11h16V9z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-              <path d="M9 20v-7h6v7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-            </svg>
+            <img src="/gawalogo.png" alt="Logo" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
           </span>
           <span className="sidebar-brand">GawaHelper</span>
         </div>
