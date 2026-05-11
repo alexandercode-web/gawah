@@ -10,6 +10,64 @@ function LandingPage() {
     TotalValue: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [infoModal, setInfoModal] = useState(null)
+
+  const modalContent = {
+    support: {
+      title: 'Support Center',
+      intro: 'Find answers or contact our team.',
+      items: [
+        { title: 'Task Posting', description: 'Tap the "+" button on Home, fill details and budget.' },
+        { title: 'Payments', description: 'Confirm receipt in task details after approval.' },
+        { title: 'Email Us', description: 'support@gawahelper.com' }
+      ]
+    },
+    community: {
+      title: 'Community Guidelines',
+      intro: 'Built on trust, respect, and mutual benefit.',
+      items: [
+        { title: 'Respect', description: 'Treat every user with dignity and professionalism.' },
+        { title: 'Reliability', description: 'Follow through on your accepted commitments.' },
+        { title: 'Safety', description: 'Keep interactions professional and report issues.' }
+      ]
+    },
+    guide: {
+      title: 'Helper Guide',
+      intro: 'How to succeed as a GawaHelper.',
+      items: [
+        { title: 'Profile', description: 'Add a clear photo and details about your skills.' },
+        { title: 'Response', description: 'Posters appreciate fast and clear replies.' },
+        { title: 'Quality', description: 'High ratings lead to more task opportunities.' }
+      ]
+    },
+    terms: {
+      title: 'Terms of Service',
+      intro: 'Platform rules for GawaHelper.',
+      items: [
+        { title: 'Acceptance', description: 'By using GawaHelper, you agree to these terms.' },
+        { title: 'Liability', description: 'We are a matching platform; users are responsible for interactions.' },
+        { title: 'Conduct', description: 'Illegal or harmful tasks are strictly prohibited.' }
+      ]
+    },
+    privacy: {
+      title: 'Privacy Policy',
+      intro: 'How we protect your data.',
+      items: [
+        { title: 'Collection', description: 'We collect profile and task data to facilitate matches.' },
+        { title: 'Sharing', description: 'We never sell your data to third parties.' },
+        { title: 'Security', description: 'Industry-standard encryption keeps your data safe.' }
+      ]
+    },
+    contact: {
+      title: 'Contact Us',
+      intro: 'Get in touch with our team.',
+      items: [
+        { title: 'Email', description: 'support@gawahelper.com' },
+        { title: 'Social', description: 'Facebook: GawaHelper Official' },
+        { title: 'Office', description: 'Campus Center, 2nd Floor, Manila' }
+      ]
+    }
+  }
 
   useEffect(() => {
     async function fetchStats() {
@@ -337,15 +395,15 @@ function LandingPage() {
           </div>
           <div className="footer-section">
             <h4>Resources</h4>
-            <Link to="/support">Support</Link>
-            <Link to="/community">Community</Link>
-            <Link to="/helper-guide">Helper Guide</Link>
+            <button type="button" className="footer-link-btn" onClick={() => setInfoModal('support')}>Support</button>
+            <button type="button" className="footer-link-btn" onClick={() => setInfoModal('community')}>Community</button>
+            <button type="button" className="footer-link-btn" onClick={() => setInfoModal('guide')}>Helper Guide</button>
           </div>
           <div className="footer-section">
             <h4>Legal</h4>
-            <Link to="/terms">Terms of Service</Link>
-            <Link to="/privacy">Privacy Policy</Link>
-            <Link to="/contact">Contact Us</Link>
+            <button type="button" className="footer-link-btn" onClick={() => setInfoModal('terms')}>Terms of Service</button>
+            <button type="button" className="footer-link-btn" onClick={() => setInfoModal('privacy')}>Privacy Policy</button>
+            <button type="button" className="footer-link-btn" onClick={() => setInfoModal('contact')}>Contact Us</button>
           </div>
         </div>
         <div className="footer-bottom">
@@ -353,6 +411,31 @@ function LandingPage() {
           <p>Made with ❤️ for GawaHelpers</p>
         </div>
       </footer>
+
+      {infoModal && (
+        <div className="status-guide-overlay" onClick={() => setInfoModal(null)}>
+          <div className="status-guide-modal" onClick={(e) => e.stopPropagation()}>
+            <header className="status-guide-header">
+              <h2>{modalContent[infoModal].title}</h2>
+              <button type="button" className="status-guide-close" onClick={() => setInfoModal(null)}>×</button>
+            </header>
+            <div className="status-guide-content">
+              <p className="status-guide-intro">{modalContent[infoModal].intro}</p>
+              <div className="status-guide-list">
+                {modalContent[infoModal].items.map((item, idx) => (
+                  <div key={idx} className="status-guide-item">
+                    <div className="status-guide-item-title orange">
+                      <span className="status-dot orange" />
+                      {item.title}
+                    </div>
+                    <p className="status-guide-item-description">{item.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
