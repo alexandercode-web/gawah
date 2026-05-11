@@ -4982,7 +4982,9 @@ textarea:focus-visible {
   gap: 0.75rem;
   font-size: 1.5rem;
   font-weight: 800;
-  color: #2563eb;
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   text-decoration: none;
 }
 
@@ -6173,7 +6175,9 @@ textarea:focus-visible {
 }
 
 .navbar-brand {
-  color: #dbeafe;
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .navbar-links {
