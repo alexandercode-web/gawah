@@ -84,12 +84,13 @@ app.use('/api/admin', adminRoutes)
 app.use('/api/reports', adminRoutes)
 
 // Fallback mountings for legacy/non-prefixed paths used by the frontend
-// Specific routes MUST come before generic /:id routes
+// IMPORTANT: tasksRoutes MUST come before messagesRoutes because
+// messagesRoutes has /:otherUserId/:taskId which would catch /public/stats
 app.use('/api', authRoutes)     // For /me, /login, etc.
-app.use('/api', adminRoutes)    // For /public/stats
+app.use('/api', adminRoutes)    // For admin routes
 app.use('/api', usersRoutes)    // For /home/summary
-app.use('/api', messagesRoutes) // For /notifications and /:otherUserId/:taskId
-app.use('/api', tasksRoutes)    // For /tasks, /categories and /:taskId
+app.use('/api', tasksRoutes)    // For /public/stats, /tasks, /categories — BEFORE messages!
+app.use('/api', messagesRoutes) // For /notifications and /:otherUserId/:taskId (catch-all, must be last)
 
 // 404 Handler - Ensure CORS headers for unknown routes
 app.use((req, res) => {

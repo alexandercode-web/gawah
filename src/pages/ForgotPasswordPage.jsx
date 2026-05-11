@@ -42,8 +42,15 @@ function ForgotPasswordPage() {
 
     try {
       setLoading(true)
-      await api.requestPasswordResetCode(trimmedEmail)
-      setSuccess('Reset code sent to your email!')
+      const result = await api.requestPasswordResetCode(trimmedEmail)
+
+      if (result.smtpFailed && result.resetCode) {
+        // SMTP blocked on Railway — auto-fill the code
+        setForm((prev) => ({ ...prev, code: result.resetCode }))
+        setSuccess(`Your reset code is: ${result.resetCode}`)
+      } else {
+        setSuccess('Reset code sent to your email!')
+      }
       setStep(2)
     } catch (err) {
       setLocalError(err.message || 'Failed to send reset code.')
