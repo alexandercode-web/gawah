@@ -43,35 +43,33 @@ export function getEmailTransporter() {
       console.error('[EMAIL] Missing credentials — set SMTP_USER/SMTP_PASS or GMAIL_USER/GMAIL_APP_PASSWORD')
     }
 
-    // Use Gmail service (handles host/port/TLS automatically)
-    // If a custom SMTP_HOST is set, use manual config instead
     const customHost = process.env.SMTP_HOST
+    const host = customHost || 'smtp.gmail.com'
+    const port = Number(process.env.SMTP_PORT || 587)
+    const secure = port === 465
 
-    if (customHost) {
-      const port = Number(process.env.SMTP_PORT || 587)
-      const secure = port === 465
-
-      _emailTransporter = nodemailer.createTransport({
-        host: customHost,
-        port,
-        secure,
-        auth: { user, pass },
-        tls: { rejectUnauthorized: false },
-        connectionTimeout: 15000,
-        greetingTimeout: 15000,
-        socketTimeout: 20000,
-      })
-    } else {
-      // Default: use Gmail service (simplest, most reliable)
-      _emailTransporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user, pass },
-        tls: { rejectUnauthorized: false },
-        connectionTimeout: 15000,
-        greetingTimeout: 15000,
-        socketTimeout: 20000,
-      })
-    }
+    _emailTransporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      requireTLS: !secure, // Force STARTTLS on port 587
+      auth: { user, pass },
+      tls: {
+        rejectUnauthorized: false,
+        // Force IPv4 — Railway cannot reach Gmail via IPv6
+        servername: host
+      },
+      connectionTimeout: 20000,
+      greetingTimeout: 20000,
+      socketTimeout: 25000,
+      // Force IPv4 DNS resolution — Railway's network has no IPv6 support
+      dnsLookup: (hostname, options, callback) => {
+        dns.resolve4(hostname, (err, addresses) => {
+          if (err) return callback(err)
+          callback(null, addresses[0], 4)
+        })
+      }
+    })
 
     // Verify connection on first use
     _emailTransporter.verify((err) => {
