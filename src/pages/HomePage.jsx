@@ -186,8 +186,7 @@ function HomePage({user, summary, myTasks = [], loading, error, hasUnreadNotific
             </div>
             <div>
               <h1>
-                <span className="brand-gawa">Gawa</span>
-                <span className="brand-helper">Helper</span>
+                <span className="brand-gawa">Gawa</span><span className="brand-helper">Helper</span>
               </h1>
               <p>{`Welcome back${user?.FullName ? `, ${user.FullName.split(' ')[0]}` : ''}. Find tasks or get help.`}</p>
             </div>

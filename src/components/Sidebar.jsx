@@ -69,8 +69,7 @@ function Sidebar({ user, onLogout, hasUnreadNotifications, logoutRedirect }) {
           <img src="/gawalogo.png" alt="Logo" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
         </span>
         <span className="sidebar-brand">
-          <span className="brand-gawa">Gawa</span>
-          <span className="brand-helper">Helper</span>
+          <span className="brand-gawa">Gawa</span><span className="brand-helper">Helper</span>
         </span>
       </div>
 
