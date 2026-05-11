@@ -185,28 +185,36 @@ function drawDoughnutChart(canvas, labels, data, colors, title) {
 
   // Legend
   const legendY = h - 45
-  const itemsPerRow = Math.min(labels.length, 3)
-  const itemW = (w - 40) / itemsPerRow
+  const totalItems = Math.min(labels.length, 6)
+  const itemsPerRow = 2
+  const rowCount = Math.ceil(totalItems / itemsPerRow)
+  const totalLegendH = rowCount * 22
   
   labels.forEach((label, i) => {
     if (i >= 6) return
     const row = Math.floor(i / itemsPerRow)
     const col = i % itemsPerRow
-    const lx = 20 + col * itemW
+    
+    // Calculate centering for the row
+    const rowItemsCount = (row === rowCount - 1) ? (totalItems % itemsPerRow || itemsPerRow) : itemsPerRow
+    const rowW = rowItemsCount * 140
+    const startX = (w - rowW) / 2
+    
+    const lx = startX + col * 140
     const ly = legendY + row * 22
     
     // Color dot
     ctx.beginPath()
-    ctx.arc(lx + 5, ly - 4, 4, 0, Math.PI * 2)
+    ctx.arc(lx + 5, ly - 4, 5, 0, Math.PI * 2)
     ctx.fillStyle = colors[i % colors.length]
     ctx.fill()
     
     // Label
     const cleanLabel = label.replace(/([A-Z])/g, ' $1').trim()
     ctx.fillStyle = '#cbd5e1'
-    ctx.font = '500 11px Inter, system-ui, sans-serif'
+    ctx.font = '600 11px Inter, system-ui, sans-serif'
     ctx.textAlign = 'left'
-    ctx.fillText(`${cleanLabel} (${data[i]})`, lx + 15, ly)
+    ctx.fillText(`${cleanLabel} (${data[i]})`, lx + 16, ly)
   })
 }
 
@@ -437,10 +445,11 @@ function ReportsPage({hasUnreadNotifications = false}) {
     const statusLabels = (summary.tasksByStatus || []).map(s => s.status || s.Status || 'Unknown')
     const statusData = (summary.tasksByStatus || []).map(s => Number(s.count || s.Count || 0))
     const statusColors = statusLabels.map(s => {
-      if (s === 'Open') return '#3b82f6'
-      if (s === 'Assigned') return '#f59e0b'
-      if (s === 'Completed') return '#10b981'
-      if (s === 'Cancelled') return '#ef4444'
+      const lower = s.toLowerCase()
+      if (lower.includes('open') || lower.includes('waiting')) return '#f59e0b' // Waiting for helper (Orange)
+      if (lower.includes('assigned') || lower.includes('progress')) return '#3b82f6' // In Progress (Blue)
+      if (lower.includes('completed') || lower.includes('done')) return '#10b981' // Completed (Green)
+      if (lower.includes('cancelled')) return '#ef4444' // Cancelled (Red)
       return '#8b5cf6'
     })
 
