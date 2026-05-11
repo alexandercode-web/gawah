@@ -99,14 +99,4 @@ router.get('/:userId/profile', requireAuth, async (req, res) => {
   }
 })
 
-router.get('/home/debug', requireAuth, async (req, res) => {
-  try {
-    const user = req.user
-    const tasksCount = await query('SELECT COUNT(*) AS count FROM Tasks WHERE UserID = ?', [user.id])
-    return res.json({ user, tasksCount: tasksCount[0] })
-  } catch (error) {
-    return res.status(500).json({ error: error.message })
-  }
-})
-
 export default router

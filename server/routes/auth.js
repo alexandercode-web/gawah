@@ -15,50 +15,6 @@ import process from 'node:process'
 
 const router = express.Router()
 
-// Temporary diagnostic endpoint — remove after debugging email issues
-router.get('/test-email', async (req, res) => {
-  const gmailUser = process.env.GMAIL_USER || '(not set)'
-  const gmailPass = process.env.GMAIL_APP_PASSWORD ? '***configured***' : '(not set)'
-
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    return res.json({
-      status: 'FAIL',
-      reason: 'Missing environment variables',
-      GMAIL_USER: gmailUser,
-      GMAIL_APP_PASSWORD: gmailPass,
-    })
-  }
-
-  try {
-    const transporter = getEmailTransporter()
-    // Verify SMTP connection first
-    await transporter.verify()
-
-    // Send a test email to the configured GMAIL_USER itself
-    await transporter.sendMail({
-      from: `"GawaHelper Test" <${process.env.GMAIL_USER}>`,
-      to: process.env.GMAIL_USER,
-      subject: 'GawaHelper Email Test - ' + new Date().toISOString(),
-      text: 'If you received this, email sending is working correctly!',
-    })
-
-    return res.json({
-      status: 'SUCCESS',
-      message: 'Test email sent successfully to ' + process.env.GMAIL_USER,
-      GMAIL_USER: gmailUser,
-    })
-  } catch (err) {
-    return res.json({
-      status: 'FAIL',
-      error: err.message,
-      code: err.code || 'unknown',
-      command: err.command || 'unknown',
-      GMAIL_USER: gmailUser,
-      GMAIL_APP_PASSWORD: gmailPass,
-    })
-  }
-})
-
 router.post('/generate-registration-options', requireAuth, async (req, res) => {
   try {
     const user = await query('SELECT UserID, Email FROM Users WHERE UserID = ?', [req.user.id])
@@ -293,74 +249,39 @@ router.post('/register', async (req, res) => {
 
     const result = await query(
       'INSERT INTO Users (FullName, Email, PasswordHash, EmailVerified) VALUES (?, ?, ?, ?) RETURNING UserID',
-      [fullName, email, passwordHash, 0]
+      [fullName, email, passwordHash, 1]
     )
 
     const newUserId = result[0].UserID
-
-    // Generate verification code (reuse PasswordResetCodes infrastructure)
-    const verifyCode = Math.random().toString(36).substring(2, 8).toUpperCase()
-    const codeExpiry = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
-    await query(
-      'INSERT INTO PasswordResetCodes (UserID, ResetCode, ExpiresAt) VALUES (?, ?, ?)',
-      [newUserId, verifyCode, codeExpiry]
-    )
-
-    // Send verification email — await so we can report failures
-    const gmailUser = process.env.GMAIL_USER
-    const gmailPass = process.env.GMAIL_APP_PASSWORD
-    let emailSent = false
-
-    if (!gmailUser || !gmailPass) {
-      logger.error('GMAIL_USER or GMAIL_APP_PASSWORD not configured — cannot send verification email')
-    } else {
-      try {
-        const transporter = getEmailTransporter()
-        await transporter.sendMail({
-          from: `"GawaHelper" <${gmailUser}>`,
-          to: email,
-          subject: 'Verify your GawaHelper account',
-          html: `
-            <div style="max-width:480px;margin:0 auto;font-family:'Segoe UI',Arial,sans-serif;background:#ffffff;border:1px solid #e8e8e8;border-radius:12px;overflow:hidden;">
-              <div style="background:linear-gradient(135deg,#0f6b3a 0%,#1a9956 100%);padding:28px 24px;text-align:center;">
-                <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">GawaHelper</h1>
-                <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Email Verification</p>
-              </div>
-              <div style="padding:32px 24px;">
-                <p style="margin:0 0 16px;color:#333;font-size:15px;">Welcome to GawaHelper!</p>
-                <p style="margin:0 0 24px;color:#555;font-size:14px;line-height:1.6;">Enter this code to verify your email. It's valid for <strong>15 minutes</strong>.</p>
-                <div style="background:#f0faf4;border:2px dashed #1a9956;border-radius:10px;padding:20px;text-align:center;margin:0 0 24px;">
-                  <p style="margin:0 0 6px;color:#777;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Verification Code</p>
-                  <h2 style="margin:0;font-family:'Courier New',monospace;font-size:36px;letter-spacing:6px;color:#0f6b3a;font-weight:800;">${verifyCode}</h2>
-                </div>
-              </div>
-              <div style="background:#fafafa;border-top:1px solid #eee;padding:16px 24px;text-align:center;">
-                <p style="margin:0;color:#aaa;font-size:11px;">© ${new Date().getFullYear()} GawaHelper • Task Marketplace</p>
-              </div>
-            </div>
-          `,
-        })
-        emailSent = true
-      } catch (err) {
-        logger.error('Verification email send failure:', err.message)
-      }
-    }
 
     const user = {
       UserID: newUserId,
       FullName: fullName,
       Email: email,
       ProfileImage: '',
-      EmailVerified: 0,
+      EmailVerified: 1,
     }
 
+    // Auto-generate a token so user can log in immediately
+    const token = signToken({
+      id: newUserId,
+      email: email,
+      isAdmin: 0,
+      IsAdmin: 0
+    })
+
+    res.cookie('gh_token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 86400000
+    })
+
     return res.status(201).json({
-      message: emailSent
-        ? 'Registration successful. Please check your email for the verification code.'
-        : 'Registration successful. Email delivery may be delayed — try "Resend Code" on the verification page.',
+      message: 'Registration successful! Welcome to GawaHelper.',
       user,
-      requiresVerification: true,
-      emailSent,
+      token,
+      requiresVerification: false,
     })
   } catch (error) {
     if (error.code === '23505') {
@@ -394,8 +315,9 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ message: 'Your account has been deactivated. Please contact support.' })
     }
 
+    // Auto-verify any unverified users (SMTP is blocked on Railway, so email codes can't be sent)
     if (Number(user.EmailVerified) === 0) {
-      return res.status(403).json({ message: 'Please verify your email before logging in.', requiresVerification: true, email: user.Email })
+      await query('UPDATE Users SET EmailVerified = 1 WHERE UserID = ?', [user.UserID])
     }
 
     const isValid = await bcrypt.compare(password, user.PasswordHash)

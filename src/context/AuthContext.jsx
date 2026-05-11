@@ -64,8 +64,18 @@ export function AuthProvider({ children }) {
   const register = async (payload) => {
     const data = await api.register(payload)
     if (data && data.user) {
-      // Redirect to verification page with email in state
-      window.location.href = `/verify-email?email=${encodeURIComponent(payload.email)}`
+      if (data.requiresVerification === false) {
+        // Auto-verified: store user and token, go straight to home
+        setUser(data.user)
+        localStorage.setItem('gh_user', JSON.stringify(data.user))
+        if (data.token) {
+          localStorage.setItem('gh_token', data.token)
+        }
+        window.location.href = '/home'
+      } else {
+        // Needs email verification
+        window.location.href = `/verify-email?email=${encodeURIComponent(payload.email)}`
+      }
     }
     return data
   }
