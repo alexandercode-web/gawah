@@ -49,7 +49,7 @@ router.get('/home/summary', requireAuth, async (req, res) => {
       WHERE LOWER(t.Status) NOT IN ('completed', 'cancelled')
         AND (LOWER(t.Status) = 'open' OR t.UserID = ? OR ta.HelperID = ?)
       ORDER BY t.CreatedAt DESC
-      LIMIT 6
+      LIMIT 50
     `, [req.user.id, req.user.id, req.user.id])
 
     return res.json({ metrics: metricsResult[0], recentTasks: recentTasksResult })
@@ -58,6 +58,7 @@ router.get('/home/summary', requireAuth, async (req, res) => {
     return res.status(500).json({ message: 'An internal server error occurred.' })
   }
 })
+
 
 router.get('/', requireAuth, async (_req, res) => {
   try {
