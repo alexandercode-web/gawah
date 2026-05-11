@@ -5986,11 +5986,11 @@ textarea:focus-visible {
 }
 
 .footer-section h4 {
-  color: #ffffff;
-  font-size: 1rem;
+  color: #f59e0b; /* Yellow brand color */
+  font-size: 0.9rem;
   font-weight: 800;
   margin-bottom: 2rem;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
@@ -6001,18 +6001,24 @@ textarea:focus-visible {
   font-size: 0.95rem;
 }
 
-.footer-section a {
+.footer-section a, .footer-link-btn {
   display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 0;
   color: #64748b;
   text-decoration: none;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
   font-size: 0.95rem;
   transition: all 0.3s ease;
   font-weight: 500;
+  cursor: pointer;
 }
 
-.footer-section a:hover {
-  color: #3b82f6;
+.footer-section a:hover, .footer-link-btn:hover {
+  color: #ffffff;
   transform: translateX(5px);
 }
 
@@ -12957,6 +12963,4 @@ td {
 .info-footer { text-align: center; margin-top: 4rem; padding: 2rem; color: #94a3b8; font-size: 0.9rem; }
 .contact-form-placeholder { display: flex; flex-direction: column; gap: 1rem; }
 
-/* Footer Modal Buttons */
-.footer-link-btn { background: transparent; border: 0; padding: 0; margin: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; transition: color 0.2s ease; opacity: 0.8; }
-.footer-link-btn:hover { color: #f59e0b; opacity: 1; text-decoration: underline; }
+/* Footer Modal Buttons Integration Complete */
