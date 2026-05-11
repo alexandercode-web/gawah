@@ -572,13 +572,22 @@ router.post('/forgot-password/request-code', async (req, res) => {
 
     // Send email with reset code
     const senderEmail = process.env.SMTP_USER || process.env.GMAIL_USER
-    if (!senderEmail) {
-      logger.error('Email service not configured (SMTP_USER/GMAIL_USER missing)')
+    const senderPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD
+
+    console.log('[EMAIL-DEBUG] GMAIL_USER set:', !!process.env.GMAIL_USER)
+    console.log('[EMAIL-DEBUG] GMAIL_APP_PASSWORD set:', !!process.env.GMAIL_APP_PASSWORD)
+    console.log('[EMAIL-DEBUG] SMTP_USER set:', !!process.env.SMTP_USER)
+    console.log('[EMAIL-DEBUG] SMTP_PASS set:', !!process.env.SMTP_PASS)
+    console.log('[EMAIL-DEBUG] Resolved sender:', senderEmail || '(empty)')
+
+    if (!senderEmail || !senderPass) {
+      logger.error('Email service not configured — missing user or password env vars')
       return res.status(500).json({ message: 'Email service is not configured. Please contact the administrator.' })
     }
 
     try {
       const transporter = getEmailTransporter()
+      console.log('[EMAIL-DEBUG] Sending to:', email, 'from:', senderEmail)
       await transporter.sendMail({
         from: `"GawaHelper" <${senderEmail}>`,
         to: email,
@@ -606,8 +615,10 @@ router.post('/forgot-password/request-code', async (req, res) => {
           </div>
         `,
       })
+      console.log('[EMAIL-DEBUG] Email sent successfully to:', email)
     } catch (emailError) {
       console.error('[EMAIL] Forgot-password send failed:', emailError.message, emailError.code || '')
+      console.error('[EMAIL] Full error:', JSON.stringify(emailError, Object.getOwnPropertyNames(emailError)))
       return res.status(500).json({
         message: 'Failed to send reset code email. Please ensure GMAIL_USER and GMAIL_APP_PASSWORD are configured on the server.'
       })
