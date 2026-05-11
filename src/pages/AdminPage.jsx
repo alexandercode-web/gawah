@@ -666,9 +666,28 @@ function AdminPage({ hasUnreadNotifications = false }) {
       {/* Image Preview Modal */}
       {selectedImage && (
         <div className="admin-image-preview-overlay" onClick={() => setSelectedImage(null)}>
-          <div className="admin-image-preview-container" onClick={(e) => e.stopPropagation()}>
-            <button className="admin-image-close" onClick={() => setSelectedImage(null)} aria-label="Close preview">&times;</button>
-            <img src={selectedImage} alt="Preview" className="admin-preview-img" />
+          <div className="admin-image-preview-content" onClick={(e) => e.stopPropagation()}>
+            <button className="admin-image-close" onClick={() => setSelectedImage(null)} aria-label="Close preview">
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            <div className="admin-preview-wrapper">
+              <img 
+                src={selectedImage} 
+                alt="Preview" 
+                className="admin-preview-img" 
+                onError={(e) => {
+                  e.target.src = 'https://placehold.co/600x400/0f172a/ffffff?text=Image+Not+Found';
+                }}
+              />
+            </div>
+            <div className="admin-preview-footer">
+              <a href={selectedImage} target="_blank" rel="noopener noreferrer" className="admin-download-link">
+                Open Original ↗
+              </a>
+            </div>
           </div>
         </div>
       )}
@@ -1050,68 +1069,92 @@ function AdminPage({ hasUnreadNotifications = false }) {
           color: #334155;
         }
 
-        /* Image Preview Styles */
+        /* Image Preview Styles - Premium Redesign */
         .admin-image-preview-overlay {
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0, 0, 0, 0.9);
-          z-index: 2000;
+          background: rgba(15, 23, 42, 0.95);
+          backdrop-filter: blur(8px);
+          z-index: 9999;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 2rem;
+          padding: 1.5rem;
           cursor: zoom-out;
-          animation: fadeIn 0.3s ease;
+          animation: adminFadeIn 0.3s ease-out;
         }
-        .admin-image-preview-container {
+        .admin-image-preview-content {
           position: relative;
-          max-width: 95%;
-          max-height: 95%;
+          width: 100%;
+          max-width: 900px;
           display: flex;
           flex-direction: column;
           align-items: center;
+          gap: 1rem;
+          cursor: default;
+        }
+        .admin-preview-wrapper {
+          width: 100%;
+          background: #000;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 200px;
         }
         .admin-preview-img {
           max-width: 100%;
-          max-height: 85vh;
+          max-height: 80vh;
           object-fit: contain;
-          border-radius: 8px;
-          box-shadow: 0 0 40px rgba(0,0,0,0.5);
-          cursor: default;
+          transition: transform 0.3s ease;
         }
         .admin-image-close {
           position: absolute;
-          top: 15px;
-          right: 15px;
-          background: rgba(255, 255, 255, 0.9);
-          border: none;
+          top: -50px;
+          right: 0;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
           width: 40px;
           height: 40px;
-          border-radius: 50%;
-          font-size: 1.8rem;
-          line-height: 1;
+          border-radius: 12px;
+          color: white;
           cursor: pointer;
-          display: grid;
-          place-items: center;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
           transition: all 0.2s ease;
-          z-index: 2001;
-          color: #1e3a8a;
         }
         .admin-image-close:hover {
-          background: #ffffff;
-          transform: scale(1.1);
-          box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+          background: #ef4444;
+          border-color: #ef4444;
+          transform: rotate(90deg);
         }
-        .admin-image-hint {
-          display: none;
+        .admin-preview-footer {
+          background: rgba(255, 255, 255, 0.05);
+          padding: 0.75rem 1.5rem;
+          border-radius: 99px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+        .admin-download-link {
+          color: white;
+          text-decoration: none;
+          font-weight: 700;
+          font-size: 0.85rem;
+          opacity: 0.8;
+          transition: opacity 0.2s;
+        }
+        .admin-download-link:hover {
+          opacity: 1;
+        }
+        @keyframes adminFadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
         }
 
         /* Mobile Admin Adjustments */
@@ -1266,7 +1309,9 @@ function AttachmentCard({ msg, onImageClick }) {
         } else if (url.startsWith('/')) {
           url = `${origin}${url}`
         } else {
-          url = `${origin}/uploads/proofs/${url}`
+          // Message attachments are typically in /uploads/chat/
+          // Try both chat and proofs if it's just a filename
+          url = `${origin}/uploads/chat/${url}`
         }
       }
       
