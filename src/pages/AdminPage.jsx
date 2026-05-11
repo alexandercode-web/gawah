@@ -12,7 +12,7 @@ function AdminPage({ hasUnreadNotifications = false }) {
     users: [],
     tasks: [],
     messages: [],
-    auditLogs: [],
+    messages: [],
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -47,7 +47,6 @@ function AdminPage({ hasUnreadNotifications = false }) {
         api.getAdminUsers(50, 0),
         api.getAdminTasks(50, 0),
         api.getAdminMessages(),
-        api.getAdminAuditLog(50, 0),
       ])
 
       setAdminData({
@@ -55,7 +54,6 @@ function AdminPage({ hasUnreadNotifications = false }) {
         users: Array.isArray(users) ? users : [],
         tasks: Array.isArray(tasks) ? tasks : [],
         messages: Array.isArray(messages) ? messages : [],
-        auditLogs: Array.isArray(auditLogs) ? auditLogs : [],
       })
       setLastRefresh(new Date())
     } catch (err) {
@@ -320,12 +318,6 @@ function AdminPage({ hasUnreadNotifications = false }) {
           onClick={() => setActiveTab('messages')}
         >
           Messages ({adminData.messages.length})
-        </button>
-        <button
-          className={`admin-tab ${activeTab === 'audit' ? 'active' : ''}`}
-          onClick={() => setActiveTab('audit')}
-        >
-          Audit Log
         </button>
       </nav>
 
@@ -599,57 +591,7 @@ function AdminPage({ hasUnreadNotifications = false }) {
         </article>
       )}
 
-      {/* Audit Log */}
-      {activeTab === 'audit' && (
-        <article className="admin-section">
-          <h2>Audit Log</h2>
-          <div className="admin-table-wrapper">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Admin</th>
-                  <th>Action</th>
-                  <th>Target</th>
-                  <th>Details</th>
-                  <th>Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {adminData.auditLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="admin-empty-cell">No audit logs found</td>
-                  </tr>
-                ) : (
-                  adminData.auditLogs.map((log) => (
-                    <tr key={log.LogID}>
-                      <td>{log.AdminUsername || `Admin #${log.AdminID}`}</td>
-                      <td><span className="admin-status">{log.Action}</span></td>
-                      <td>{log.TargetType} {log.TargetID ? `#${log.TargetID}` : ''}</td>
-                      <td style={{ maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.Details || '\u2014'}</td>
-                      <td>{new Date(log.CreatedAt).toLocaleString()}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-              <button type="button" className="admin-refresh-btn" onClick={async () => {
-                try {
-                  const more = await api.getAdminAuditLog(50, adminData.auditLogs.length)
-                  if (Array.isArray(more) && more.length > 0) {
-                    setAdminData(prev => ({ ...prev, auditLogs: [...prev.auditLogs, ...more] }))
-                  } else {
-                    alert('No more logs')
-                  }
-                } catch (err) { console.error(err) }
-              }}>
-                Load More Logs
-              </button>
-            </div>
-          </div>
-        </article>
-      )}
-      {/* Bottom Navigation */}
+      {/* Sidebar Navigation */}
       <Sidebar 
         user={user} 
         onLogout={onLogout} 
