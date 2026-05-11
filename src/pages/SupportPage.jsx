@@ -1,8 +1,9 @@
-import React from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import Sidebar from '../components/Sidebar'
 
-function SupportPage() {
+function SupportPage({ hasUnreadNotifications = false }) {
+  const { user, logout: onLogout } = useAuth()
   const navigate = useNavigate()
 
   const faqs = [
@@ -62,6 +63,11 @@ function SupportPage() {
           <p>Made for Campus Productivity</p>
         </footer>
       </div>
+      <Sidebar 
+        user={user} 
+        onLogout={onLogout} 
+        hasUnreadNotifications={hasUnreadNotifications} 
+      />
     </section>
   )
 }

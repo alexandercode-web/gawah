@@ -36,17 +36,23 @@ export const uploadLimiter = rateLimit({
 let _emailTransporter = null
 export function getEmailTransporter() {
   if (!_emailTransporter) {
+    const host = process.env.SMTP_HOST || 'smtp.gmail.com'
+    const port = Number(process.env.SMTP_PORT || 587)
+    const secure = process.env.SMTP_SECURE === 'true' // For port 587, secure should usually be false
+    const user = process.env.SMTP_USER || process.env.GMAIL_USER || ''
+    const pass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || ''
+
     _emailTransporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.GMAIL_USER || '',
-        pass: process.env.GMAIL_APP_PASSWORD || '',
-      },
+      host,
+      port,
+      secure, // false for 587, true for 465
+      auth: { user, pass },
       tls: {
         rejectUnauthorized: false
       },
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
       // Force IPv4 DNS lookup — Railway cannot reach Gmail via IPv6
       dnsLookup: (hostname, options, callback) => {
         dns.resolve4(hostname, (err, addresses) => {

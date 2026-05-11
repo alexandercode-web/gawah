@@ -237,7 +237,8 @@ router.get('/summary', requireAdmin, async (req, res) => {
           (SELECT COUNT(*) FROM Reviews) AS totalReviews,
           (SELECT COALESCE(AVG(Rating), 0) FROM Reviews) AS avgRating,
           (SELECT COUNT(*) FROM Payments) AS totalPayments,
-          (SELECT COALESCE(SUM(Amount), 0) FROM Payments WHERE Status = 'Completed') AS completedPayments
+          (SELECT COALESCE(SUM(Amount), 0) FROM Payments WHERE Status = 'Completed') AS completedPayments,
+          (SELECT COALESCE(SUM(PlatformFee), 0) FROM Payments WHERE Status = 'Completed') AS platformEarnings
       `)
     ])
 
@@ -356,6 +357,8 @@ router.get('/transactions', requireAdmin, async (req, res) => {
         p.TaskID,
         t.Title AS taskTitle,
         p.Amount,
+        p.PlatformFee,
+        p.NetAmount,
         p.PaymentMethod,
         p.Status,
         p.CreatedAt,
@@ -472,6 +475,42 @@ router.get('/audit-log', requireAdmin, async (req, res) => {
       LIMIT ? OFFSET ?
     `, [limit, offset])
     return res.json(result)
+  } catch (error) {
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+
+router.get('/settings', requireAdmin, async (req, res) => {
+  try {
+    const result = await query('SELECT SettingKey, SettingValue FROM PlatformSettings')
+    const settings = {}
+    result.forEach(row => {
+      settings[row.SettingKey] = row.SettingValue
+    })
+    return res.json(settings)
+  } catch (error) {
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+
+router.post('/settings', requireAdmin, async (req, res) => {
+  const settings = req.body // Object with keys and values
+  try {
+    for (const [key, value] of Object.entries(settings)) {
+      await query(
+        'INSERT INTO PlatformSettings (SettingKey, SettingValue, UpdatedAt) VALUES (?, ?, NOW()) ON CONFLICT (SettingKey) DO UPDATE SET SettingValue = EXCLUDED.SettingValue, UpdatedAt = NOW()',
+        [key, String(value)]
+      )
+      
+      // Audit log
+      await query(
+        'INSERT INTO AuditLogs (AdminID, Action, TargetType, Details) VALUES (?, ?, ?, ?)',
+        [req.user.id, 'update_setting', 'platform_settings', `Updated ${key} to ${value}`]
+      )
+    }
+    return res.json({ success: true, message: 'Settings updated successfully' })
   } catch (error) {
     logger.error('API Error:', error.message)
     return res.status(500).json({ message: 'An internal server error occurred.' })

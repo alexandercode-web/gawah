@@ -3,8 +3,9 @@ import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { startRegistration } from '@simplewebauthn/browser'
 import { api } from '../api'
+import Sidebar from '../components/Sidebar'
 
-function SettingsPage({user, onLogout}) {
+function SettingsPage({user, onLogout, hasUnreadNotifications = false}) {
   const navigate = useNavigate()
   const [pushNotifications, setPushNotifications] = useState(true)
   const [emailUpdates, setEmailUpdates] = useState(true)
@@ -422,85 +423,11 @@ function SettingsPage({user, onLogout}) {
         </>
       )}
 
-      <nav className="nav-hint" aria-label="Bottom navigation">
-        <div className="sidebar-header">
-          <span className="sidebar-brand">GawaHelper</span>
-        </div>
-        {!(Number(user?.IsAdmin) === 1 || user?.IsAdmin === true || String(user?.IsAdmin) === '1') && (
-          <>
-            <button type="button" className="nav-item" onClick={() => navigate('/home')}>
-              <span className="nav-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                  <path d="M4 11.5 12 4l8 7.5V20H4z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-                </svg>
-              </span>
-              <span>Home</span>
-            </button>
-            <button type="button" className="nav-item" onClick={() => navigate('/tasks')}>
-              <span className="nav-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                  <path d="M5 6h6v6H5z" fill="none" stroke="currentColor" strokeWidth="2" />
-                  <path d="M14 7h5M14 12h5M5 17h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </span>
-              <span>My Tasks</span>
-            </button>
-          </>
-        )}
-        {(Number(user?.IsAdmin) === 1 || user?.IsAdmin === true || String(user?.IsAdmin) === '1') && (
-          <button type="button" className="nav-item" onClick={() => navigate('/admin')}>
-            <span className="nav-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                <path d="M5 6h6v6H5z" fill="none" stroke="currentColor" strokeWidth="2" />
-                <path d="M14 7h5M14 12h5M5 17h14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </span>
-            <span>Admin Panels</span>
-          </button>
-        )}
-        {(Number(user?.IsAdmin) === 1 || user?.IsAdmin === true || String(user?.IsAdmin) === '1') && (
-          <button type="button" className="nav-item" onClick={() => navigate('/reports')}>
-            <span className="nav-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                <path d="M3 3v18h18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <path d="M7 16l4-8 4 4 4-10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-            <span>Reports</span>
-          </button>
-        )}
-        {!(Number(user?.IsAdmin) === 1 || user?.IsAdmin === true || String(user?.IsAdmin) === '1') && (
-          <button type="button" className="nav-item" onClick={() => navigate('/notifications')}>
-            <span className="nav-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-                <path d="M18 8a6 6 0 0 0-12 0v5l-2 3h16l-2-3z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M10 19a2 2 0 0 0 4 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </span>
-            <span>Notifications</span>
-          </button>
-        )}
-        <button type="button" className="nav-item" onClick={() => navigate('/profile')}>
-          <span className="nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-              <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" strokeWidth="2" />
-              <path d="M5 20a7 7 0 0 1 14 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </span>
-          <span>Profile</span>
-        </button>
-
-        <button type="button" className="nav-item" onClick={onLogout}>
-          <span className="nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-              <path d="M10 7V5a2 2 0 0 1 2-2h6v18h-6a2 2 0 0 1-2-2v-2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M3 12h11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <path d="m6 9 3 3-3 3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-          <span>Log out</span>
-        </button>
-      </nav>
+      <Sidebar 
+        user={user} 
+        onLogout={onLogout} 
+        hasUnreadNotifications={hasUnreadNotifications} 
+      />
     </section>
   )
 }

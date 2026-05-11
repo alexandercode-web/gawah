@@ -571,10 +571,16 @@ router.post('/forgot-password/request-code', async (req, res) => {
     )
 
     // Send email with reset code
+    const senderEmail = process.env.SMTP_USER || process.env.GMAIL_USER
+    if (!senderEmail) {
+      logger.error('Email service not configured (SMTP_USER/GMAIL_USER missing)')
+      return res.status(500).json({ message: 'Email service is not configured. Please contact the administrator.' })
+    }
+
     try {
       const transporter = getEmailTransporter()
       await transporter.sendMail({
-        from: `"GawaHelper" <${process.env.GMAIL_USER}>`,
+        from: `"GawaHelper" <${senderEmail}>`,
         to: email,
         subject: 'Your GawaHelper Password Reset Code',
         html: `
@@ -775,18 +781,16 @@ router.post('/resend-verification', async (req, res) => {
     )
 
     // Send verification email — await so we can report failures
-    const gmailUser = process.env.GMAIL_USER
-    const gmailPass = process.env.GMAIL_APP_PASSWORD
-
-    if (!gmailUser || !gmailPass) {
-      logger.error('GMAIL_USER or GMAIL_APP_PASSWORD not configured — cannot send verification email')
+    const senderEmail = process.env.SMTP_USER || process.env.GMAIL_USER
+    if (!senderEmail || (!process.env.SMTP_PASS && !process.env.GMAIL_APP_PASSWORD)) {
+      logger.error('Email service not configured (User/Pass missing)')
       return res.status(500).json({ message: 'Email service is not configured. Please contact the administrator.' })
     }
 
     try {
       const transporter = getEmailTransporter()
       await transporter.sendMail({
-        from: `"GawaHelper" <${gmailUser}>`,
+        from: `"GawaHelper" <${senderEmail}>`,
         to: email,
         subject: 'Verify your GawaHelper account',
         html: `

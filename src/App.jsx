@@ -12,6 +12,7 @@ import ProfilePage from './pages/ProfilePage'
 import SettingsPage from './pages/SettingsPage'
 import TaskDetailsPage from './pages/TaskDetailsPage'
 import AdminPage from './pages/AdminPage'
+import AdminSettingsPage from './pages/AdminSettingsPage'
 import ReportsPage from './pages/ReportsPage'
 import LoginPage from './pages/LoginPage'
 import AdminLoginPage from './pages/AdminLoginPage'
@@ -436,6 +437,7 @@ function App() {
               <SettingsPage
                 user={user}
                 onLogout={logout}
+                hasUnreadNotifications={hasUnreadNotifications}
               />
             ) : (
               <Navigate to="/login" replace />
@@ -461,7 +463,7 @@ function App() {
           path="/support"
           element={
             token ? (
-              <SupportPage />
+              <SupportPage hasUnreadNotifications={hasUnreadNotifications} />
             ) : (
               <Navigate to="/login" replace />
             )
@@ -471,7 +473,19 @@ function App() {
           path="/admin"
           element={
             token && (Number(user?.IsAdmin) === 1 || user?.IsAdmin === true || String(user?.IsAdmin) === '1') ? (
-              <AdminPage />
+              <AdminPage hasUnreadNotifications={hasUnreadNotifications} />
+            ) : token ? (
+              <Navigate to="/home" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            token && (Number(user?.IsAdmin) === 1 || user?.IsAdmin === true || String(user?.IsAdmin) === '1') ? (
+              <AdminSettingsPage hasUnreadNotifications={hasUnreadNotifications} />
             ) : token ? (
               <Navigate to="/home" replace />
             ) : (

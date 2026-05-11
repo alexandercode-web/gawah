@@ -12,6 +12,9 @@ async function request(path, options = {}) {
     headers['Authorization'] = `Bearer ${storedToken}`
   }
 
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 seconds timeout
+
   let response
 
   try {
@@ -19,8 +22,14 @@ async function request(path, options = {}) {
       ...options,
       headers,
       credentials: 'include',
+      signal: controller.signal
     })
-  } catch {
+    clearTimeout(timeoutId)
+  } catch (err) {
+    clearTimeout(timeoutId)
+    if (err.name === 'AbortError') {
+      throw new Error('Request timed out. The server is taking too long to respond.')
+    }
     throw new Error('Unable to reach the server. Please check your internet connection or try again in a few moments.')
   }
 
@@ -380,5 +389,14 @@ export const api = {
   },
   getUserRatingSummary() {
     return request('/me/rating-summary')
+  },
+  getAdminSettings() {
+    return request('/admin/settings')
+  },
+  updateAdminSettings(settings) {
+    return request('/admin/settings', {
+      method: 'POST',
+      body: JSON.stringify(settings),
+    })
   }
 }

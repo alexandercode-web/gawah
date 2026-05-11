@@ -234,15 +234,34 @@ export async function initDatabase() {
     )
   `)
 
+    // PlatformSettings
+    await pool.query(`
+    CREATE TABLE IF NOT EXISTS PlatformSettings (
+      SettingID SERIAL PRIMARY KEY,
+      SettingKey VARCHAR(50) NOT NULL UNIQUE,
+      SettingValue TEXT NOT NULL,
+      CreatedAt TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UpdatedAt TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `)
+
+    // Seed default platform fee percentage (5%)
+    const feeCheck = await pool.query("SELECT COUNT(*) FROM PlatformSettings WHERE SettingKey = 'platform_fee_percentage'")
+    if (parseInt(feeCheck.rows[0].count) === 0) {
+      await pool.query(
+        "INSERT INTO PlatformSettings (SettingKey, SettingValue) VALUES ('platform_fee_percentage', '5')"
+      )
+    }
+
     // Repair: Ensure all tasks have a payment record (fixes orphaned tasks from migration)
     await pool.query(`
-    INSERT INTO Payments (TaskID, Amount, PaymentMethod, Status, PayerUserID)
-    SELECT t.TaskID, t.Budget, 'Cash', 'Pending', t.UserID
-    FROM Tasks t
-    LEFT JOIN Payments p ON t.TaskID = p.TaskID
-    WHERE p.PaymentID IS NULL
-    ON CONFLICT DO NOTHING
-  `)
+      INSERT INTO Payments (TaskID, Amount, PaymentMethod, Status, PayerUserID)
+      SELECT t.TaskID, t.Budget, 'Cash', 'Pending', t.UserID
+      FROM Tasks t
+      LEFT JOIN Payments p ON t.TaskID = p.TaskID
+      WHERE p.PaymentID IS NULL
+      ON CONFLICT DO NOTHING
+    `)
 
     console.log('PostgreSQL: All tables and constraints verified.')
 
@@ -298,6 +317,22 @@ export async function initDatabase() {
         ) THEN
           ALTER TABLE Users ADD COLUMN CancellationCount INT NOT NULL DEFAULT 0;
           RAISE NOTICE 'Added CancellationCount column to Users table';
+        END IF;
+      END $$;
+    `)
+
+    // Migration: Add PlatformFee and NetAmount columns to Payments
+    await pool.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'payments' AND column_name = 'platformfee'
+        ) THEN
+          ALTER TABLE Payments ADD COLUMN PlatformFee DECIMAL(10,2) NOT NULL DEFAULT 0.00;
+          ALTER TABLE Payments ADD COLUMN NetAmount DECIMAL(10,2) NOT NULL DEFAULT 0.00;
+          -- Initialize existing completed payments
+          UPDATE Payments SET NetAmount = Amount WHERE Status = 'Completed';
+          RAISE NOTICE 'Added PlatformFee and NetAmount columns to Payments table';
         END IF;
       END $$;
     `)

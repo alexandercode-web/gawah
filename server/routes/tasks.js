@@ -837,7 +837,27 @@ router.post('/:taskId/payment-received', requireAuth, async (req, res) => {
     }
 
     await query('UPDATE Tasks SET Status = ? WHERE TaskID = ?', ['Completed', taskId])
-    await query('UPDATE Payments SET Status = ?, CompletedAt = NOW() WHERE TaskID = ?', ['Completed', taskId])
+    
+    // Calculate Platform Fee
+    let platformFee = 0
+    let netAmount = 0
+    try {
+      const settingsResult = await query("SELECT SettingValue FROM PlatformSettings WHERE SettingKey = 'platform_fee_percentage' LIMIT 1")
+      const feePercent = Number(settingsResult[0]?.SettingValue || 0)
+      
+      const paymentInfo = await query('SELECT Amount FROM Payments WHERE TaskID = ? LIMIT 1', [taskId])
+      const totalAmount = Number(paymentInfo[0]?.Amount || 0)
+      
+      platformFee = totalAmount * (feePercent / 100)
+      netAmount = totalAmount - platformFee
+    } catch (err) {
+      logger.error('Fee calculation failed:', err.message)
+    }
+
+    await query(
+      'UPDATE Payments SET Status = ?, CompletedAt = NOW(), PlatformFee = ?, NetAmount = ? WHERE TaskID = ?', 
+      ['Completed', platformFee, netAmount, taskId]
+    )
     
     await query(
       'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES ($1, $2, $3, $4, 0, NOW())',
