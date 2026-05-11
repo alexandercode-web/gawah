@@ -139,10 +139,9 @@ function PostTaskPage({ user, onSubmitTask, posting, hasUnreadNotifications = fa
     }
 
     const serviceTotal = baseFee + complexityFee
-    const protectionFee = Math.ceil((serviceTotal + prodPrice) * 0.05) // Student Rate: 5%
-    const total = serviceTotal + prodPrice + protectionFee
+    const total = serviceTotal + prodPrice
 
-    return { baseFee, complexityFee, prodPrice, protectionFee, total, isStudentRate: true }
+    return { baseFee, complexityFee, prodPrice, total, isStudentRate: true }
   }, [form.category, form.itemQuantity, form.tutoringYear, form.errandType, form.productPrice])
 
   useEffect(() => {
@@ -685,10 +684,7 @@ function PostTaskPage({ user, onSubmitTask, posting, hasUnreadNotifications = fa
                     <span>₱{budgetDetails.prodPrice}</span>
                   </div>
                 )}
-                <div className="price-row student-discount">
-                  <span><i className="icon">🛡️</i> Platform Fee (Only 5%)</span>
-                  <span>₱{budgetDetails.protectionFee}</span>
-                </div>
+
                 <div className="price-total-row">
                   <span>Student Total to Pay</span>
                   <strong>₱{form.budget}</strong>
