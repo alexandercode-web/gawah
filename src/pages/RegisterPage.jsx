@@ -89,11 +89,13 @@ function RegisterPage({onRegister, loading, error}) {
             <div className="auth-form-stack">
               <Link to="/" className="auth-logo-link">
                 <span className="auth-logo-dot" />
-                <span>GawaHelper</span>
+                <span className="brand-gawa">Gawa</span><span className="brand-helper">Helper</span>
               </Link>
 
               <div className="auth-header">
-                <h1>Create Account</h1>
+                <h1>
+                  <span className="brand-gawa">Create</span> <span className="brand-helper">Account</span>
+                </h1>
                 <p>Build your profile and start collaborating in minutes.</p>
               </div>
 

@@ -108,11 +108,13 @@ function LoginPage({onLogin, loading, error: authError}) {
             <div className="auth-form-stack">
               <Link to="/" className="auth-logo-link">
                 <span className="auth-logo-dot" />
-                <span>GawaHelper</span>
+                <span className="brand-gawa">Gawa</span><span className="brand-helper">Helper</span>
               </Link>
 
               <div className="auth-header">
-                <h1>Welcome Back</h1>
+                <h1>
+                  <span className="brand-gawa">Welcome</span> <span className="brand-helper">Back</span>
+                </h1>
                 <p>Sign in and continue your active tasks.</p>
               </div>
 
