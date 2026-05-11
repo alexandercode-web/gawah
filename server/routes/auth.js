@@ -586,7 +586,10 @@ router.post('/forgot-password/request-code', async (req, res) => {
     }
 
     try {
-      const transporter = getEmailTransporter()
+      const transporter = await getEmailTransporter()
+      if (!transporter) {
+        return res.status(500).json({ message: 'Email service is not configured. Please contact the administrator.' })
+      }
       console.log('[EMAIL-DEBUG] Sending to:', email, 'from:', senderEmail)
       await transporter.sendMail({
         from: `"GawaHelper" <${senderEmail}>`,
@@ -801,7 +804,7 @@ router.post('/resend-verification', async (req, res) => {
     }
 
     try {
-      const transporter = getEmailTransporter()
+      const transporter = await getEmailTransporter()
       await transporter.sendMail({
         from: `"GawaHelper" <${senderEmail}>`,
         to: email,

@@ -34,51 +34,65 @@ export const uploadLimiter = rateLimit({
 })
 
 let _emailTransporter = null
-export function getEmailTransporter() {
-  if (!_emailTransporter) {
-    const user = process.env.SMTP_USER || process.env.GMAIL_USER || ''
-    const pass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || ''
+let _transporterReady = false
 
-    if (!user || !pass) {
-      console.error('[EMAIL] Missing credentials — set SMTP_USER/SMTP_PASS or GMAIL_USER/GMAIL_APP_PASSWORD')
-    }
+export async function getEmailTransporter() {
+  if (_emailTransporter && _transporterReady) return _emailTransporter
 
-    const customHost = process.env.SMTP_HOST
-    const host = customHost || 'smtp.gmail.com'
-    const port = Number(process.env.SMTP_PORT || 587)
-    const secure = port === 465
+  const user = process.env.SMTP_USER || process.env.GMAIL_USER || ''
+  const pass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || ''
 
-    _emailTransporter = nodemailer.createTransport({
-      host,
-      port,
-      secure,
-      requireTLS: !secure, // Force STARTTLS on port 587
-      auth: { user, pass },
-      tls: {
-        rejectUnauthorized: false,
-        // Force IPv4 — Railway cannot reach Gmail via IPv6
-        servername: host
-      },
-      connectionTimeout: 20000,
-      greetingTimeout: 20000,
-      socketTimeout: 25000,
-      // Force IPv4 DNS resolution — Railway's network has no IPv6 support
-      dnsLookup: (hostname, options, callback) => {
-        dns.resolve4(hostname, (err, addresses) => {
-          if (err) return callback(err)
-          callback(null, addresses[0], 4)
-        })
-      }
-    })
-
-    // Verify connection on first use
-    _emailTransporter.verify((err) => {
-      if (err) {
-        console.error('[EMAIL] Transporter verification failed:', err.message)
-      } else {
-        console.log('[EMAIL] Transporter ready — emails will be sent from:', user)
-      }
-    })
+  if (!user || !pass) {
+    console.error('[EMAIL] Missing credentials — set GMAIL_USER + GMAIL_APP_PASSWORD')
+    return null
   }
+
+  const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
+  const port = Number(process.env.SMTP_PORT || 587)
+  const secure = port === 465
+
+  // Pre-resolve to IPv4 — Railway has no IPv6 connectivity
+  let resolvedHost = smtpHost
+  try {
+    const addresses = await new Promise((resolve, reject) => {
+      dns.resolve4(smtpHost, (err, addrs) => {
+        if (err) reject(err)
+        else resolve(addrs)
+      })
+    })
+    if (addresses && addresses.length > 0) {
+      resolvedHost = addresses[0]
+      console.log(`[EMAIL] Resolved ${smtpHost} → ${resolvedHost} (IPv4)`)
+    }
+  } catch (dnsErr) {
+    console.error('[EMAIL] IPv4 DNS resolve failed:', dnsErr.message)
+    // Fall back to hostname and hope for the best
+  }
+
+  _emailTransporter = nodemailer.createTransport({
+    host: resolvedHost,
+    port,
+    secure,
+    requireTLS: !secure,
+    auth: { user, pass },
+    tls: {
+      rejectUnauthorized: false,
+      servername: smtpHost // Must use original hostname for TLS certificate validation
+    },
+    connectionTimeout: 20000,
+    greetingTimeout: 20000,
+    socketTimeout: 25000,
+  })
+
+  // Verify
+  try {
+    await _emailTransporter.verify()
+    console.log('[EMAIL] Transporter verified — ready to send from:', user)
+    _transporterReady = true
+  } catch (verifyErr) {
+    console.error('[EMAIL] Transporter verify failed:', verifyErr.message)
+    // Still return the transporter — sendMail might work even if verify fails
+  }
+
   return _emailTransporter
 }
