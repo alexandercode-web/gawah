@@ -50,6 +50,9 @@ app.use(express.json({ limit: '5mb' }))
 app.use(express.urlencoded({ limit: '5mb', extended: true }))
 app.use(cookieParser())
 
+// Serve static files from the public directory (for uploaded proofs/avatars)
+app.use(express.static(path.join(__dirname, '../public')))
+
 // SSE Endpoint
 app.get('/api/sse/stream', (req, res) => {
   const token = req.query.token || req.cookies?.gh_token
