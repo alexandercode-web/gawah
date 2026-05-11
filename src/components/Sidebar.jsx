@@ -8,19 +8,21 @@ function Sidebar({ user, onLogout, hasUnreadNotifications, logoutRedirect }) {
   const isAdmin = Number(user?.IsAdmin || 0) === 1 || user?.IsAdmin === true || String(user?.IsAdmin) === '1';
 
   const navItems = [
-    { 
-      label: 'Home', 
-      path: '/home', 
-      paths: ['M4 11.5 12 4l8 7.5V20H4z'] 
-    },
-    { 
-      label: 'My Tasks', 
-      path: '/tasks', 
-      paths: [
-        'M5 6h6v6H5z',
-        'M14 7h5M14 12h5M5 17h14'
-      ] 
-    },
+    ...(!isAdmin ? [
+      { 
+        label: 'Home', 
+        path: '/home', 
+        paths: ['M4 11.5 12 4l8 7.5V20H4z'] 
+      },
+      { 
+        label: 'My Tasks', 
+        path: '/tasks', 
+        paths: [
+          'M5 6h6v6H5z',
+          'M14 7h5M14 12h5M5 17h14'
+        ] 
+      }
+    ] : []),
     ...(isAdmin ? [
       { 
         label: 'Admin Panels', 
@@ -37,25 +39,19 @@ function Sidebar({ user, onLogout, hasUnreadNotifications, logoutRedirect }) {
           'M3 3v18h18',
           'M7 16l4-8 4 4 4-10'
         ] 
-      },
-      { 
-        label: 'Settings', 
-        path: '/admin/settings', 
-        paths: [
-          'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
-          'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z'
-        ] 
       }
     ] : []),
-    { 
-      label: 'Notifications', 
-      path: '/notifications', 
-      paths: [
-        'M18 8a6 6 0 0 0-12 0v5l-2 3h16l-2-3z',
-        'M10 19a2 2 0 0 0 4 0'
-      ],
-      hasBadge: hasUnreadNotifications
-    },
+    ...(!isAdmin ? [
+      { 
+        label: 'Notifications', 
+        path: '/notifications', 
+        paths: [
+          'M18 8a6 6 0 0 0-12 0v5l-2 3h16l-2-3z',
+          'M10 19a2 2 0 0 0 4 0'
+        ],
+        hasBadge: hasUnreadNotifications
+      }
+    ] : []),
     { 
       label: 'Profile', 
       path: '/profile', 
