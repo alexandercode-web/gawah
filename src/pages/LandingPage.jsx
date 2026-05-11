@@ -82,17 +82,7 @@ function LandingPage() {
 
           </div>
 
-          <div className="hero-stats">
-            <div className="stat">
-              <span className="stat-number">{loading ? '-' : `${stats.TotalUsers || stats.totalUsers || 0}+`}</span>
-              <span className="stat-label">active users</span>
-            </div>
-            <div className="stat">
-              <span className="stat-number">{loading ? '-' : `${stats.CompletedTasks || stats.completedTasks || 0}+`}</span>
-              <span className="stat-label">completed tasks</span>
-            </div>
-
-          </div>
+          {/* Stats section removed as requested */}
         </div>
 
         <div className="hero-right hero-live-art" aria-hidden="true">
