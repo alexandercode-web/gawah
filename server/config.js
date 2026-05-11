@@ -1,6 +1,7 @@
 import dotenv from 'dotenv'
 import rateLimit from 'express-rate-limit'
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
+import dns from 'node:dns'
 
 dotenv.config()
 
@@ -32,48 +33,56 @@ export const uploadLimiter = rateLimit({
   },
 })
 
-// Email via Resend (HTTP API — works on Railway, unlike SMTP which is blocked)
-let _resend = null
-
-function getResend() {
-  if (!_resend) {
-    const apiKey = process.env.RESEND_API_KEY
-    if (!apiKey) {
-      console.error('[EMAIL] RESEND_API_KEY not set')
-      return null
-    }
-    _resend = new Resend(apiKey)
-    console.log('[EMAIL] Resend client initialized')
-  }
-  return _resend
-}
+// Email via Nodemailer (as requested)
+let _emailTransporter = null
 
 /**
- * Send an email using Resend (HTTP-based, no SMTP needed).
- * @param {object} options - { to, subject, html }
+ * Get the email transporter instance.
+ * @returns {object} The nodemailer transporter
  */
-export async function sendEmail({ to, subject, html }) {
-  const resend = getResend()
-  if (!resend) {
-    throw new Error('Email service not configured. Set RESEND_API_KEY on the server.')
+export function getEmailTransporter() {
+  if (!_emailTransporter) {
+    const user = process.env.SMTP_USER || process.env.GMAIL_USER || ''
+    const pass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || ''
+
+    if (!user || !pass) {
+      console.error('[EMAIL] Missing credentials — set GMAIL_USER + GMAIL_APP_PASSWORD')
+    }
+
+    const host = process.env.SMTP_HOST || 'smtp.gmail.com'
+    const port = Number(process.env.SMTP_PORT || 587)
+    const secure = port === 465
+
+    _emailTransporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      requireTLS: !secure,
+      auth: { user, pass },
+      tls: {
+        rejectUnauthorized: false,
+        servername: host // Crucial for certificate matching
+      },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000,
+      // Force IPv4 DNS lookup to avoid ENETUNREACH IPv6 errors on Railway
+      dnsLookup: (hostname, options, callback) => {
+        dns.resolve4(hostname, (err, addresses) => {
+          if (err) return callback(err)
+          callback(null, addresses[0], 4)
+        })
+      }
+    })
+
+    // Log status but don't block
+    _emailTransporter.verify((err) => {
+      if (err) {
+        console.error('[EMAIL] Nodemailer Transporter Error:', err.message)
+      } else {
+        console.log('[EMAIL] Nodemailer Transporter Ready (from:', user, ')')
+      }
+    })
   }
-
-  const fromAddress = process.env.EMAIL_FROM || 'GawaHelper <onboarding@resend.dev>'
-
-  console.log('[EMAIL] Sending to:', to, 'from:', fromAddress)
-
-  const { data, error } = await resend.emails.send({
-    from: fromAddress,
-    to: [to],
-    subject,
-    html,
-  })
-
-  if (error) {
-    console.error('[EMAIL] Resend error:', JSON.stringify(error))
-    throw new Error(error.message || 'Failed to send email')
-  }
-
-  console.log('[EMAIL] Sent successfully, id:', data?.id)
-  return data
+  return _emailTransporter
 }
