@@ -278,6 +278,7 @@ function MyTasksPage({user, myTasks, loading, error, hasUnreadNotifications = fa
             ))}
           </ul>
         )}
+      </section>
       <Sidebar 
         user={user} 
         onLogout={onLogout} 
