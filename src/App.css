@@ -170,20 +170,20 @@ textarea:focus-visible {
 .home-header h1, 
 .home-header h1 .brand-gawa, 
 .home-header h1 .brand-helper {
-  font-size: 2.2rem;
+  font-size: 1.95rem;
   margin: 0;
-  font-weight: 900;
-  letter-spacing: -0.04em;
+  font-weight: 800;
+  letter-spacing: -0.035em;
   color: #ffffff !important;
   background: none !important;
   -webkit-text-fill-color: initial !important;
 }
 
 .home-header p {
-  margin: 0.5rem 0 0;
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 600;
+  margin: 0.4rem 0 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 500;
 }
 
 .home-header-icons {
