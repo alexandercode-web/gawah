@@ -1615,32 +1615,36 @@ textarea:focus-visible {
 }
 
 .refresh-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.18);
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: #fff;
   display: grid;
   place-items: center;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .refresh-btn:hover {
-  background: rgba(255, 255, 255, 0.26);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px) rotate(15deg);
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.15);
 }
 
-.refresh-btn:disabled {
-  opacity: 0.75;
-  cursor: not-allowed;
-  transform: none;
+.refresh-btn:active {
+  transform: translateY(0) scale(0.95);
 }
 
 .refresh-btn svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .refresh-btn svg.spinning {
@@ -9476,7 +9480,6 @@ td {
 
 .home-primary-btn,
 .home-secondary-btn,
-.mark-read-btn,
 .profile-quick-btn {
   min-height: 40px;
   border-radius: 10px;
@@ -9491,9 +9494,44 @@ td {
 .home-primary-btn,
 .profile-quick-btn,
 .mark-read-btn {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  color: #fff;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 25px rgba(29, 78, 216, 0.3) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  padding: 0.6rem 1.25rem !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.mark-read-btn::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.mark-read-btn:hover::after {
+  opacity: 1;
+}
+
+.mark-read-btn .btn-icon {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s ease;
+}
+
+.mark-read-btn:hover .btn-icon {
+  transform: scale(1.1) rotate(-5deg);
 }
 
 .home-secondary-btn,
@@ -9518,9 +9556,15 @@ td {
 }
 
 .notifications-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.85rem !important;
+  animation: actionsFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes actionsFadeIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .profile-email-line {
@@ -9570,11 +9614,7 @@ td {
     gap: 0.35rem;
   }
 
-  .mark-read-btn {
-    min-height: 38px;
-    padding-inline: 0.62rem;
-    font-size: 0.78rem;
-  }
+  /* Removed override */
 
   .tasks-tab {
     font-size: 0.84rem;
@@ -9860,24 +9900,9 @@ td {
   padding-top: 0.9rem;
 }
 
-.notifications-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
+/* Consolidated in premium section */
 
-.mark-read-btn {
-  min-height: 42px;
-  border-radius: 12px;
-  border: none;
-  padding: 0 0.95rem;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  color: #fff;
-  font-size: 0.84rem;
-  font-weight: 700;
-  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
-}
+/* Consolidated in premium section */
 
 .no-notifications-wrap {
   display: grid;
@@ -9975,7 +10000,6 @@ td {
 
   .home-dashboard-head,
   .home-dashboard-actions,
-  .notifications-actions,
   .profile-quick-actions {
     width: 100%;
   }
@@ -9984,8 +10008,7 @@ td {
   .home-export-btn,
   .tasks-new-btn,
   .profile-header-action,
-  .profile-quick-btn,
-  .mark-read-btn {
+  .profile-quick-btn {
     width: 100%;
   }
 }

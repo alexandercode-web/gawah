@@ -373,7 +373,11 @@ function NotificationsPage({ summary, myTasks, user, onNotificationsRead, onLogo
               </svg>
             </button>
             <button className="mark-read-btn" type="button" onClick={markAllAsRead} disabled={unreadCount === 0}>
-              Mark all read
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="btn-icon">
+                <path d="M7 13l3 3 7-7" />
+                <path d="M12 18l3 3 7-7" opacity="0.6" />
+              </svg>
+              <span>Mark all read</span>
             </button>
           </div>
         </div>

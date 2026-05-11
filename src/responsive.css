@@ -603,10 +603,7 @@ img {
     gap: 0.5rem !important;
   }
 
-  .notifications-actions {
-    display: flex !important;
-    gap: 0.5rem !important;
-  }
+  /* Removed legacy override */
 
   /* Profile page - FIT EVERYTHING */
   .profile-page {
