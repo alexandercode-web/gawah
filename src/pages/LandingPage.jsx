@@ -62,9 +62,9 @@ function LandingPage() {
       title: 'Contact Us',
       intro: 'Get in touch with our team.',
       items: [
-        { title: 'Email', description: 'support@gawahelper.com' },
-        { title: 'Social', description: 'Facebook: GawaHelper Official' },
-        { title: 'Office', description: 'Campus Center, 2nd Floor, Manila' }
+        { title: 'Email', description: 'None' },
+        { title: 'Social', description: 'Facebook: None' },
+        { title: 'Office', description: 'University of Cebu Lapu-Lapu And Mandaue' }
       ]
     }
   }
