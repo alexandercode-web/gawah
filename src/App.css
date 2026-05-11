@@ -228,95 +228,138 @@ textarea:focus-visible {
 .status-guide-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(2, 6, 23, 0.5);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 70;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  animation: ghFadeIn 0.3s ease-out;
 }
 
 .status-guide-modal {
-  width: min(620px, 100%);
-  max-height: 88vh;
-  background: #fff;
-  border-radius: 22px 22px 0 0;
+  background: #ffffff;
+  width: 100%;
+  max-width: 520px;
+  max-height: 85vh;
+  border-radius: 28px;
+  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.18);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: ghModalUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .status-guide-header {
-  padding: 1.35rem 1.5rem 1.2rem;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 1.75rem 2rem;
+  border-bottom: 1px solid #f1f5f9;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 }
 
 .status-guide-header h2 {
   margin: 0;
-  color: #0f172a;
-  font-size: 2rem;
+  color: #1e293b;
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .status-guide-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   border: 0;
-  background: transparent;
-  color: #111827;
-  font-size: 2rem;
-  line-height: 1;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 1.25rem;
+  display: grid;
+  place-items: center;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.status-guide-close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .status-guide-content {
-  padding: 1rem 1.4rem 1.25rem;
+  padding: 2rem;
   overflow-y: auto;
-  display: grid;
-  gap: 0.9rem;
+  flex: 1;
 }
 
 .status-guide-intro {
-  margin: 0;
-  color: #334155;
-  font-size: 0.98rem;
+  margin: 0 0 1.5rem;
+  color: #64748b;
+  font-size: 1.05rem;
+  line-height: 1.5;
 }
 
 .status-guide-list {
   display: grid;
-  gap: 0.8rem;
+  gap: 1rem;
 }
 
 .status-guide-item {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 1rem 1.1rem;
+  padding: 1.25rem 1.5rem;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 20px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.status-guide-item:hover {
+  border-color: #e2e8f0;
+  transform: translateX(4px);
 }
 
 .status-guide-item-title {
-  margin: 0;
-  font-size: 0.98rem;
+  margin: 0 0 0.5rem;
   font-weight: 700;
+  font-size: 1.15rem;
   display: flex;
   align-items: center;
-  gap: 0.7rem;
-  color: #111827;
-}
-
-.status-dot {
-  width: 0.85rem;
-  height: 0.85rem;
-  border-radius: 999px;
-  display: inline-block;
-  flex-shrink: 0;
+  gap: 0.75rem;
 }
 
 .status-guide-item-description {
-  margin: 0.5rem 0 0;
-  color: #6b7280;
-  padding-left: 1.55rem;
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  padding-left: 1.75rem;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Specific Status Colors to match screenshot */
+.status-guide-item-title.orange { color: #f59e0b; }
+.status-dot.orange { background: #f59e0b; }
+
+.status-guide-item-title.blue { color: #2563eb; }
+.status-dot.blue { background: #2563eb; }
+
+.status-guide-item-title.green { color: #10b981; }
+.status-dot.green { background: #10b981; }
+
+.status-guide-item-title.red { color: #ef4444; }
+.status-dot.red { background: #ef4444; }
+
+.status-guide-tip {
+  margin-top: 2rem;
+  padding: 1.25rem;
+  background: #f8fafc;
+  border-radius: 16px;
   font-size: 0.9rem;
-  line-height: 1.4;
+  color: #64748b;
+  border-left: 4px solid #3b82f6;
 }
 
 .status-guide-item-title.orange {
