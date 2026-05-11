@@ -1337,10 +1337,12 @@ function TaskDetailsPage({user, hasUnreadNotifications = false, onLogout, onTask
           <button
             type="button"
             className="image-lightbox-close"
-            onClick={closeImageLightbox}
             aria-label="Close image preview"
+            onClick={closeImageLightbox}
           >
-            ×
+            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="3" fill="none">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
           </button>
           <div className="image-lightbox-body" onClick={(event) => event.stopPropagation()}>
             <img
