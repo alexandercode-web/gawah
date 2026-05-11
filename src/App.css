@@ -10983,7 +10983,8 @@ td {
   background: #fff;
   border-bottom: 1px solid #e2e8f0;
   overflow-x: auto;
-  sticky: top;
+  position: sticky;
+  top: 0;
   z-index: 10;
 }
 
