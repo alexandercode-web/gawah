@@ -173,7 +173,7 @@ router.get('/notifications', requireAuth, async (req, res) => {
   }
 })
 
-router.patch('/:notificationId', requireAuth, async (req, res) => {
+router.patch('/notifications/:notificationId', requireAuth, async (req, res) => {
   try {
     const notificationId = Number(req.params.notificationId)
     await query('UPDATE Notifications SET IsRead = 1 WHERE NotificationID = ? AND UserID = ?', [notificationId, req.user.id])
