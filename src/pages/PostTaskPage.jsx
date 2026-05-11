@@ -298,6 +298,7 @@ function PostTaskPage({ user, onSubmitTask, posting, hasUnreadNotifications = fa
       if (!normalizeCategory(value).includes('delivery')) {
         next.itemName = ''
         next.itemQuantity = '1'
+        next.productPrice = '0'
       }
       return next
     })
