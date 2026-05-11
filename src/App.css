@@ -11234,41 +11234,23 @@ td {
   height: 300px;
 }
 
-/* Sections */
-.reports-section {
-  background: #1e293b;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-  overflow: hidden;
-}
-
-.reports-section-head {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.reports-section-head h2 {
-  margin: 0;
-  font-size: 1.2rem;
-  color: #f8fafc;
-}
-
-/* Tables */
-.reports-table th {
-  background: rgba(255, 255, 255, 0.02);
-  color: #94a3b8;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  padding: 1rem;
-}
-
+/* Consolidate Reports Table styles for high contrast */
 .reports-table td {
   padding: 1rem;
-  color: #cbd5e1;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.reports-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1rem;
 }
 
 .budget-display-value.mini {
