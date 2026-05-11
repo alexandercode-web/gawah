@@ -188,27 +188,26 @@ function HomePage({user, summary, myTasks = [], loading, error, hasUnreadNotific
               <p>{`Welcome back${user?.FullName ? `, ${user.FullName.split(' ')[0]}` : ''}. Find tasks or get help.`}</p>
             </div>
           </div>
-          <div className="home-header-icons">
-            <button
-              type="button"
-              className="icon-btn help-btn"
-              aria-label="Task status guide"
-              onClick={() => setShowStatusGuide(true)}
-            >
-              ?
-            </button>
-            <button
-              type="button"
-              className="icon-btn add-btn"
-              aria-label="Post task"
-              onClick={() => navigate('/tasks/new')}
-            >
-              +
-            </button>
-          </div>
         </div>
 
-
+        <div className="home-action-row">
+          <button
+            type="button"
+            className="icon-btn help-btn"
+            aria-label="Task status guide"
+            onClick={() => setShowStatusGuide(true)}
+          >
+            ?
+          </button>
+          <button
+            type="button"
+            className="icon-btn add-btn"
+            aria-label="Post task"
+            onClick={() => navigate('/tasks/new')}
+          >
+            +
+          </button>
+        </div>
       </header>
 
       {error && <div className="feedback error">{error}</div>}
