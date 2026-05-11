@@ -4257,17 +4257,22 @@ textarea:focus-visible {
 
 .image-lightbox-close {
   position: absolute;
-  top: 0.9rem;
-  right: 1rem;
-  width: 42px;
-  height: 42px;
+  top: 1rem;
+  right: 1.5rem;
+  width: 44px;
+  height: 44px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.38);
-  background: rgba(15, 23, 42, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(15, 23, 42, 0.8);
   color: #fff;
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   line-height: 1;
   cursor: pointer;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 
 .message-link-card {
