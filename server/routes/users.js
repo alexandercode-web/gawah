@@ -55,7 +55,7 @@ router.get('/home/summary', requireAuth, async (req, res) => {
     return res.json({ metrics: metricsResult[0], recentTasks: recentTasksResult })
   } catch (error) {
     logger.error('API Error:', error.message);
-    return res.status(500).json({ message: 'An internal server error occurred.' })
+    return res.status(500).json({ message: error.message })
   }
 })
 
