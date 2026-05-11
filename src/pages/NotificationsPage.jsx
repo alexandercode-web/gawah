@@ -74,6 +74,7 @@ function NotificationsPage({ summary, myTasks, user, onNotificationsRead, onLogo
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [refreshToast, setRefreshToast] = useState('')
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [ratingDetails, setRatingDetails] = useState(null)
   const [ratingModalLoading, setRatingModalLoading] = useState(false)
@@ -94,15 +95,25 @@ function NotificationsPage({ summary, myTasks, user, onNotificationsRead, onLogo
 
   async function handleRefresh() {
     setRefreshing(true)
+    setRefreshToast('')
     try {
       const data = await api.listNotifications()
       if (Array.isArray(data)) {
+        const oldCount = items.length
         setItems(data)
+        const newCount = data.length - oldCount
+        if (newCount > 0) {
+          setRefreshToast(`${newCount} new notification${newCount > 1 ? 's' : ''}`)
+        } else {
+          setRefreshToast('All caught up!')
+        }
       }
     } catch (error) {
       console.error('Failed to refresh notifications:', error)
+      setRefreshToast('Refresh failed')
     } finally {
       setRefreshing(false)
+      setTimeout(() => setRefreshToast(''), 2500)
     }
   }
 
@@ -351,7 +362,7 @@ function NotificationsPage({ summary, myTasks, user, onNotificationsRead, onLogo
           </div>
           <div className="notifications-actions">
             <button
-              className="refresh-btn"
+              className={`refresh-btn ${refreshing ? 'is-refreshing' : ''}`}
               onClick={handleRefresh}
               disabled={refreshing}
               title="Refresh notifications"
@@ -366,6 +377,8 @@ function NotificationsPage({ summary, myTasks, user, onNotificationsRead, onLogo
             </button>
           </div>
         </div>
+        {refreshing && <div className="notif-refresh-bar" />}
+        {refreshToast && <div className="notif-refresh-toast">{refreshToast}</div>}
       </header>
 
       <section className="notifications-overview" aria-label="Notification overview">
