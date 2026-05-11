@@ -4988,7 +4988,7 @@ textarea:focus-visible {
 }
 
 .navbar-brand, .brand-text, .home-header h1 {
-  background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%) !important;
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   color: transparent !important;
@@ -4998,8 +4998,8 @@ textarea:focus-visible {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #f59e0b;
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+  background: #2563eb;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.6);
 }
 
 .navbar-links {
