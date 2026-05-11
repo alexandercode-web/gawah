@@ -417,6 +417,56 @@ router.post('/logout', (req, res) => {
   return res.json({ success: true, message: 'Logged out successfully' })
 })
 
+router.post('/me/profile-image', requireAuth, async (req, res) => {
+  try {
+    const { imageDataUrl, fileName } = req.body
+    const userId = req.user.id
+
+    if (!imageDataUrl) {
+      return res.status(400).json({ message: 'Image data is required' })
+    }
+
+    const matches = imageDataUrl.match(/^data:([^;]+);base64,(.+)$/i)
+    if (!matches) {
+      return res.status(400).json({ message: 'Invalid image format' })
+    }
+
+    const mime = matches[1]
+    const base64Payload = matches[2]
+    let ext = 'jpg'
+    if (mime.includes('png')) ext = 'png'
+    else if (mime.includes('jpeg')) ext = 'jpg'
+    else if (fileName && fileName.includes('.')) {
+      ext = fileName.split('.').pop().toLowerCase()
+    }
+
+    const safeName = `avatar-${userId}-${Date.now()}.${ext}`
+    const filePath = `avatars/${safeName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('uploads')
+      .upload(filePath, Buffer.from(base64Payload, 'base64'), {
+        contentType: mime,
+        upsert: true
+      })
+
+    if (uploadError) {
+      throw new Error(`Supabase upload failed: ${uploadError.message}`)
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('uploads')
+      .getPublicUrl(filePath)
+
+    await query('UPDATE Users SET ProfileImage = ? WHERE UserID = ?', [publicUrl, userId])
+
+    return res.json({ success: true, profileImage: publicUrl })
+  } catch (error) {
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+
 router.post('/change-password', requireAuth, async (req, res) => {
   const currentPassword = req.body.currentPassword || ''
   const newPassword = req.body.newPassword || ''
