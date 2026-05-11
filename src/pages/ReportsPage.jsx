@@ -544,11 +544,11 @@ function ReportsPage({hasUnreadNotifications = false}) {
     downloadCSV('gawahelper_activity_log.csv',
       ['Type', 'User', 'Description', 'Ref ID', 'Timestamp'],
       filteredAct.map(a => [
-        ACTIVITY_LABELS[a.type] || a.type,
+        ACTIVITY_LABELS[a.type || a.Type] || a.type || a.Type,
         a.UserName,
-        a.description,
-        a.referenceId,
-        new Date(a.timestamp).toLocaleString(),
+        a.description || a.Description,
+        a.referenceId || a.ReferenceId,
+        new Date(a.timestamp || a.Timestamp).toLocaleString(),
       ])
     )
   }
@@ -844,28 +844,34 @@ function ReportsPage({hasUnreadNotifications = false}) {
             {filteredAct.length === 0 ? (
               <div className="reports-empty">No activity logs found</div>
             ) : (
-              filteredAct.map((act, i) => (
-                <article key={`act-${i}`} className="activity-item">
-                  <div className="activity-dot-line">
-                    <span className={`activity-dot ${act.type}`} aria-hidden="true">
-                      {ACTIVITY_ICONS[act.type] || '●'}
-                    </span>
-                    {i < filteredAct.length - 1 && <span className="activity-line" />}
-                  </div>
-                  <div className="activity-body">
-                    <div className="activity-head">
-                      <span className={`activity-type-badge ${act.type}`}>
-                        {ACTIVITY_LABELS[act.type] || act.type}
+              filteredAct.map((act, i) => {
+                const aType = act.type || act.Type;
+                const aDesc = act.description || act.Description;
+                const aTime = act.timestamp || act.Timestamp;
+                
+                return (
+                  <article key={`act-${i}`} className="activity-item">
+                    <div className="activity-dot-line">
+                      <span className={`activity-dot ${aType}`} aria-hidden="true">
+                        {ACTIVITY_ICONS[aType] || '●'}
                       </span>
-                      <time className="activity-time">
-                        {new Date(act.timestamp).toLocaleString()}
-                      </time>
+                      {i < filteredAct.length - 1 && <span className="activity-line" />}
                     </div>
-                    <p className="activity-desc">{act.description}</p>
-                    <span className="activity-user">by {act.UserName}</span>
-                  </div>
-                </article>
-              ))
+                    <div className="activity-body">
+                      <div className="activity-head">
+                        <span className={`activity-type-badge ${aType}`}>
+                          {ACTIVITY_LABELS[aType] || aType}
+                        </span>
+                        <time className="activity-time">
+                          {aTime ? new Date(aTime).toLocaleString() : 'No Date'}
+                        </time>
+                      </div>
+                      <p className="activity-desc">{aDesc}</p>
+                      <span className="activity-user">by {act.UserName}</span>
+                    </div>
+                  </article>
+                );
+              })
             )}
           </div>
 
