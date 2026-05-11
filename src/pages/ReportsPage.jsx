@@ -443,7 +443,7 @@ function ReportsPage({hasUnreadNotifications = false}) {
     ], 'Tasks Created per Month')
 
     // Doughnut – Status Distribution
-    const statusOrder = ['completed', 'assigned', 'open', 'waiting', 'cancelled']
+    const statusOrder = ['open', 'waiting', 'completed', 'assigned', 'cancelled']
     const rawStatusList = summary.tasksByStatus || []
     
     // Sort logic to ensure Completed is left, Open is right
