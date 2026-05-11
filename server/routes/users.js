@@ -59,6 +59,27 @@ router.get('/home/summary', requireAuth, async (req, res) => {
   }
 })
 
+router.get('/debug-query', async (req, res) => {
+  try {
+    const q = await query(`
+      SELECT DISTINCT
+        t.TaskID, t.Title, t.Location, t.Budget, t.Status,
+        u.FullName AS PosterName, u.Rating AS PosterRating,
+        c.CategoryName, t.CreatedAt
+      FROM Tasks t
+      INNER JOIN Users u ON t.UserID = u.UserID
+      LEFT JOIN Categories c ON t.CategoryID = c.CategoryID
+      LEFT JOIN TaskAssignments ta ON ta.TaskID = t.TaskID AND ta.HelperID = 1::int
+      WHERE LOWER(t.Status) NOT IN ('completed', 'cancelled')
+        AND (LOWER(t.Status) = 'open' OR t.UserID = 1::int OR ta.HelperID = 1::int)
+      ORDER BY t.CreatedAt DESC
+      LIMIT 50
+    `)
+    return res.json({ success: true, data: q })
+  } catch (e) {
+    return res.json({ success: false, error: e.message, stack: e.stack })
+  }
+})
 
 router.get('/', requireAuth, async (_req, res) => {
   try {
