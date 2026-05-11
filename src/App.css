@@ -11327,20 +11327,7 @@ td {
   border-color: #2563eb;
   box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
 }
-
-/* Consolidated above */  align-items: center;
-  gap: 0.45rem;
-  padding: 0.7rem 1.2rem;
-  border: 1px solid #d1d9e6;
-  border-radius: 12px;
-  background: #fff;
-  color: #475569;
-  font-size: 0.88rem;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
+/* Removed malformed block */
 
 .reports-tab svg {
   width: 1.1rem;
