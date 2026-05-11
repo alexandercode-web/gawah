@@ -209,8 +209,8 @@ textarea:focus-visible {
 }
 
 .help-btn {
-  background: rgba(0, 0, 0, 0.05);
-  color: #111827;
+  background: #f59e0b;
+  color: #ffffff;
 }
 
 .add-btn {
