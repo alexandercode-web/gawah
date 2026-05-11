@@ -208,39 +208,7 @@ function HomePage({user, summary, myTasks = [], loading, error, hasUnreadNotific
           </div>
         </div>
 
-        <div className="home-search">
-          <span className="search-icon">⌕</span>
-          <input
-            type="text"
-            placeholder="Search tasks..."
-            className="search-input"
-            value={searchText}
-            onChange={(event) => setSearchText(event.target.value)}
-          />
-          <button className="filter-btn" aria-label="Filter" onClick={() => setShowFilterMenu((prev) => !prev)}>
-            <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-              <path d="M3 6h18l-7 7v5l-4 2v-7z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
 
-        {showFilterMenu && (
-          <div className="home-filter-menu" role="menu" aria-label="Task filter options">
-            {statusFilters.map((item) => (
-              <button
-                key={item}
-                type="button"
-                className={`home-filter-item ${statusFilter === item ? 'active' : ''}`}
-                onClick={() => {
-                  setStatusFilter(item)
-                  setShowFilterMenu(false)
-                }}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-        )}
       </header>
 
       {error && <div className="feedback error">{error}</div>}
