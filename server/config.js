@@ -36,29 +36,49 @@ export const uploadLimiter = rateLimit({
 let _emailTransporter = null
 export function getEmailTransporter() {
   if (!_emailTransporter) {
-    const host = process.env.SMTP_HOST || 'smtp.gmail.com'
-    const port = Number(process.env.SMTP_PORT || 587)
-    const secure = process.env.SMTP_SECURE === 'true' // For port 587, secure should usually be false
     const user = process.env.SMTP_USER || process.env.GMAIL_USER || ''
     const pass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || ''
 
-    _emailTransporter = nodemailer.createTransport({
-      host,
-      port,
-      secure, // false for 587, true for 465
-      auth: { user, pass },
-      tls: {
-        rejectUnauthorized: false
-      },
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
-      // Force IPv4 DNS lookup — Railway cannot reach Gmail via IPv6
-      dnsLookup: (hostname, options, callback) => {
-        dns.resolve4(hostname, (err, addresses) => {
-          if (err) return callback(err)
-          callback(null, addresses[0], 4)
-        })
+    if (!user || !pass) {
+      console.error('[EMAIL] Missing credentials — set SMTP_USER/SMTP_PASS or GMAIL_USER/GMAIL_APP_PASSWORD')
+    }
+
+    // Use Gmail service (handles host/port/TLS automatically)
+    // If a custom SMTP_HOST is set, use manual config instead
+    const customHost = process.env.SMTP_HOST
+
+    if (customHost) {
+      const port = Number(process.env.SMTP_PORT || 587)
+      const secure = port === 465
+
+      _emailTransporter = nodemailer.createTransport({
+        host: customHost,
+        port,
+        secure,
+        auth: { user, pass },
+        tls: { rejectUnauthorized: false },
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 20000,
+      })
+    } else {
+      // Default: use Gmail service (simplest, most reliable)
+      _emailTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user, pass },
+        tls: { rejectUnauthorized: false },
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 20000,
+      })
+    }
+
+    // Verify connection on first use
+    _emailTransporter.verify((err) => {
+      if (err) {
+        console.error('[EMAIL] Transporter verification failed:', err.message)
+      } else {
+        console.log('[EMAIL] Transporter ready — emails will be sent from:', user)
       }
     })
   }

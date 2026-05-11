@@ -607,13 +607,9 @@ router.post('/forgot-password/request-code', async (req, res) => {
         `,
       })
     } catch (emailError) {
-      console.error('Email sending failed FULL TRACE:', emailError)
-      // SMTP is blocked on Railway — fall back to returning the code directly
-      logger.warn('SMTP failed, returning reset code directly as fallback')
-      return res.json({
-        message: 'Email service unavailable. Use the code below to reset your password.',
-        resetCode,
-        smtpFailed: true
+      console.error('[EMAIL] Forgot-password send failed:', emailError.message, emailError.code || '')
+      return res.status(500).json({
+        message: 'Failed to send reset code email. Please ensure GMAIL_USER and GMAIL_APP_PASSWORD are configured on the server.'
       })
     }
 
