@@ -337,15 +337,15 @@ function LandingPage() {
           </div>
           <div className="footer-section">
             <h4>Resources</h4>
-            <a href="/login">Support</a>
-            <a href="/register">Community</a>
-            <a href="/login">Helper Guide</a>
+            <Link to="/support">Support</Link>
+            <Link to="/community">Community</Link>
+            <Link to="/helper-guide">Helper Guide</Link>
           </div>
           <div className="footer-section">
             <h4>Legal</h4>
-            <a href="/">Terms of Service</a>
-            <a href="/">Privacy Policy</a>
-            <a href="/">Contact Us</a>
+            <Link to="/terms">Terms of Service</Link>
+            <Link to="/privacy">Privacy Policy</Link>
+            <Link to="/contact">Contact Us</Link>
           </div>
         </div>
         <div className="footer-bottom">

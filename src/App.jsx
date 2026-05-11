@@ -22,6 +22,11 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
 
 import SupportPage from './pages/SupportPage'
+import CommunityPage from './pages/CommunityPage'
+import HelperGuidePage from './pages/HelperGuidePage'
+import TermsPage from './pages/TermsPage'
+import PrivacyPage from './pages/PrivacyPage'
+import ContactPage from './pages/ContactPage'
 import './App.css'
 import './responsive.css'
 
@@ -461,13 +466,27 @@ function App() {
 
         <Route
           path="/support"
-          element={
-            token ? (
-              <SupportPage hasUnreadNotifications={hasUnreadNotifications} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
+          element={<SupportPage hasUnreadNotifications={hasUnreadNotifications} />}
+        />
+        <Route
+          path="/community"
+          element={<CommunityPage hasUnreadNotifications={hasUnreadNotifications} />}
+        />
+        <Route
+          path="/helper-guide"
+          element={<HelperGuidePage hasUnreadNotifications={hasUnreadNotifications} />}
+        />
+        <Route
+          path="/terms"
+          element={<TermsPage hasUnreadNotifications={hasUnreadNotifications} />}
+        />
+        <Route
+          path="/privacy"
+          element={<PrivacyPage hasUnreadNotifications={hasUnreadNotifications} />}
+        />
+        <Route
+          path="/contact"
+          element={<ContactPage hasUnreadNotifications={hasUnreadNotifications} />}
         />
         <Route
           path="/admin"

@@ -63,11 +63,13 @@ function SupportPage({ hasUnreadNotifications = false }) {
           <p>Made for Campus Productivity</p>
         </footer>
       </div>
-      <Sidebar 
-        user={user} 
-        onLogout={onLogout} 
-        hasUnreadNotifications={hasUnreadNotifications} 
-      />
+      {user && (
+        <Sidebar 
+          user={user} 
+          onLogout={onLogout} 
+          hasUnreadNotifications={hasUnreadNotifications} 
+        />
+      )}
     </section>
   )
 }
