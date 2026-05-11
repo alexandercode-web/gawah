@@ -226,32 +226,47 @@ function MessagesPage({user, onLogout}) {
   }
 
   async function compressImageFile(file) {
-    const objectUrl = URL.createObjectURL(file)
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDimension = 1280;
+          let width = img.width;
+          let height = img.height;
 
-    try {
-      const bitmap = await createImageBitmap(file)
-      const maxDimension = 1280
-      const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height))
-      const targetWidth = Math.max(1, Math.round(bitmap.width * scale))
-      const targetHeight = Math.max(1, Math.round(bitmap.height * scale))
+          if (width > height) {
+            if (width > maxDimension) {
+              height *= maxDimension / width;
+              width = maxDimension;
+            }
+          } else {
+            if (height > maxDimension) {
+              width *= maxDimension / height;
+              height = maxDimension;
+            }
+          }
 
-      const canvas = document.createElement('canvas')
-      canvas.width = targetWidth
-      canvas.height = targetHeight
-
-      const context = canvas.getContext('2d')
-      if (!context) {
-        return { dataUrl: await fileToDataUrl(file), mime: file.type || 'image/jpeg' }
-      }
-
-      context.drawImage(bitmap, 0, 0, targetWidth, targetHeight)
-      const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg'
-      const quality = mime === 'image/png' ? undefined : 0.82
-      const dataUrl = canvas.toDataURL(mime, quality)
-      return { dataUrl, mime }
-    } finally {
-      URL.revokeObjectURL(objectUrl)
-    }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve({ dataUrl: String(e.target.result), mime: file.type || 'image/jpeg' });
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+          const quality = mime === 'image/png' ? undefined : 0.82;
+          resolve({ dataUrl: canvas.toDataURL(mime, quality), mime });
+        };
+        img.onerror = () => reject(new Error('Failed to load image for compression.'));
+        img.src = String(e.target.result);
+      };
+      reader.onerror = () => reject(new Error('Failed to read file.'));
+      reader.readAsDataURL(file);
+    });
   }
 
   function fileToDataUrl(file) {
@@ -280,6 +295,7 @@ function MessagesPage({user, onLogout}) {
     }
 
     try {
+      setSending(true) // Reuse sending state to show loading
       const { dataUrl, mime } = file.size > 450 * 1024
         ? await compressImageFile(file)
         : { dataUrl: await fileToDataUrl(file), mime: file.type || 'image/jpeg' }
@@ -294,7 +310,11 @@ function MessagesPage({user, onLogout}) {
         fileInputRef.current.value = ''
       }
     } catch (error) {
+      console.error('Attachment error:', error)
       setAttachmentError(error.message || 'Unable to load image.')
+      alert('Error loading image: ' + (error.message || 'Please try a different image.'))
+    } finally {
+      setSending(false)
     }
   }
 

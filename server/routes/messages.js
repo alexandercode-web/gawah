@@ -89,6 +89,7 @@ router.post('/', requireAuth, async (req, res) => {
       INSERT INTO Messages 
         (TaskID, SenderID, RecipientID, Content, AttachmentType, AttachmentData, AttachmentName, AttachmentMime, IsRead)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+      RETURNING MessageID
     `, [
       Number(taskId),
       senderId,
@@ -101,11 +102,12 @@ router.post('/', requireAuth, async (req, res) => {
     ])
 
     await query(
-      'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES ($1, $2, $3, $4, 0, NOW())',
+      'INSERT INTO Notifications (UserID, SenderID, TaskID, Message, IsRead, CreatedAt) VALUES (?, ?, ?, ?, 0, NOW())',
       [Number(recipientId), senderId, Number(taskId), 'You received a new message.']
     )
 
-    return res.json({ success: true, messageId: result.insertId, attachmentUrl: savedAttachmentUrl })
+    const messageId = result[0]?.MessageID || result[0]?.messageid || 0
+    return res.json({ success: true, messageId, attachmentUrl: savedAttachmentUrl })
   } catch (error) {
     logger.error('API Error:', error.message)
     return res.status(500).json({ message: 'An internal server error occurred.' })
