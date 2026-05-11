@@ -53,20 +53,25 @@ export function getEmailTransporter() {
     const port = Number(process.env.SMTP_PORT || 587)
     const secure = port === 465
 
+    // If using default Gmail, we force a known good IPv4 address to bypass Railway's broken IPv6 DNS resolution
+    const actualHost = (host === 'smtp.gmail.com') ? '142.251.12.109' : host 
+
+    console.log('[EMAIL] Initializing transporter with host:', actualHost, 'port:', port)
+
     _emailTransporter = nodemailer.createTransport({
-      host,
+      host: actualHost,
       port,
       secure,
       requireTLS: !secure,
       auth: { user, pass },
       tls: {
         rejectUnauthorized: false,
-        servername: host // Crucial for certificate matching
+        servername: 'smtp.gmail.com' // CRITICAL: This must stay as the hostname for TLS certificates to match
       },
-      connectionTimeout: 15000,
-      greetingTimeout: 15000,
-      socketTimeout: 20000,
-      // Force IPv4 DNS lookup to avoid ENETUNREACH IPv6 errors on Railway
+      connectionTimeout: 20000,
+      greetingTimeout: 20000,
+      socketTimeout: 25000,
+      // Backup forcing IPv4 DNS lookup
       dnsLookup: (hostname, options, callback) => {
         dns.resolve4(hostname, (err, addresses) => {
           if (err) return callback(err)
@@ -80,7 +85,7 @@ export function getEmailTransporter() {
       if (err) {
         console.error('[EMAIL] Nodemailer Transporter Error:', err.message)
       } else {
-        console.log('[EMAIL] Nodemailer Transporter Ready (from:', user, ')')
+        console.log('[EMAIL] Nodemailer Transporter Ready (via IPv4:', actualHost, ')')
       }
     })
   }
