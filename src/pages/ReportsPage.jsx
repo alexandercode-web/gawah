@@ -137,13 +137,13 @@ function drawDoughnutChart(canvas, labels, data, colors, title) {
   let startAngle = -Math.PI / 2
   data.forEach((val, i) => {
     const sliceAngle = (val / total) * Math.PI * 2
-    
+
     // Slice path
     ctx.beginPath()
     ctx.arc(cx, cy, outerR, startAngle, startAngle + sliceAngle)
     ctx.arc(cx, cy, innerR, startAngle + sliceAngle, startAngle, true)
     ctx.closePath()
-    
+
     // Gradient fill
     const sliceMidAngle = startAngle + sliceAngle / 2
     const gradient = ctx.createLinearGradient(
@@ -154,15 +154,15 @@ function drawDoughnutChart(canvas, labels, data, colors, title) {
     )
     gradient.addColorStop(0, colors[i % colors.length])
     gradient.addColorStop(1, colors[i % colors.length] + 'dd')
-    
+
     ctx.fillStyle = gradient
     ctx.fill()
-    
+
     // Slice border (for separation)
     ctx.strokeStyle = '#0f172a'
     ctx.lineWidth = 2
     ctx.stroke()
-    
+
     startAngle += sliceAngle
   })
 
@@ -178,7 +178,7 @@ function drawDoughnutChart(canvas, labels, data, colors, title) {
   ctx.font = 'bold 24px Inter, system-ui, sans-serif'
   ctx.textAlign = 'center'
   ctx.fillText(total.toLocaleString(), cx, cy + 5)
-  
+
   ctx.fillStyle = '#94a3b8'
   ctx.font = '600 10px Inter, system-ui, sans-serif'
   ctx.fillText('TASKS', cx, cy + 20)
@@ -189,27 +189,27 @@ function drawDoughnutChart(canvas, labels, data, colors, title) {
   const itemsPerRow = 2
   const rowCount = Math.ceil(totalItems / itemsPerRow)
   const totalLegendH = rowCount * 22
-  
+
   labels.forEach((label, i) => {
     if (i >= 6) return
     const row = Math.floor(i / itemsPerRow)
     const col = i % itemsPerRow
-    
+
     // Calculate centering for the row
     const rowItemsCount = (row === rowCount - 1) ? (totalItems % itemsPerRow || itemsPerRow) : itemsPerRow
     const itemWidth = 130
     const rowW = rowItemsCount * itemWidth
     const startX = (w - rowW) / 2
-    
+
     const lx = startX + col * itemWidth
     const ly = legendY + row * 22
-    
+
     // Color dot
     ctx.beginPath()
     ctx.arc(lx + 6, ly - 4, 4.5, 0, Math.PI * 2)
     ctx.fillStyle = colors[i % colors.length]
     ctx.fill()
-    
+
     // Label
     const cleanLabel = label.replace(/([A-Z])/g, ' $1').trim()
     ctx.fillStyle = '#cbd5e1'
@@ -277,7 +277,7 @@ function drawLineChart(canvas, labels, data, color, title) {
   const areaGradient = ctx.createLinearGradient(0, padding.top, 0, padding.top + chartH)
   areaGradient.addColorStop(0, color + '30')
   areaGradient.addColorStop(1, color + '00')
-  
+
   ctx.beginPath()
   ctx.moveTo(points[0].x, padding.top + chartH)
   points.forEach((p, i) => {
@@ -370,7 +370,7 @@ const ACTIVITY_LABELS = {
 
 /* ──────────────────────────── Component ──────────────────────────── */
 
-function ReportsPage({hasUnreadNotifications = false}) {
+function ReportsPage({ hasUnreadNotifications = false }) {
   const { user, logout: onLogout } = useAuth()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('summary')
@@ -445,7 +445,7 @@ function ReportsPage({hasUnreadNotifications = false}) {
     // Doughnut – Status Distribution
     const statusOrder = ['open', 'waiting', 'completed', 'assigned', 'cancelled']
     const rawStatusList = summary.tasksByStatus || []
-    
+
     // Sort logic to ensure Completed is left, Open is right
     const sortedStatusList = [...rawStatusList].sort((a, b) => {
       const aS = String(a.status || a.Status || '').toLowerCase()
@@ -459,9 +459,9 @@ function ReportsPage({hasUnreadNotifications = false}) {
     const statusData = sortedStatusList.map(s => Number(s.count || s.Count || 0))
     const statusColors = statusLabels.map(s => {
       const lower = s.toLowerCase()
-      if (lower.includes('completed') || lower.includes('done')) return '#f59e0b' // Completed (Yellow)
+      if (lower.includes('completed') || lower.includes('done')) return '#10b981' // Completed (Green)
       if (lower.includes('assigned') || lower.includes('progress')) return '#3b82f6' // In Progress (Blue)
-      if (lower.includes('open') || lower.includes('waiting')) return '#10b981' // Open (Green)
+      if (lower.includes('open') || lower.includes('waiting')) return '#f59e0b' // Open (Yellow)
       if (lower.includes('cancelled')) return '#ef4444' // Cancelled (Red)
       return '#8b5cf6'
     })
@@ -621,21 +621,21 @@ function ReportsPage({hasUnreadNotifications = false}) {
           className={`reports-tab ${activeTab === 'summary' ? 'active' : ''}`}
           onClick={() => setActiveTab('summary')}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-10"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18" /><path d="M7 16l4-8 4 4 4-10" /></svg>
           Summary Report
         </button>
         <button
           className={`reports-tab ${activeTab === 'transactions' ? 'active' : ''}`}
           onClick={() => setActiveTab('transactions')}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>
           Transaction History
         </button>
         <button
           className={`reports-tab ${activeTab === 'activity' ? 'active' : ''}`}
           onClick={() => setActiveTab('activity')}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 8v4l3 3" /><circle cx="12" cy="12" r="10" /></svg>
           Activity Log
         </button>
       </nav>
@@ -754,7 +754,7 @@ function ReportsPage({hasUnreadNotifications = false}) {
 
           <div className="reports-export-bar">
             <button type="button" className="reports-export-btn" onClick={exportSummaryCSV}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
               Export Summary as CSV
             </button>
           </div>
@@ -782,7 +782,7 @@ function ReportsPage({hasUnreadNotifications = false}) {
               <option value="Completed">Completed</option>
             </select>
             <button type="button" className="reports-export-btn" onClick={exportTransactionsCSV}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
               Export CSV
             </button>
           </div>
@@ -857,7 +857,7 @@ function ReportsPage({hasUnreadNotifications = false}) {
               <option value="user_registered">User Registered</option>
             </select>
             <button type="button" className="reports-export-btn" onClick={exportActivityCSV}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
               Export CSV
             </button>
           </div>
@@ -870,7 +870,7 @@ function ReportsPage({hasUnreadNotifications = false}) {
                 const aType = act.type || act.Type;
                 const aDesc = act.description || act.Description;
                 const aTime = act.timestamp || act.Timestamp;
-                
+
                 return (
                   <article key={`act-${i}`} className="activity-item">
                     <div className="activity-dot-line">
@@ -904,10 +904,10 @@ function ReportsPage({hasUnreadNotifications = false}) {
       )}
 
       {/* Bottom Navigation */}
-      <Sidebar 
-        user={user} 
-        onLogout={onLogout} 
-        hasUnreadNotifications={hasUnreadNotifications} 
+      <Sidebar
+        user={user}
+        onLogout={onLogout}
+        hasUnreadNotifications={hasUnreadNotifications}
         logoutRedirect="/admin-login"
       />
     </section>
