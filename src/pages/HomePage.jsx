@@ -181,7 +181,7 @@ function HomePage({user, summary, myTasks = [], loading, error, hasUnreadNotific
         <div className="home-header-content">
           <div className="home-brand-block">
             <div className="home-brand-icon" aria-hidden="true">
-              <img src="/small-logo.png?v=2" alt="" className="home-brand-icon-image" />
+              <img src="/gawalogo.png" alt="" className="home-brand-icon-image" />
             </div>
             <div>
               <h1>GawaHelper</h1>
