@@ -130,7 +130,7 @@ textarea:focus-visible {
 }
 
 .home-header {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  background: linear-gradient(115deg, #1e3a8a 0%, #2563eb 58%, #3b82f6 100%);
   color: #111827;
   padding: 3rem 2rem 2.5rem;
   border-radius: 0 0 40px 40px;
