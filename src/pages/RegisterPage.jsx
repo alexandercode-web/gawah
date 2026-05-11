@@ -73,8 +73,6 @@ function RegisterPage({onRegister, loading, error}) {
 
     if (!success) return
 
-    setSuccessMessage('Account created successfully! Redirecting to verification...')
-
     // Remove any previous face-login enrollment from this device on new registrations.
     localStorage.removeItem('gh_face_login_opt_in')
     localStorage.removeItem('gh_face_login_email')

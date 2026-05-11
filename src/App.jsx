@@ -241,7 +241,8 @@ function App() {
     try {
       const data = await registerUser(payload)
       if (data && data.user) {
-        setMessage('Account created! Please check your email for the verification code.')
+        setMessage('Account created successfully! Please log in to continue.')
+        navigate('/login', { replace: true })
       }
       return data
     } catch (err) {
