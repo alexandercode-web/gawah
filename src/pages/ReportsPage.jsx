@@ -7,8 +7,8 @@ import Sidebar from '../components/Sidebar'
 /* ──────────────────────────── Chart Helpers ──────────────────────────── */
 
 const CHART_COLORS = [
-  '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6',
-  '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#6366f1',
+  '#2563eb', '#f59e0b', '#10b981', '#6366f1', '#f97316',
+  '#ec4899', '#06b6d4', '#8b5cf6', '#14b8a6', '#ef4444',
 ]
 
 function drawBarChart(canvas, labels, datasets, title) {
