@@ -48,7 +48,10 @@ function LandingPage() {
         <div className="navbar-container">
           <div className="navbar-brand">
             <span className="brand-dot-nav" />
-            <span className="brand-text">GawaHelper</span>
+            <span className="brand-text">
+              <span className="brand-gawa">Gawa</span>
+              <span className="brand-helper">Helper</span>
+            </span>
           </div>
 
           <div className="navbar-links">

@@ -4987,11 +4987,23 @@ textarea:focus-visible {
   text-decoration: none;
 }
 
-.navbar-brand, .brand-text, .home-header h1 {
-  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%) !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  color: transparent !important;
+.navbar-brand, .brand-text, .home-header h1, .sidebar-brand {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.brand-gawa {
+  color: #2563eb !important;
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
+}
+
+.brand-helper {
+  color: #f59e0b !important;
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
 }
 
 .brand-dot-nav {
