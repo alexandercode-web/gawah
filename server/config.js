@@ -1,7 +1,6 @@
 import dotenv from 'dotenv'
 import rateLimit from 'express-rate-limit'
-import nodemailer from 'nodemailer'
-import dns from 'node:dns'
+import { Resend } from 'resend'
 
 dotenv.config()
 
@@ -33,66 +32,48 @@ export const uploadLimiter = rateLimit({
   },
 })
 
-let _emailTransporter = null
-let _transporterReady = false
+// Email via Resend (HTTP API — works on Railway, unlike SMTP which is blocked)
+let _resend = null
 
-export async function getEmailTransporter() {
-  if (_emailTransporter && _transporterReady) return _emailTransporter
-
-  const user = process.env.SMTP_USER || process.env.GMAIL_USER || ''
-  const pass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || ''
-
-  if (!user || !pass) {
-    console.error('[EMAIL] Missing credentials — set GMAIL_USER + GMAIL_APP_PASSWORD')
-    return null
-  }
-
-  const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
-  const port = Number(process.env.SMTP_PORT || 587)
-  const secure = port === 465
-
-  // Pre-resolve to IPv4 — Railway has no IPv6 connectivity
-  let resolvedHost = smtpHost
-  try {
-    const addresses = await new Promise((resolve, reject) => {
-      dns.resolve4(smtpHost, (err, addrs) => {
-        if (err) reject(err)
-        else resolve(addrs)
-      })
-    })
-    if (addresses && addresses.length > 0) {
-      resolvedHost = addresses[0]
-      console.log(`[EMAIL] Resolved ${smtpHost} → ${resolvedHost} (IPv4)`)
+function getResend() {
+  if (!_resend) {
+    const apiKey = process.env.RESEND_API_KEY
+    if (!apiKey) {
+      console.error('[EMAIL] RESEND_API_KEY not set')
+      return null
     }
-  } catch (dnsErr) {
-    console.error('[EMAIL] IPv4 DNS resolve failed:', dnsErr.message)
-    // Fall back to hostname and hope for the best
+    _resend = new Resend(apiKey)
+    console.log('[EMAIL] Resend client initialized')
+  }
+  return _resend
+}
+
+/**
+ * Send an email using Resend (HTTP-based, no SMTP needed).
+ * @param {object} options - { to, subject, html }
+ */
+export async function sendEmail({ to, subject, html }) {
+  const resend = getResend()
+  if (!resend) {
+    throw new Error('Email service not configured. Set RESEND_API_KEY on the server.')
   }
 
-  _emailTransporter = nodemailer.createTransport({
-    host: resolvedHost,
-    port,
-    secure,
-    requireTLS: !secure,
-    auth: { user, pass },
-    tls: {
-      rejectUnauthorized: false,
-      servername: smtpHost // Must use original hostname for TLS certificate validation
-    },
-    connectionTimeout: 20000,
-    greetingTimeout: 20000,
-    socketTimeout: 25000,
+  const fromAddress = process.env.EMAIL_FROM || 'GawaHelper <onboarding@resend.dev>'
+
+  console.log('[EMAIL] Sending to:', to, 'from:', fromAddress)
+
+  const { data, error } = await resend.emails.send({
+    from: fromAddress,
+    to: [to],
+    subject,
+    html,
   })
 
-  // Verify
-  try {
-    await _emailTransporter.verify()
-    console.log('[EMAIL] Transporter verified — ready to send from:', user)
-    _transporterReady = true
-  } catch (verifyErr) {
-    console.error('[EMAIL] Transporter verify failed:', verifyErr.message)
-    // Still return the transporter — sendMail might work even if verify fails
+  if (error) {
+    console.error('[EMAIL] Resend error:', JSON.stringify(error))
+    throw new Error(error.message || 'Failed to send email')
   }
 
-  return _emailTransporter
+  console.log('[EMAIL] Sent successfully, id:', data?.id)
+  return data
 }
