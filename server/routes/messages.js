@@ -72,14 +72,28 @@ router.post('/', requireAuth, async (req, res) => {
             ext = attachmentName.split('.').pop().toLowerCase()
           }
 
-          // Validate size (10MB for files)
           const sizeInBytes = Math.ceil((base64Payload.length * 3) / 4)
+          // Limit to 10MB
           if (sizeInBytes <= 10 * 1024 * 1024) {
             const safeName = `msg-${taskId}-${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`
-            const proofsDir = path.resolve(__dirname, '../public/uploads/proofs')
-            await mkdir(proofsDir, { recursive: true })
-            await writeFile(path.join(proofsDir, safeName), Buffer.from(base64Payload, 'base64'))
-            savedAttachmentUrl = `/uploads/proofs/${safeName}`
+            const filePath = `chat/${safeName}`
+            
+            const { error: uploadError } = await supabase.storage
+              .from('uploads')
+              .upload(filePath, Buffer.from(base64Payload, 'base64'), {
+                contentType: mime,
+                upsert: true
+              })
+
+            if (uploadError) {
+              logger.error('Supabase upload error:', uploadError.message)
+            } else {
+              const { data: { publicUrl } } = supabase.storage
+                .from('uploads')
+                .getPublicUrl(filePath)
+              
+              savedAttachmentUrl = publicUrl
+            }
           }
         }
       }
