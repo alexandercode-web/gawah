@@ -197,24 +197,25 @@ function drawDoughnutChart(canvas, labels, data, colors, title) {
     
     // Calculate centering for the row
     const rowItemsCount = (row === rowCount - 1) ? (totalItems % itemsPerRow || itemsPerRow) : itemsPerRow
-    const rowW = rowItemsCount * 140
+    const itemWidth = 130
+    const rowW = rowItemsCount * itemWidth
     const startX = (w - rowW) / 2
     
-    const lx = startX + col * 140
+    const lx = startX + col * itemWidth
     const ly = legendY + row * 22
     
     // Color dot
     ctx.beginPath()
-    ctx.arc(lx + 5, ly - 4, 5, 0, Math.PI * 2)
+    ctx.arc(lx + 6, ly - 4, 4.5, 0, Math.PI * 2)
     ctx.fillStyle = colors[i % colors.length]
     ctx.fill()
     
     // Label
     const cleanLabel = label.replace(/([A-Z])/g, ' $1').trim()
     ctx.fillStyle = '#cbd5e1'
-    ctx.font = '600 11px Inter, system-ui, sans-serif'
+    ctx.font = '600 11.5px Inter, system-ui, sans-serif'
     ctx.textAlign = 'left'
-    ctx.fillText(`${cleanLabel} (${data[i]})`, lx + 16, ly)
+    ctx.fillText(`${cleanLabel} (${data[i]})`, lx + 18, ly)
   })
 }
 
