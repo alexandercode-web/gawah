@@ -6,7 +6,7 @@ import { notifyUser } from '../sse.js'
 import { supabase } from '../supabase.js'
 import logger from '../logger.js'
 
-import { rpName, rpID, origin, authLimiter, getEmailTransporter } from '../config.js'
+import { rpName, rpID, origin, authLimiter, sendEmail } from '../config.js'
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from '@simplewebauthn/server'
 import { Buffer } from 'node:buffer'
 import process from 'node:process'
@@ -570,13 +570,9 @@ router.post('/forgot-password/request-code', async (req, res) => {
       [user.UserID, resetCode, expiresAt]
     )
 
-    // Send email with reset code via Nodemailer
+    // Send email with reset code via Resend (HTTP API)
     try {
-      const transporter = getEmailTransporter()
-      const senderEmail = process.env.SMTP_USER || process.env.GMAIL_USER
-      
-      await transporter.sendMail({
-        from: `"GawaHelper" <${senderEmail}>`,
+      await sendEmail({
         to: email,
         subject: 'Your GawaHelper Password Reset Code',
         html: `
@@ -605,7 +601,7 @@ router.post('/forgot-password/request-code', async (req, res) => {
     } catch (emailError) {
       console.error('[EMAIL] Forgot-password send failed:', emailError.message)
       return res.status(500).json({
-        message: 'Failed to send reset code email. Please check your email configuration.'
+        message: 'Failed to send reset code email. Please contact the administrator.'
       })
     }
 
@@ -778,13 +774,9 @@ router.post('/resend-verification', async (req, res) => {
       [user.UserID, verifyCode, codeExpiry]
     )
 
-    // Send verification email via Nodemailer
+    // Send verification email via Resend (HTTP API)
     try {
-      const transporter = getEmailTransporter()
-      const senderEmail = process.env.SMTP_USER || process.env.GMAIL_USER
-      
-      await transporter.sendMail({
-        from: `"GawaHelper" <${senderEmail}>`,
+      await sendEmail({
         to: email,
         subject: 'Verify your GawaHelper account',
         html: `
