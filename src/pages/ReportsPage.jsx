@@ -426,8 +426,8 @@ function ReportsPage({hasUnreadNotifications = false}) {
       const d = new Date(Number(y), Number(mo) - 1)
       return d.toLocaleString('default', { month: 'short' })
     })
-    const monthData = (summary.tasksByMonth || []).map(m => Number(m.count))
-    const monthBudget = (summary.tasksByMonth || []).map(m => Number(m.totalBudget))
+    const monthData = (summary.tasksByMonth || []).map(m => Number(m.count || m.Count || 0))
+    const monthBudget = (summary.tasksByMonth || []).map(m => Number(m.totalBudget || m.TotalBudget || 0))
 
     drawBarChart(barChartRef.current, monthLabels, [
       { label: 'Tasks', data: monthData, color: '#10b981' },
@@ -448,16 +448,17 @@ function ReportsPage({hasUnreadNotifications = false}) {
 
     // Line chart – User Growth
     const userLabels = (summary.usersByMonth || []).map(m => {
-      const [y, mo] = m.month.split('-')
+      const [y, mo] = (m.month || m.Month || '').split('-')
+      if (!y || !mo) return 'Unknown'
       const d = new Date(Number(y), Number(mo) - 1)
       return d.toLocaleString('default', { month: 'short' })
     })
-    const userData = (summary.usersByMonth || []).map(m => Number(m.count))
+    const userData = (summary.usersByMonth || []).map(m => Number(m.count || m.Count || 0))
     drawLineChart(lineChartRef.current, userLabels, userData, '#3b82f6', 'User Registrations per Month')
 
     // Category bar chart
-    const catLabels = (summary.tasksByCategory || []).map(c => c.category)
-    const catData = (summary.tasksByCategory || []).map(c => Number(c.count))
+    const catLabels = (summary.tasksByCategory || []).map(c => c.category || c.Category || 'Unknown')
+    const catData = (summary.tasksByCategory || []).map(c => Number(c.count || c.Count || 0))
     drawBarChart(categoryChartRef.current, catLabels, [
       { label: 'Tasks', data: catData, color: '#8b5cf6' },
     ], 'Tasks by Category')
@@ -503,21 +504,21 @@ function ReportsPage({hasUnreadNotifications = false}) {
     downloadCSV('gawahelper_summary_report.csv',
       ['Metric', 'Value'],
       [
-        ['Total Users', s.totalUsers],
-        ['Total Tasks', s.totalTasks],
-        ['Open Tasks', s.openTasks],
-        ['Assigned Tasks', s.assignedTasks],
-        ['Completed Tasks', s.completedTasks],
-        ['Cancelled Tasks', s.cancelledTasks],
-        ['Total Budget', `₱${Number(s.totalBudget).toLocaleString()}`],
-        ['Completed Value', `₱${Number(s.completedValue).toLocaleString()}`],
-        ['Average Budget', `₱${Number(s.avgBudget).toFixed(2)}`],
-        ['Total Assignments', s.totalAssignments],
-        ['Total Messages', s.totalMessages],
-        ['Total Reviews', s.totalReviews],
-        ['Average Rating', Number(s.avgRating).toFixed(1)],
-        ['Total Payments', s.totalPayments],
-        ['Completed Payments', `₱${Number(s.completedPayments).toLocaleString()}`],
+        ['Total Users', s.totalUsers || s.TotalUsers || 0],
+        ['Total Tasks', s.totalTasks || s.TotalTasks || 0],
+        ['Open Tasks', s.openTasks || s.OpenTasks || 0],
+        ['Assigned Tasks', s.assignedTasks || s.AssignedTasks || 0],
+        ['Completed Tasks', s.completedTasks || s.CompletedTasks || 0],
+        ['Cancelled Tasks', s.cancelledTasks || s.CancelledTasks || 0],
+        ['Total Budget', `₱${Number(s.totalBudget || s.TotalBudget || 0).toLocaleString()}`],
+        ['Completed Value', `₱${Number(s.completedValue || s.CompletedValue || 0).toLocaleString()}`],
+        ['Average Budget', `₱${Number(s.avgBudget || s.AvgBudget || 0).toFixed(2)}`],
+        ['Total Assignments', s.totalAssignments || s.TotalAssignments || 0],
+        ['Total Messages', s.totalMessages || s.TotalMessages || 0],
+        ['Total Reviews', s.totalReviews || s.TotalReviews || 0],
+        ['Average Rating', Number(s.avgRating || s.AvgRating || 0).toFixed(1)],
+        ['Total Payments', s.totalPayments || s.TotalPayments || 0],
+        ['Completed Payments', `₱${Number(s.completedPayments || s.CompletedPayments || 0).toLocaleString()}`],
       ]
     )
   }
