@@ -46,8 +46,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   exposedHeaders: ['set-cookie']
 }))
-app.use(express.json({ limit: '5mb' }))
-app.use(express.urlencoded({ limit: '5mb', extended: true }))
+app.use(express.json({ limit: '20mb' }))
+app.use(express.urlencoded({ limit: '20mb', extended: true }))
 app.use(cookieParser())
 
 // Serve static files from the public directory (for uploaded proofs/avatars)
