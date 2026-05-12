@@ -517,4 +517,23 @@ router.post('/settings', requireAdmin, async (req, res) => {
   }
 })
 
+router.get('/reports', requireAdmin, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT 
+        r.ReportID, r.Reason, r.CreatedAt,
+        reporter.FullName AS ReporterName, reporter.Email AS ReporterEmail,
+        target.FullName AS ReportedName, target.Email AS ReportedEmail, target.UserID AS ReportedUserID, target.IsDeactivated
+      FROM Reports r
+      JOIN Users reporter ON r.ReporterID = reporter.UserID
+      JOIN Users target ON r.ReportedUserID = target.UserID
+      ORDER BY r.CreatedAt DESC
+    `)
+    return res.json(result)
+  } catch (error) {
+    logger.error('Admin Reports Fetch Error:', error.message)
+    return res.status(500).json({ message: 'Failed to fetch user reports' })
+  }
+})
+
 export default router

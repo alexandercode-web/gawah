@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
 import Sidebar from '../components/Sidebar'
+import ReportModal from '../components/ReportModal'
 
 function getProofImageSrc(proofImage) {
   const raw = String(proofImage || '').trim()
@@ -185,6 +186,9 @@ function TaskDetailsPage({user, hasUnreadNotifications = false, onLogout, onTask
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
   const [clockTick, setClockTick] = useState(() => Date.now())
   const [activeLightboxImage, setActiveLightboxImage] = useState(null)
+  
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [reportTarget, setReportTarget] = useState({ id: 0, name: '' })
 
   useEffect(() => {
     let active = true
@@ -646,6 +650,12 @@ function TaskDetailsPage({user, hasUnreadNotifications = false, onLogout, onTask
     setActiveLightboxImage(null)
   }
 
+  function openReportUser(id, name) {
+    if (!id || id === user?.UserID) return
+    setReportTarget({ id, name })
+    setShowReportModal(true)
+  }
+
   return (
     <div className="task-details-page-shell">
       <section className="page task-details-page">
@@ -778,6 +788,14 @@ function TaskDetailsPage({user, hasUnreadNotifications = false, onLogout, onTask
                       : `★ 5.0 (0 reviews)`}
                   </p>
                 </div>
+                <button 
+                  type="button" 
+                  className="task-report-link"
+                  onClick={() => openReportUser(task.UserID, task.PosterName)}
+                  title="Report this user to admin"
+                >
+                  🚩 Report
+                </button>
               </div>
             </article>
 
@@ -805,6 +823,14 @@ function TaskDetailsPage({user, hasUnreadNotifications = false, onLogout, onTask
                         : `★ 5.0 (0 reviews)`}
                     </p>
                   </div>
+                  <button 
+                    type="button" 
+                    className="task-report-link"
+                    onClick={() => openReportUser(task.HelperID, task.HelperName)}
+                    title="Report this user to admin"
+                  >
+                    🚩 Report
+                  </button>
                 </div>
               </article>
             )}
@@ -1282,6 +1308,41 @@ function TaskDetailsPage({user, hasUnreadNotifications = false, onLogout, onTask
           </div>
         </div>
       )}
+
+      <ReportModal 
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        targetUserId={reportTarget.id}
+        targetUserName={reportTarget.name}
+      />
+
+      <style>{`
+        .task-report-link {
+          background: none;
+          border: none;
+          color: #94a3b8;
+          font-size: 0.75rem;
+          font-weight: 600;
+          cursor: pointer;
+          padding: 4px 8px;
+          border-radius: 4px;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          margin-left: auto;
+        }
+        .task-report-link:hover {
+          color: #ef4444;
+          background: rgba(239, 68, 68, 0.05);
+        }
+        .task-poster-block {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+        }
+      `}</style>
     </div>
   )
 }

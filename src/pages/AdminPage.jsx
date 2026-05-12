@@ -12,7 +12,7 @@ function AdminPage({ hasUnreadNotifications = false }) {
     users: [],
     tasks: [],
     messages: [],
-    messages: [],
+    reports: [],
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -47,6 +47,7 @@ function AdminPage({ hasUnreadNotifications = false }) {
         api.getAdminUsers(50, 0),
         api.getAdminTasks(50, 0),
         api.getAdminMessages(),
+        api.getAdminUserReports(),
       ])
 
       setAdminData({
@@ -54,6 +55,7 @@ function AdminPage({ hasUnreadNotifications = false }) {
         users: Array.isArray(users) ? users : [],
         tasks: Array.isArray(tasks) ? tasks : [],
         messages: Array.isArray(messages) ? messages : [],
+        reports: Array.isArray(reports) ? reports : [],
       })
       setLastRefresh(new Date())
     } catch (err) {
@@ -283,12 +285,14 @@ function AdminPage({ hasUnreadNotifications = false }) {
       {activeTab === 'overview' && (
           <AdminStats
             stats={adminData.stats || {}}
+            reportsCount={adminData.reports.length}
             onCardClick={(label) => {
               if (label === 'Total Users') setActiveTab('users');
               if (label === 'Active Tasks') setActiveTab('tasks');
               if (label === 'Completed Tasks') setActiveTab('tasks');
               if (label === 'Total Messages') setActiveTab('messages');
               if (label === 'Active Helpers') setActiveTab('users');
+              if (label === 'User Reports') setActiveTab('reports');
             }}
           />
       )}
@@ -318,6 +322,12 @@ function AdminPage({ hasUnreadNotifications = false }) {
           onClick={() => setActiveTab('messages')}
         >
           Messages ({adminData.messages.length})
+        </button>
+        <button
+          className={`admin-tab ${activeTab === 'reports' ? 'active' : ''}`}
+          onClick={() => setActiveTab('reports')}
+        >
+          Reports ({adminData.reports.length})
         </button>
       </nav>
 
@@ -587,6 +597,95 @@ function AdminPage({ hasUnreadNotifications = false }) {
                 </div>
               ))
             )}
+          </div>
+        </article>
+      )}
+
+      {/* User Reports */}
+      {activeTab === 'reports' && (
+        <article className="admin-section">
+          <h2>User Reports</h2>
+          <div className="admin-controls">
+            <input
+              type="text"
+              className="admin-search"
+              placeholder="Search reports by user name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <button
+              type="button"
+              className="admin-refresh-btn"
+              onClick={loadAdminData}
+            >
+              ↻ Refresh
+            </button>
+          </div>
+
+          <div className="admin-table-wrapper">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Report ID</th>
+                  <th>Reporter</th>
+                  <th>Reported User</th>
+                  <th>Reason</th>
+                  <th>Submitted At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {adminData.reports.filter(r => 
+                  r.ReporterName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  r.ReportedName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  r.Reason.toLowerCase().includes(searchQuery.toLowerCase())
+                ).length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="admin-empty-cell">
+                      No reports found
+                    </td>
+                  </tr>
+                ) : (
+                  adminData.reports
+                    .filter(r => 
+                      r.ReporterName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      r.ReportedName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      r.Reason.toLowerCase().includes(searchQuery.toLowerCase())
+                    )
+                    .map((r) => (
+                    <tr key={r.ReportID}>
+                      <td>#{r.ReportID}</td>
+                      <td>
+                        <strong>{r.ReporterName}</strong><br/>
+                        <small>{r.ReporterEmail}</small>
+                      </td>
+                      <td>
+                        <strong>{r.ReportedName}</strong><br/>
+                        <small>{r.ReportedEmail}</small>
+                        {Number(r.IsDeactivated) === 1 && (
+                          <span className="status-badge suspended" style={{ marginLeft: '8px', fontSize: '0.7rem' }}>Deactivated</span>
+                        )}
+                      </td>
+                      <td style={{ maxWidth: '300px', wordBreak: 'break-word' }}>
+                        {r.Reason}
+                      </td>
+                      <td>{new Date(r.CreatedAt).toLocaleString()}</td>
+                      <td className="admin-actions-cell">
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            type="button"
+                            className={`admin-action-btn ${r.IsDeactivated ? 'success' : 'danger'}`}
+                            onClick={() => r.IsDeactivated ? handleActivateUser(r.ReportedUserID) : handleDeactivateUser(r.ReportedUserID)}
+                          >
+                            {r.IsDeactivated ? 'Activate' : 'Deactivate'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </article>
       )}
@@ -1230,7 +1329,7 @@ function AdminPage({ hasUnreadNotifications = false }) {
   )
 }
 
-function AdminStats({ stats, onCardClick }) {
+function AdminStats({ stats, onCardClick, reportsCount = 0 }) {
   const cards = [
     { label: 'Total Users', sub: 'Registered Accounts', value: stats.TotalUsers || stats.totalUsers || 0, icon: '👥', color: '#3b82f6' },
     { label: 'Active Tasks', sub: 'In Progress', value: stats.ActiveTasks || stats.activeTasks || 0, icon: '⚡', color: '#f59e0b' },
@@ -1238,6 +1337,7 @@ function AdminStats({ stats, onCardClick }) {
     { label: 'Total Value', sub: 'Platform Volume', value: `₱${Number(stats.TotalValue || stats.totalValue || 0).toLocaleString()}`, icon: '💰', color: '#06b6d4' },
     { label: 'Total Messages', sub: 'Conversations', value: stats.TotalMessages || stats.totalMessages || 0, icon: '💬', color: '#8b5cf6' },
     { label: 'Active Helpers', sub: 'Task Workers', value: stats.ActiveHelpers || stats.activeHelpers || 0, icon: '🤝', color: '#ec4899' },
+    { label: 'User Reports', sub: 'Pending Review', value: reportsCount, icon: '🚩', color: '#ef4444' },
   ]
 
   return (

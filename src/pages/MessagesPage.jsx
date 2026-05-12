@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api'
 import Sidebar from '../components/Sidebar'
+import ReportModal from '../components/ReportModal'
 
 function MessagesPage({user, onLogout, hasUnreadNotifications = false}) {
   const navigate = useNavigate()
@@ -26,6 +27,8 @@ function MessagesPage({user, onLogout, hasUnreadNotifications = false}) {
   const [task, setTask] = useState(null)
   const [activeImage, setActiveImage] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
+  
+  const [showReportModal, setShowReportModal] = useState(false)
 
   const currentUserId = Number(user?.UserID || 0)
   const taskPosterId = Number(task?.UserID || 0)
@@ -587,6 +590,16 @@ function MessagesPage({user, onLogout, hasUnreadNotifications = false}) {
             'Refresh'
           )}
         </button>
+        {otherUser && (
+          <button 
+            type="button" 
+            className="messages-report-header-btn" 
+            onClick={() => setShowReportModal(true)}
+            title="Report this user"
+          >
+            🚩
+          </button>
+        )}
       </header>
 
       <div className="messages-shell">
@@ -774,6 +787,35 @@ function MessagesPage({user, onLogout, hasUnreadNotifications = false}) {
         onLogout={onLogout} 
         hasUnreadNotifications={hasUnreadNotifications} 
       />
+
+      {otherUser && (
+        <ReportModal 
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          targetUserId={otherUser.UserID}
+          targetUserName={otherUser.FullName}
+        />
+      )}
+
+      <style>{`
+        .messages-report-header-btn {
+          background: none;
+          border: none;
+          font-size: 1.25rem;
+          cursor: pointer;
+          padding: 8px;
+          border-radius: 50%;
+          transition: all 0.2s;
+          display: grid;
+          place-items: center;
+          margin-left: 8px;
+          opacity: 0.6;
+        }
+        .messages-report-header-btn:hover {
+          opacity: 1;
+          background: rgba(239, 68, 68, 0.1);
+        }
+      `}</style>
     </section>
   )
 }

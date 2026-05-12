@@ -404,5 +404,14 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(settings),
     })
+  },
+  reportUser(userId, reason) {
+    return request(`/users/${userId}/report`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    })
+  },
+  getAdminUserReports() {
+    return request('/admin/reports')
   }
 }

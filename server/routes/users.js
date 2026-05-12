@@ -121,4 +121,30 @@ router.get('/:userId/profile', requireAuth, async (req, res) => {
   }
 })
 
+router.post('/:userId/report', requireAuth, async (req, res) => {
+  const reportedUserId = Number(req.params.userId)
+  const reporterId = req.user.id
+  const { reason } = req.body
+
+  if (!reason || reason.trim().length < 5) {
+    return res.status(400).json({ message: 'A valid reason (min 5 chars) is required for reporting.' })
+  }
+
+  if (reportedUserId === reporterId) {
+    return res.status(400).json({ message: 'You cannot report yourself.' })
+  }
+
+  try {
+    await query(
+      'INSERT INTO Reports (ReporterID, ReportedUserID, Reason) VALUES (?, ?, ?)',
+      [reporterId, reportedUserId, reason.trim()]
+    )
+
+    return res.json({ success: true, message: 'Thank you. Your report has been submitted for admin review.' })
+  } catch (error) {
+    logger.error('User Reporting Error:', error.message)
+    return res.status(500).json({ message: 'Failed to submit report.' })
+  }
+})
+
 export default router
