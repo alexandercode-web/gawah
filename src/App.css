@@ -12951,16 +12951,13 @@ td {
 
 /* Unified Guide Page Design (Based on Task Status Guide) */
 .guide-page {
-  background: 
-    linear-gradient(rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.4)),
-    url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') center/cover; /* Blurred abstract bg for modal feel */
+  background: #f1f5f9; /* Plain professional solid background */
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
   position: relative;
-  backdrop-filter: blur(8px);
 }
 
 .guide-container {
