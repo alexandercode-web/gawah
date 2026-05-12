@@ -143,13 +143,24 @@ function NotificationsPage({ summary, myTasks, user, onNotificationsRead, onLogo
   useEffect(() => {
     if (!Array.isArray(items) || items.length === 0) return
 
-    const unreadItems = items.filter((item) => Number(item?.IsRead || 0) === 0)
+    const unreadItems = items.filter((item) => {
+      const isRead = item?.IsRead !== undefined ? item.IsRead : item?.isread;
+      return Number(isRead || 0) === 0;
+    })
+    
     if (unreadItems.length === 0) return
 
     Promise.all(
-      unreadItems.map((item) => api.markNotificationAsRead(item.NotificationID).catch(() => null))
+      unreadItems.map((item) => {
+        const id = item.NotificationID || item.notificationid;
+        return api.markNotificationAsRead(id).catch(() => null);
+      })
     ).then(() => {
-      setItems((prevItems) => prevItems.map((item) => ({ ...item, IsRead: 1 })))
+      setItems((prevItems) => prevItems.map((item) => {
+        if (item.NotificationID) return { ...item, IsRead: 1 };
+        if (item.notificationid) return { ...item, isread: 1 };
+        return item;
+      }))
       if (typeof onNotificationsRead === 'function') {
         onNotificationsRead()
       }
@@ -190,13 +201,20 @@ function NotificationsPage({ summary, myTasks, user, onNotificationsRead, onLogo
       api.listNotifications()
         .then(data => {
           if (Array.isArray(data)) {
-            // Merge new notifications with existing ones, avoiding duplicates
             setItems(prevItems => {
-              const existingIds = new Set(prevItems.map(item => item.NotificationID))
-              const newItems = data.filter(item => !existingIds.has(item.NotificationID))
+              const getID = (i) => i.NotificationID || i.notificationid;
+              const existingIds = new Set(prevItems.map(getID));
+              const newItems = data.filter(item => !existingIds.has(getID(item)));
+              
+              if (newItems.length === 0) return prevItems;
+
               // Combine and sort by creation date (newest first)
-              return [...data, ...prevItems.filter(item => !data.some(d => d.NotificationID === item.NotificationID))]
-                .sort((a, b) => new Date(b.CreatedAt) - new Date(a.CreatedAt))
+              return [...data, ...prevItems.filter(item => !data.some(d => getID(d) === getID(item)))]
+                .sort((a, b) => {
+                  const dateA = new Date(a.CreatedAt || a.createdat);
+                  const dateB = new Date(b.CreatedAt || b.createdat);
+                  return dateB - dateA;
+                });
             })
           }
         })
@@ -315,33 +333,49 @@ function NotificationsPage({ summary, myTasks, user, onNotificationsRead, onLogo
   }
 
   const notifications = useMemo(() => {
-    // Only show real notifications from database
     if (items.length > 0) {
-      return items.map((item) => ({
-        ...(() => {
-          const message = String(item.Message || '').toLowerCase()
-          if (message.includes('accepted')) return { iconType: 'success', iconClass: 'success' }
-          if (message.includes('message') || message.includes('sent you')) return { iconType: 'info', iconClass: 'info' }
-          if (message.includes('rating') || message.includes('star')) return { iconType: 'success', iconClass: 'success' }
-          if (message.includes('proof')) return { iconType: 'upload', iconClass: 'info' }
-          if (message.includes('payment') || message.includes('earnings') || message.includes('released')) {
-            return { iconType: 'money', iconClass: 'money' }
-          }
-          if (message.includes('cancelled')) return { iconType: 'cancel', iconClass: 'error' }
-          if (message.includes('reminder') || message.includes('upcoming')) return { iconType: 'warn', iconClass: 'warn' }
-          return { iconType: 'info', iconClass: 'info' }
-        })(),
-        id: `n-${item.NotificationID}`,
-        taskId: item.TaskID,
-        senderId: item.SenderID,
-        title: deriveTitle(item.Message),
-        message: item.Message,
-        time: formatRelativeTime(item.CreatedAt),
-        isNew: Number(item.IsRead || 0) === 0,
-      }))
-    }
+      return items.map((item) => {
+        const rawMessage = item.Message || item.message || '';
+        const lowerMessage = String(rawMessage).toLowerCase();
+        const notificationID = item.NotificationID || item.notificationid;
+        const taskID = item.TaskID || item.taskid;
+        const senderID = item.SenderID || item.senderid;
+        const createdAt = item.CreatedAt || item.createdat;
+        const isRead = item.IsRead !== undefined ? item.IsRead : item.isread;
 
-    // No demo notifications - show empty list if no real notifications
+        let iconType = 'info';
+        let iconClass = 'info';
+
+        if (lowerMessage.includes('accepted')) {
+          iconType = 'success'; iconClass = 'success';
+        } else if (lowerMessage.includes('message') || lowerMessage.includes('sent you')) {
+          iconType = 'info'; iconClass = 'info';
+        } else if (lowerMessage.includes('rating') || lowerMessage.includes('star')) {
+          iconType = 'success'; iconClass = 'success';
+        } else if (lowerMessage.includes('proof')) {
+          iconType = 'upload'; iconClass = 'info';
+        } else if (lowerMessage.includes('payment') || lowerMessage.includes('earnings') || lowerMessage.includes('released')) {
+          iconType = 'money'; iconClass = 'money';
+        } else if (lowerMessage.includes('cancelled')) {
+          iconType = 'cancel'; iconClass = 'error';
+        } else if (lowerMessage.includes('reminder') || lowerMessage.includes('upcoming')) {
+          iconType = 'warn'; iconClass = 'warn';
+        }
+
+        return {
+          id: `n-${notificationID}`,
+          notificationID,
+          taskId: taskID,
+          senderId: senderID,
+          title: deriveTitle(rawMessage),
+          message: rawMessage,
+          time: formatRelativeTime(createdAt),
+          isNew: Number(isRead || 0) === 0,
+          iconType,
+          iconClass
+        };
+      })
+    }
     return []
   }, [items])
 
