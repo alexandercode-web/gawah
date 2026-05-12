@@ -235,7 +235,7 @@ function RegisterPage({onRegister, loading, error}) {
                     onChange={(event) => setAcceptedTerms(event.target.checked)}
                   />
                   <label htmlFor="register-terms">
-                    I agree to the <Link to="/" className="terms-link">Terms</Link> and <Link to="/" className="terms-link">Privacy Policy</Link>.
+                    I agree to the <Link to="/terms" className="terms-link">Terms</Link> and <Link to="/privacy" className="terms-link">Privacy Policy</Link>.
                   </label>
                 </div>
 

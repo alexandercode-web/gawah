@@ -395,15 +395,15 @@ function LandingPage() {
           </div>
           <div className="footer-section">
             <h4>Resources</h4>
-            <button type="button" className="footer-link-btn" onClick={() => setInfoModal('support')}>Support</button>
-            <button type="button" className="footer-link-btn" onClick={() => setInfoModal('community')}>Community</button>
-            <button type="button" className="footer-link-btn" onClick={() => setInfoModal('guide')}>Helper Guide</button>
+            <Link to="/support">Support</Link>
+            <Link to="/community">Community</Link>
+            <Link to="/helper-guide">Helper Guide</Link>
           </div>
           <div className="footer-section">
             <h4>Legal</h4>
-            <button type="button" className="footer-link-btn" onClick={() => setInfoModal('terms')}>Terms of Service</button>
-            <button type="button" className="footer-link-btn" onClick={() => setInfoModal('privacy')}>Privacy Policy</button>
-            <button type="button" className="footer-link-btn" onClick={() => setInfoModal('contact')}>Contact Us</button>
+            <Link to="/terms">Terms of Service</Link>
+            <Link to="/privacy">Privacy Policy</Link>
+            <Link to="/contact">Contact Us</Link>
           </div>
         </div>
         <div className="footer-bottom">
