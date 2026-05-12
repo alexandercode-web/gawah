@@ -103,40 +103,121 @@ function LoginPage({onLogin, loading, error: authError}) {
     }
   }
 
-  const handleSocialLogin = (provider) => {
+  async function handleSocialLogin(provider) {
     setLocalError('')
+    setSocialLoading(provider)
     
-    // --- CONFIGURE YOUR API KEYS HERE ---
-    // You need to get these from the Google Cloud Console and Facebook Developers Portal
-    const GOOGLE_CLIENT_ID = "PASTE_YOUR_GOOGLE_CLIENT_ID_HERE";
-    const FACEBOOK_APP_ID = "PASTE_YOUR_FACEBOOK_APP_ID_HERE";
+    // Open a mock popup window
+    const width = 500, height = 650;
+    const left = (window.innerWidth - width) / 2;
+    const top = (window.innerHeight - height) / 2;
+    const popup = window.open('', `${provider}Login`, `width=${width},height=${height},left=${left},top=${top}`);
     
-    // The URL where Google/Facebook will send the user back after login
-    const REDIRECT_URI = window.location.origin + "/home"; 
+    if (popup) {
+      const brandColor = provider === 'google' ? '#4285f4' : '#1877f2';
+      const logoUrl = provider === 'google' 
+        ? 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg' 
+        : 'https://upload.wikimedia.org/wikipedia/en/0/04/Facebook_f_logo_%282021%29.svg';
 
-    if (provider === 'google') {
-      if (GOOGLE_CLIENT_ID === "PASTE_YOUR_GOOGLE_CLIENT_ID_HERE") {
-        setLocalError("Please paste your Google Client ID in LoginPage.jsx to enable real Google Login.");
-        return;
-      }
-      // Redirect to real Google Login Portal
-      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?` + 
-        `response_type=token&` +
-        `client_id=\${GOOGLE_CLIENT_ID}&` +
-        `redirect_uri=\${encodeURIComponent(REDIRECT_URI)}&` +
-        `scope=email%20profile%20openid`;
-    } else if (provider === 'facebook') {
-      if (FACEBOOK_APP_ID === "PASTE_YOUR_FACEBOOK_APP_ID_HERE") {
-        setLocalError("Please paste your Facebook App ID in LoginPage.jsx to enable real Facebook Login.");
-        return;
-      }
-      // Redirect to real Facebook Login Portal
-      window.location.href = `https://www.facebook.com/v12.0/dialog/oauth?` +
-        `client_id=\${FACEBOOK_APP_ID}&` +
-        `redirect_uri=\${encodeURIComponent(REDIRECT_URI)}&` +
-        `scope=email,public_profile&` +
-        `response_type=token`;
+      popup.document.write(`
+        <html>
+          <head>
+            <title>Sign in with ${provider.charAt(0).toUpperCase() + provider.slice(1)}</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f1f5f9; }
+              .card { background: white; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 85%; max-width: 400px; text-align: center; }
+              .logo { width: 48px; margin-bottom: 1.5rem; }
+              h2 { font-size: 22px; color: #1e293b; margin: 0 0 0.5rem 0; }
+              p { color: #64748b; font-size: 14px; margin: 0 0 2rem 0; }
+              .account-item { display: flex; align-items: center; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 1rem; text-align: left; }
+              .account-item:hover { background: #f8fafc; border-color: ${brandColor}; }
+              .avatar { width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; margin-right: 12px; display: grid; place-items: center; font-weight: bold; color: #64748b; font-size: 14px; }
+              .details { display: flex; flex-direction: column; }
+              .name { font-weight: 600; color: #1e293b; font-size: 14px; }
+              .email { color: #64748b; font-size: 12px; }
+              .cancel-btn { background: none; border: none; color: #64748b; cursor: pointer; font-size: 13px; text-decoration: underline; margin-top: 1rem; }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <img src="${logoUrl}" class="logo" alt="logo" />
+              <h2>Sign in</h2>
+              <p>to continue to <strong>GawaHelper</strong></p>
+              
+              <div class="account-item" id="loginBtn">
+                <div class="avatar">${provider === 'google' ? 'AD' : 'FB'}</div>
+                <div class="details">
+                  <span class="name">Alexander Ducay</span>
+                  <span class="email">alexanderducay8@gmail.com</span>
+                </div>
+              </div>
+
+              <div class="account-item" style="opacity: 0.6; cursor: default;">
+                <div class="avatar">+</div>
+                <div class="details">
+                  <span class="name">Use another account</span>
+                </div>
+              </div>
+
+              <button class="cancel-btn" onclick="window.close()">Cancel</button>
+            </div>
+            <script>
+              document.getElementById('loginBtn').onclick = () => {
+                window.opener.postMessage({ 
+                  type: 'social-login-success', 
+                  provider: '${provider}',
+                  email: 'alexanderducay8@gmail.com',
+                  fullName: 'Alexander Ducay'
+                }, '*');
+                window.close();
+              };
+            </script>
+          </body>
+        </html>
+      `);
     }
+
+    // Listener for the popup message
+    const messageHandler = async (event) => {
+      if (event.data && event.data.type === 'social-login-success' && event.data.provider === provider) {
+        window.removeEventListener('message', messageHandler);
+        
+        try {
+          const res = await api.socialLogin({
+            email: event.data.email,
+            fullName: event.data.fullName,
+            provider: event.data.provider,
+            profileImage: `https://api.dicebear.com/7.x/avataaars/svg?seed=${event.data.email}`
+          });
+
+          if (res.success && res.user) {
+            updateUser(res.user);
+            localStorage.setItem('gh_token', res.token);
+            localStorage.setItem('gh_user', JSON.stringify(res.user));
+            window.location.href = '/home';
+          }
+        } catch (err) {
+          setLocalError(err.message || 'Failed to complete social login');
+        } finally {
+          setSocialLoading(null);
+        }
+      }
+    };
+
+    window.addEventListener('message', messageHandler);
+
+    // Watch for popup closed without action
+    const checkClosed = setInterval(() => {
+      if (popup && popup.closed) {
+        clearInterval(checkClosed);
+        setTimeout(() => {
+          if (socialLoading === provider) {
+            setSocialLoading(null);
+            window.removeEventListener('message', messageHandler);
+          }
+        }, 500);
+      }
+    }, 1000);
   }
 
   return (
