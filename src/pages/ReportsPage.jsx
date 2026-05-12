@@ -179,7 +179,7 @@ function drawDoughnutChart(canvas, labels, data, colors, title) {
 
   ctx.fillStyle = '#94a3b8'
   ctx.font = '600 9px Inter, system-ui, sans-serif'
-  ctx.fillText('TASKS', cx, cy + 20)
+  ctx.fillText('TASKS', cx, cy + 22)
 
   // Legend (Side Layout)
   const legendX = w * 0.65
@@ -199,14 +199,9 @@ function drawDoughnutChart(canvas, labels, data, colors, title) {
     // Label
     const cleanLabel = label.replace(/([A-Z])/g, ' $1').trim()
     ctx.fillStyle = '#cbd5e1'
-    ctx.font = '600 12px Inter, system-ui, sans-serif'
+    ctx.font = '600 12.5px Inter, system-ui, sans-serif'
     ctx.textAlign = 'left'
-    ctx.fillText(`${cleanLabel}`, legendX + 15, ly - 5)
-    
-    // Count (Smaller/Subtle)
-    ctx.fillStyle = '#94a3b8'
-    ctx.font = '500 11px Inter, system-ui, sans-serif'
-    ctx.fillText(`${data[i]} tasks`, legendX + 15, ly + 10)
+    ctx.fillText(`${cleanLabel} ${data[i]} tasks`, legendX + 15, ly + 2)
   })
 }
 
