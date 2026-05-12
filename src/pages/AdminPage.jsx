@@ -643,9 +643,9 @@ function AdminPage({ hasUnreadNotifications = false }) {
               <tbody>
                 {adminData.reports.filter(r => {
                   const search = String(searchQuery || '').toLowerCase()
-                  const reporter = String(r?.ReporterName || '').toLowerCase()
-                  const reported = String(r?.ReportedName || '').toLowerCase()
-                  const reason = String(r?.Reason || '').toLowerCase()
+                  const reporter = String(r?.ReporterName || r?.reportername || '').toLowerCase()
+                  const reported = String(r?.ReportedName || r?.reportedname || '').toLowerCase()
+                  const reason = String(r?.Reason || r?.reason || '').toLowerCase()
                   return reporter.includes(search) || reported.includes(search) || reason.includes(search)
                 }).length === 0 ? (
                   <tr>
@@ -657,29 +657,29 @@ function AdminPage({ hasUnreadNotifications = false }) {
                   adminData.reports
                     .filter(r => {
                       const search = String(searchQuery || '').toLowerCase()
-                      const reporter = String(r?.ReporterName || '').toLowerCase()
-                      const reported = String(r?.ReportedName || '').toLowerCase()
-                      const reason = String(r?.Reason || '').toLowerCase()
+                      const reporter = String(r?.ReporterName || r?.reportername || '').toLowerCase()
+                      const reported = String(r?.ReportedName || r?.reportedname || '').toLowerCase()
+                      const reason = String(r?.Reason || r?.reason || '').toLowerCase()
                       return reporter.includes(search) || reported.includes(search) || reason.includes(search)
                     })
                     .map((r) => (
-                    <tr key={r.ReportID}>
-                      <td>#{r.ReportID}</td>
-                      <td>
-                        <strong>{r.ReporterName}</strong><br/>
-                        <small>{r.ReporterEmail}</small>
-                      </td>
-                      <td>
-                        <strong>{r.ReportedName}</strong><br/>
-                        <small>{r.ReportedEmail}</small>
-                        {Number(r.IsDeactivated) === 1 && (
-                          <span className="status-badge suspended" style={{ marginLeft: '8px', fontSize: '0.7rem' }}>Deactivated</span>
-                        )}
-                      </td>
-                      <td style={{ maxWidth: '300px', wordBreak: 'break-word' }}>
-                        {r.Reason}
-                      </td>
-                      <td>{new Date(r.CreatedAt).toLocaleString()}</td>
+                     <tr key={r.ReportID || r.reportid}>
+                       <td>#{r.ReportID || r.reportid}</td>
+                       <td>
+                         <strong>{r.ReporterName || r.reportername}</strong><br/>
+                         <small>{r.ReporterEmail || r.reporteremail}</small>
+                       </td>
+                       <td>
+                         <strong>{r.ReportedName || r.reportedname}</strong><br/>
+                         <small>{r.ReportedEmail || r.reportedemail}</small>
+                         {Number(r.IsDeactivated || r.isdeactivated) === 1 && (
+                           <span className="status-badge suspended" style={{ marginLeft: '8px', fontSize: '0.7rem' }}>Deactivated</span>
+                         )}
+                       </td>
+                       <td style={{ maxWidth: '300px', wordBreak: 'break-word' }}>
+                         {r.Reason || r.reason}
+                       </td>
+                       <td>{new Date(r.CreatedAt || r.createdat).toLocaleString()}</td>
                       <td className="admin-actions-cell">
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button
