@@ -357,6 +357,75 @@ router.post('/login', async (req, res) => {
   }
 })
 
+router.post('/social-login', async (req, res) => {
+  const { email, fullName, provider, profileImage } = req.body
+
+  if (!email || !fullName) {
+    return res.status(400).json({ message: 'Social profile data is missing' })
+  }
+
+  try {
+    // Check if user exists
+    let result = await query(
+      'SELECT UserID, FullName, Email, ProfileImage, IsAdmin, IsDeactivated FROM Users WHERE Email = ?',
+      [email.toLowerCase()]
+    )
+
+    let user
+
+    if (result.length === 0) {
+      // Create new user for social login
+      const insertResult = await query(
+        'INSERT INTO Users (FullName, Email, ProfileImage, EmailVerified, PasswordHash) VALUES (?, ?, ?, ?, ?) RETURNING UserID',
+        [fullName, email.toLowerCase(), profileImage || '', 1, 'social-login-no-password']
+      )
+      
+      const newUserId = insertResult[0].UserID
+      user = {
+        UserID: newUserId,
+        FullName: fullName,
+        Email: email.toLowerCase(),
+        ProfileImage: profileImage || '',
+        IsAdmin: 0
+      }
+    } else {
+      user = result[0]
+      if (Number(user.IsDeactivated) === 1) {
+        return res.status(403).json({ message: 'Your account has been deactivated.' })
+      }
+    }
+
+    const token = signToken({
+      id: user.UserID,
+      email: user.Email,
+      isAdmin: Number(user.IsAdmin),
+      IsAdmin: Number(user.IsAdmin)
+    })
+
+    res.cookie('gh_token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 86400000 // 1 day
+    })
+
+    return res.json({
+      token,
+      user: {
+        UserID: user.UserID,
+        FullName: user.FullName,
+        Email: user.Email,
+        ProfileImage: user.ProfileImage || '',
+        IsAdmin: Number(user.IsAdmin || 0),
+      },
+      success: true
+    })
+  } catch (error) {
+    logger.error('Social Login API Error:', error.message)
+    return res.status(500).json({ message: 'Failed to process social login.' })
+  }
+})
+
 router.get('/me', async (req, res) => {
   // Manual authentication check for /me to prevent console errors on landing
   let token = null

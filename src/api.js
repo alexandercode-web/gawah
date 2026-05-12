@@ -120,6 +120,12 @@ export const api = {
       method: 'POST',
     })
   },
+  socialLogin(payload) {
+    return request('/auth/social-login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
   changePassword(payload) {
     return request('/auth/change-password', {
       method: 'POST',
