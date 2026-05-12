@@ -458,7 +458,7 @@ function ReportsPage({ hasUnreadNotifications = false }) {
     const statusLabels = sortedStatusList.map(s => s.status || s.Status || 'Unknown')
     const statusData = sortedStatusList.map(s => Number(s.count || s.Count || 0))
     const statusColors = statusLabels.map(s => {
-      const lower = s.toLowerCase()
+      const lower = String(s || '').toLowerCase()
       if (lower.includes('completed') || lower.includes('done')) return '#10b981' // Completed (Green)
       if (lower.includes('assigned') || lower.includes('progress')) return '#3b82f6' // In Progress (Blue)
       if (lower.includes('open') || lower.includes('waiting')) return '#f59e0b' // Open (Yellow)

@@ -227,16 +227,18 @@ function AdminPage({ hasUnreadNotifications = false }) {
   }, [adminData.messages])
 
   const filteredGroupedMessages = useMemo(() => {
-    const query = searchQuery.toLowerCase().trim()
-    if (!query) return groupedMessages
+    const q = String(searchQuery || '').toLowerCase().trim()
+    if (!q) return groupedMessages
 
     return groupedMessages.filter((group) => {
-      const matchesTitle = group.taskTitle.toLowerCase().includes(query)
-      const matchesMessages = group.messages.some((m) =>
-        m.Content.toLowerCase().includes(query) ||
-        m.SenderName.toLowerCase().includes(query) ||
-        m.RecipientName.toLowerCase().includes(query)
-      )
+      const title = String(group?.taskTitle || '').toLowerCase()
+      const matchesTitle = title.includes(q)
+      const matchesMessages = group.messages.some((m) => {
+        const content = String(m?.Content || '').toLowerCase()
+        const sender = String(m?.SenderName || '').toLowerCase()
+        const recipient = String(m?.RecipientName || '').toLowerCase()
+        return content.includes(q) || sender.includes(q) || recipient.includes(q)
+      })
       return matchesTitle || matchesMessages
     })
   }, [groupedMessages, searchQuery])
@@ -488,7 +490,7 @@ function AdminPage({ hasUnreadNotifications = false }) {
                       </td>
                       <td>{t.PosterName}</td>
                       <td>
-                        <span className={`admin-status ${t.Status.toLowerCase()}`}>
+                        <span className={`admin-status ${String(t.Status || 'open').toLowerCase()}`}>
                           {t.Status}
                         </span>
                       </td>
@@ -639,11 +641,13 @@ function AdminPage({ hasUnreadNotifications = false }) {
                 </tr>
               </thead>
               <tbody>
-                {adminData.reports.filter(r => 
-                  r.ReporterName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  r.ReportedName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  r.Reason.toLowerCase().includes(searchQuery.toLowerCase())
-                ).length === 0 ? (
+                {adminData.reports.filter(r => {
+                  const search = String(searchQuery || '').toLowerCase()
+                  const reporter = String(r?.ReporterName || '').toLowerCase()
+                  const reported = String(r?.ReportedName || '').toLowerCase()
+                  const reason = String(r?.Reason || '').toLowerCase()
+                  return reporter.includes(search) || reported.includes(search) || reason.includes(search)
+                }).length === 0 ? (
                   <tr>
                     <td colSpan="6" className="admin-empty-cell">
                       No reports found
@@ -651,11 +655,13 @@ function AdminPage({ hasUnreadNotifications = false }) {
                   </tr>
                 ) : (
                   adminData.reports
-                    .filter(r => 
-                      r.ReporterName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      r.ReportedName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      r.Reason.toLowerCase().includes(searchQuery.toLowerCase())
-                    )
+                    .filter(r => {
+                      const search = String(searchQuery || '').toLowerCase()
+                      const reporter = String(r?.ReporterName || '').toLowerCase()
+                      const reported = String(r?.ReportedName || '').toLowerCase()
+                      const reason = String(r?.Reason || '').toLowerCase()
+                      return reporter.includes(search) || reported.includes(search) || reason.includes(search)
+                    })
                     .map((r) => (
                     <tr key={r.ReportID}>
                       <td>#{r.ReportID}</td>
