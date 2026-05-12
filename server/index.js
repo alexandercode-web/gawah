@@ -89,8 +89,8 @@ app.use('/api/reports', adminRoutes)
 app.use('/api', authRoutes)     // For /me, /login, etc.
 app.use('/api', adminRoutes)    // For admin routes
 app.use('/api', usersRoutes)    // For /home/summary
-app.use('/api', tasksRoutes)    // For /public/stats, /tasks, /categories — BEFORE messages!
 app.use('/api', messagesRoutes) // For /notifications and /:otherUserId/:taskId (catch-all, must be last)
+app.use('/api', tasksRoutes)    // For /public/stats, /tasks, /categories
 
 // 404 Handler - Ensure CORS headers for unknown routes
 app.use((req, res) => {

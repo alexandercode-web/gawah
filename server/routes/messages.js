@@ -17,32 +17,7 @@ const __dirname = path.dirname(__filename)
 
 const router = express.Router()
 
-router.get('/:otherUserId/:taskId', requireAuth, async (req, res) => {
-  try {
-    const taskId = Number(req.params.taskId) || 0
-    const otherUserId = Number(req.params.otherUserId) || 0
-    const userId = req.user.id
 
-    const rows = await query(`
-      SELECT 
-        m.*,
-        u.FullName AS SenderName,
-        u.ProfileImage AS SenderAvatar
-      FROM Messages m
-      JOIN Users u ON m.SenderID = u.UserID
-      WHERE m.TaskID = ? AND (
-        (m.SenderID = ? AND m.RecipientID = ?) OR 
-        (m.SenderID = ? AND m.RecipientID = ?)
-      )
-      ORDER BY m.CreatedAt ASC
-    `, [taskId, userId, otherUserId, otherUserId, userId])
-
-    return res.json(rows)
-  } catch (error) {
-    logger.error('API Error:', error.message)
-    return res.status(500).json({ message: 'An internal server error occurred.' })
-  }
-})
 
 router.post('/', requireAuth, async (req, res) => {
   try {
@@ -178,6 +153,32 @@ router.patch('/notifications/:notificationId', requireAuth, async (req, res) => 
     const notificationId = Number(req.params.notificationId)
     await query('UPDATE Notifications SET IsRead = 1 WHERE NotificationID = ? AND UserID = ?', [notificationId, req.user.id])
     return res.json({ success: true })
+  } catch (error) {
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+router.get('/:otherUserId/:taskId', requireAuth, async (req, res) => {
+  try {
+    const taskId = Number(req.params.taskId) || 0
+    const otherUserId = Number(req.params.otherUserId) || 0
+    const userId = req.user.id
+
+    const rows = await query(`
+      SELECT 
+        m.*,
+        u.FullName AS SenderName,
+        u.ProfileImage AS SenderAvatar
+      FROM Messages m
+      JOIN Users u ON m.SenderID = u.UserID
+      WHERE m.TaskID = ? AND (
+        (m.SenderID = ? AND m.RecipientID = ?) OR 
+        (m.SenderID = ? AND m.RecipientID = ?)
+      )
+      ORDER BY m.CreatedAt ASC
+    `, [taskId, userId, otherUserId, otherUserId, userId])
+
+    return res.json(rows)
   } catch (error) {
     logger.error('API Error:', error.message)
     return res.status(500).json({ message: 'An internal server error occurred.' })

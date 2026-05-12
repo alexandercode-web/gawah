@@ -233,80 +233,7 @@ router.get('/counts-by-category', async (_req, res) => {
   }
 })
 
-router.get('/:taskId', async (req, res) => {
-  const taskId = Number(req.params.taskId)
 
-  if (!Number.isFinite(taskId) || taskId <= 0) {
-    return res.status(400).json({ message: 'Invalid task id' })
-  }
-
-  try {
-    const result = await query(
-      `
-        SELECT
-          t.TaskID,
-          t.UserID,
-          t.Title,
-          t.Description,
-          t.Location,
-          t.TaskTime,
-          t.Budget,
-          t.Status,
-          t.CreatedAt,
-          u.FullName AS PosterName,
-          u.ProfileImage AS PosterProfileImage,
-          u.Rating AS PosterRating,
-          (SELECT COUNT(*) FROM Reviews WHERE ReviewedUserID = u.UserID) AS PosterReviewCount,
-          c.CategoryName,
-          ta.HelperID,
-          ta.AcceptedAt AS HelperAcceptedAt,
-          ta.ProofImage,
-          hu.FullName AS HelperName,
-          hu.ProfileImage AS HelperProfileImage,
-          hu.Rating AS HelperRating,
-          (SELECT COUNT(*) FROM Reviews WHERE ReviewedUserID = hu.UserID) AS HelperReviewCount,
-          hu.CancellationCount AS HelperCancellationCount,
-          rv.ReviewID AS PosterReviewID,
-          rv.Rating AS PosterReviewRating,
-          rv.Comment AS PosterReviewComment,
-          p.PaymentMethod,
-          p.PosterPaymentConfirmed
-        FROM Tasks t
-        INNER JOIN Users u ON t.UserID = u.UserID
-        LEFT JOIN Categories c ON t.CategoryID = c.CategoryID
-        LEFT JOIN (
-          SELECT ta1.TaskID, ta1.HelperID, ta1.AcceptedAt, ta1.ProofImage
-          FROM TaskAssignments ta1
-          INNER JOIN (
-            SELECT TaskID, MAX(AcceptedAt) AS LatestAcceptedAt
-            FROM TaskAssignments
-            GROUP BY TaskID
-          ) latest
-            ON latest.TaskID = ta1.TaskID
-           AND latest.LatestAcceptedAt = ta1.AcceptedAt
-        ) ta ON ta.TaskID = t.TaskID
-        LEFT JOIN Users hu ON hu.UserID = ta.HelperID
-        LEFT JOIN Reviews rv
-          ON rv.TaskID = t.TaskID
-         AND rv.ReviewerID = t.UserID
-         AND rv.ReviewedUserID = ta.HelperID
-        LEFT JOIN Payments p ON p.TaskID = t.TaskID
-        WHERE t.TaskID = ?
-        LIMIT 1
-      `,
-      [taskId]
-    )
-
-    if (result.length === 0) {
-      return res.status(404).json({ message: 'Task not found' })
-    }
-
-    return res.json(result[0])
-  } catch (error) {
-    logger.error('API Error:', error.message);
-    return res.status(500).json({ message: 'An internal server error occurred.' })
-  }
-})
 
 router.post('/', requireAuth, async (req, res) => {
   const { title, description, location, taskTime, budget, categoryId, paymentMethod } = req.body
@@ -1108,6 +1035,80 @@ router.patch('/:taskId/status', requireAuth, async (req, res) => {
     await query('UPDATE Tasks SET Status = ? WHERE TaskID = ?', [status, taskId])
 
     return res.json({ TaskID: taskId, Status: status })
+  } catch (error) {
+    logger.error('API Error:', error.message);
+    return res.status(500).json({ message: 'An internal server error occurred.' })
+  }
+})
+router.get('/:taskId', async (req, res) => {
+  const taskId = Number(req.params.taskId)
+
+  if (!Number.isFinite(taskId) || taskId <= 0) {
+    return res.status(400).json({ message: 'Invalid task id' })
+  }
+
+  try {
+    const result = await query(
+      `
+        SELECT
+          t.TaskID,
+          t.UserID,
+          t.Title,
+          t.Description,
+          t.Location,
+          t.TaskTime,
+          t.Budget,
+          t.Status,
+          t.CreatedAt,
+          u.FullName AS PosterName,
+          u.ProfileImage AS PosterProfileImage,
+          u.Rating AS PosterRating,
+          (SELECT COUNT(*) FROM Reviews WHERE ReviewedUserID = u.UserID) AS PosterReviewCount,
+          c.CategoryName,
+          ta.HelperID,
+          ta.AcceptedAt AS HelperAcceptedAt,
+          ta.ProofImage,
+          hu.FullName AS HelperName,
+          hu.ProfileImage AS HelperProfileImage,
+          hu.Rating AS HelperRating,
+          (SELECT COUNT(*) FROM Reviews WHERE ReviewedUserID = hu.UserID) AS HelperReviewCount,
+          hu.CancellationCount AS HelperCancellationCount,
+          rv.ReviewID AS PosterReviewID,
+          rv.Rating AS PosterReviewRating,
+          rv.Comment AS PosterReviewComment,
+          p.PaymentMethod,
+          p.PosterPaymentConfirmed
+        FROM Tasks t
+        INNER JOIN Users u ON t.UserID = u.UserID
+        LEFT JOIN Categories c ON t.CategoryID = c.CategoryID
+        LEFT JOIN (
+          SELECT ta1.TaskID, ta1.HelperID, ta1.AcceptedAt, ta1.ProofImage
+          FROM TaskAssignments ta1
+          INNER JOIN (
+            SELECT TaskID, MAX(AcceptedAt) AS LatestAcceptedAt
+            FROM TaskAssignments
+            GROUP BY TaskID
+          ) latest
+            ON latest.TaskID = ta1.TaskID
+           AND latest.LatestAcceptedAt = ta1.AcceptedAt
+        ) ta ON ta.TaskID = t.TaskID
+        LEFT JOIN Users hu ON hu.UserID = ta.HelperID
+        LEFT JOIN Reviews rv
+          ON rv.TaskID = t.TaskID
+         AND rv.ReviewerID = t.UserID
+         AND rv.ReviewedUserID = ta.HelperID
+        LEFT JOIN Payments p ON p.TaskID = t.TaskID
+        WHERE t.TaskID = ?
+        LIMIT 1
+      `,
+      [taskId]
+    )
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: 'Task not found' })
+    }
+
+    return res.json(result[0])
   } catch (error) {
     logger.error('API Error:', error.message);
     return res.status(500).json({ message: 'An internal server error occurred.' })
