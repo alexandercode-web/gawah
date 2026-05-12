@@ -506,10 +506,11 @@ function ReportsPage({ hasUnreadNotifications = false }) {
 
   // Filtered transactions
   const filteredTx = transactions.filter(tx => {
-    const matchSearch = txSearch.trim() === '' ||
-      (tx.TaskTitle || '').toLowerCase().includes(txSearch.toLowerCase()) ||
-      (tx.PosterName || '').toLowerCase().includes(txSearch.toLowerCase()) ||
-      (tx.HelperName || '').toLowerCase().includes(txSearch.toLowerCase())
+    const q = String(txSearch || '').trim().toLowerCase()
+    const matchSearch = q === '' ||
+      String(tx.TaskTitle || '').toLowerCase().includes(q) ||
+      String(tx.PosterName || '').toLowerCase().includes(q) ||
+      String(tx.HelperName || '').toLowerCase().includes(q)
     const matchFilter = txFilter === 'all' || tx.Status === txFilter
     return matchSearch && matchFilter
   })
