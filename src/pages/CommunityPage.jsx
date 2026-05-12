@@ -8,33 +8,38 @@ function CommunityPage({ hasUnreadNotifications = false }) {
   const navigate = useNavigate()
 
   const guidelines = [
-    { title: 'Respect Everyone', content: 'Treat every helper and poster with dignity. Professional communication is the foundation of our community.', color: 'blue' },
-    { title: 'Reliability', content: 'Follow through on your commitments. If you accept or post a task, ensure it is completed on time and as described.', color: 'green' },
-    { title: 'Safety First', content: 'Keep interactions professional. Never share sensitive personal info and report suspicious behavior immediately.', color: 'orange' },
-    { title: 'Prohibited Behavior', content: 'Harassment, illegal tasks, and fraudulent reviews are strictly prohibited and will lead to account suspension.', color: 'red' },
-    { title: 'Fair Payments', content: 'Always settle payments fairly and as agreed upon. Transparency builds trust between clients and helpers.', color: 'indigo' },
+    { title: 'Respect', content: 'Treat every user with dignity. Professional communication is required.', color: 'blue' },
+    { title: 'Reliability', content: 'Follow through on your commitments. Complete tasks on time.', color: 'green' },
+    { title: 'Safety', content: 'Keep interactions professional and report suspicious behavior immediately.', color: 'orange' },
+    { title: 'Prohibited Behavior', content: 'Harassment and illegal tasks will lead to account suspension.', color: 'red' },
   ]
 
   return (
     <section className="guide-page">
-      <button type="button" className="guide-back-btn" onClick={() => navigate(-1)} aria-label="Go back">←</button>
-      
       <div className="guide-container">
-        <header className="guide-header">
+        <header className="guide-modal-header">
           <h1>Community Guidelines</h1>
-          <p>GawaHelper is built on trust. Help us maintain a safe and productive environment for everyone.</p>
+          <button type="button" className="guide-close-btn" onClick={() => navigate(-1)}>×</button>
         </header>
 
-        <div className="guide-list">
-          {guidelines.map((item, idx) => (
-            <div key={idx} className="guide-card">
-              <div className={`guide-card-dot ${item.color}`} />
-              <div className="guide-card-content">
-                <h3>{item.title}</h3>
-                <p>{item.content}</p>
+        <div className="guide-scroll-area">
+          <p className="guide-intro">Help us build a trusted and safe workspace for every GawaHelper user.</p>
+          
+          <div className="guide-list">
+            {guidelines.map((item, idx) => (
+              <div key={idx} className={`guide-card ${item.color}`}>
+                <div className={`guide-card-dot ${item.color}`} />
+                <div className="guide-card-content">
+                  <h3>{item.title}</h3>
+                  <p>{item.content}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          <div className="guide-tip-card">
+            <span><strong>Tip:</strong> Always use the in-app chat to document your task agreements and updates.</span>
+          </div>
         </div>
       </div>
 

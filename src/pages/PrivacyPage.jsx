@@ -8,33 +8,38 @@ function PrivacyPage({ hasUnreadNotifications = false }) {
   const navigate = useNavigate()
 
   const sections = [
-    { title: 'Information We Collect', content: 'We collect profile information such as your name, email, and phone number, along with task details and transaction history to facilitate our services.', color: 'blue' },
-    { title: 'How We Use Your Info', content: 'We use your data to facilitate task matching, improve our platform services, and ensure the safety of all community members.', color: 'orange' },
-    { title: 'Data Sharing', content: 'We only share your information with other users when you interact with them (e.g., sharing your name with a helper). We never sell your data to third parties.', color: 'green' },
-    { title: 'Data Security', content: 'We use industry-standard encryption to keep your data safe. However, please be aware that no method of transmission over the internet is 100% secure.', color: 'red' },
-    { title: 'Your Rights', content: 'You have the right to access, update, or request the deletion of your personal data at any time through your profile settings.', color: 'indigo' },
+    { title: 'Information Collection', content: 'We collect profile info, task details, and transaction history to facilitate our services.', color: 'blue' },
+    { title: 'Data Usage', content: 'Your data is used to match tasks, improve services, and ensure platform safety.', color: 'orange' },
+    { title: 'Information Sharing', content: 'We only share info with other users when you interact. We never sell your data.', color: 'green' },
+    { title: 'Security Measures', content: 'We use industry-standard encryption to keep your data safe from unauthorized access.', color: 'red' },
   ]
 
   return (
     <section className="guide-page">
-      <button type="button" className="guide-back-btn" onClick={() => navigate(-1)} aria-label="Go back">←</button>
-      
       <div className="guide-container">
-        <header className="guide-header">
+        <header className="guide-modal-header">
           <h1>Privacy Policy</h1>
-          <p>Your privacy matters to us. Learn how we handle and protect your personal information.</p>
+          <button type="button" className="guide-close-btn" onClick={() => navigate(-1)}>×</button>
         </header>
 
-        <div className="guide-list">
-          {sections.map((section, idx) => (
-            <div key={idx} className="guide-card">
-              <div className={`guide-card-dot ${section.color}`} />
-              <div className="guide-card-content">
-                <h3>{section.title}</h3>
-                <p>{section.content}</p>
+        <div className="guide-scroll-area">
+          <p className="guide-intro">Learn how GawaHelper collects, uses, and protects your personal information.</p>
+          
+          <div className="guide-list">
+            {sections.map((section, idx) => (
+              <div key={idx} className={`guide-card ${section.color}`}>
+                <div className={`guide-card-dot ${section.color}`} />
+                <div className="guide-card-content">
+                  <h3>{section.title}</h3>
+                  <p>{section.content}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          <div className="guide-tip-card">
+            <span><strong>Tip:</strong> You can manage your privacy preferences and data visibility in your <a href="/settings">Profile Settings</a>.</span>
+          </div>
         </div>
       </div>
 

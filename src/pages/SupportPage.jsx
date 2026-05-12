@@ -8,33 +8,38 @@ function SupportPage({ hasUnreadNotifications = false }) {
   const navigate = useNavigate()
 
   const items = [
-    { title: 'How do I post a task?', content: 'Tap the "+" button on the Home screen, fill in the details, and set a budget.', color: 'blue' },
-    { title: 'How do I get paid?', content: 'Once the task poster approves your work, confirm payment receipt in the task details to complete the transfer.', color: 'green' },
-    { title: 'What if there is a dispute?', content: 'Contact our support team through the official email with your Task ID for assistance.', color: 'orange' },
-    { title: 'Email Support', content: 'Reach us at support@gawahelper.com for any technical or account-related inquiries.', color: 'indigo' },
-    { title: 'Community Support', content: 'Join our official Messenger group: GawaHelper Official for community discussions.', color: 'blue' },
+    { title: 'Task Posting', content: 'Tap the "+" button on Home, fill details, and set your budget.', color: 'orange' },
+    { title: 'Payments', content: 'Confirm receipt in task details after the poster approves your work.', color: 'blue' },
+    { title: 'Disputes', content: 'Contact support through email with your Task ID for help with issues.', color: 'orange' },
+    { title: 'Email Support', content: 'Reach us directly at support@gawahelper.com for technical help.', color: 'green' },
   ]
 
   return (
     <section className="guide-page">
-      <button type="button" className="guide-back-btn" onClick={() => navigate(-1)} aria-label="Go back">←</button>
-      
       <div className="guide-container">
-        <header className="guide-header">
+        <header className="guide-modal-header">
           <h1>Help & Support</h1>
-          <p>Find answers to common questions or reach out to our team for help.</p>
+          <button type="button" className="guide-close-btn" onClick={() => navigate(-1)}>×</button>
         </header>
 
-        <div className="guide-list">
-          {items.map((item, idx) => (
-            <div key={idx} className="guide-card">
-              <div className={`guide-card-dot ${item.color}`} />
-              <div className="guide-card-content">
-                <h3>{item.title}</h3>
-                <p>{item.content}</p>
+        <div className="guide-scroll-area">
+          <p className="guide-intro">Find quick answers or contact our team for assistance with your tasks.</p>
+          
+          <div className="guide-list">
+            {items.map((item, idx) => (
+              <div key={idx} className={`guide-card ${item.color}`}>
+                <div className={`guide-card-dot ${item.color}`} />
+                <div className="guide-card-content">
+                  <h3>{item.title}</h3>
+                  <p>{item.content}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          <div className="guide-tip-card">
+            <span><strong>Tip:</strong> Join our <a href="https://facebook.com">Messenger Group</a> for faster community-based support.</span>
+          </div>
         </div>
       </div>
 
