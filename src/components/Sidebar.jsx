@@ -100,7 +100,7 @@ function Sidebar({ user, onLogout, hasUnreadNotifications, logoutRedirect }) {
       <button type="button" className="nav-item" onClick={() => onLogout(logoutRedirect)}>
         <span className="nav-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" role="presentation" focusable="false">
-            <path d="M10 7V5a2 2-2h6v18h-6a2 2 0 0 1-2-2v-2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M3 12h11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             <path d="m6 9 3 3-3 3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>

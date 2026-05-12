@@ -20,6 +20,7 @@ import tasksRoutes from './routes/tasks.js'
 import usersRoutes from './routes/users.js'
 import messagesRoutes from './routes/messages.js'
 import adminRoutes from './routes/admin.js'
+import notificationsRoutes from './routes/notifications.js'
 
 import { authLimiter } from './config.js'
 
@@ -82,6 +83,7 @@ app.use('/api/users', usersRoutes)
 app.use('/api/messages', messagesRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/reports', adminRoutes)
+app.use('/api/notifications', notificationsRoutes)
 
 // Fallback mountings for legacy/non-prefixed paths used by the frontend
 // IMPORTANT: tasksRoutes MUST come before messagesRoutes because

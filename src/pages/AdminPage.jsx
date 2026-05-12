@@ -55,7 +55,7 @@ function AdminPage({ hasUnreadNotifications = false }) {
         users: Array.isArray(users) ? users : [],
         tasks: Array.isArray(tasks) ? tasks : [],
         messages: Array.isArray(messages) ? messages : [],
-        reports: Array.isArray(reports) ? reports : [],
+        reports: Array.isArray(auditLogs) ? auditLogs : [],
       })
       setLastRefresh(new Date())
     } catch (err) {
