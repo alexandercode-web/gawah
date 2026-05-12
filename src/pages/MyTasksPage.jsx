@@ -108,12 +108,17 @@ function MyTasksPage({user, myTasks, loading, error, hasUnreadNotifications = fa
     const query = searchText.trim().toLowerCase()
     if (!query) return activeTasks
 
-    return activeTasks.filter((task) =>
-      task.title.toLowerCase().includes(query)
-      || task.category.toLowerCase().includes(query)
-      || task.location.toLowerCase().includes(query)
-      || task.displayName.toLowerCase().includes(query)
-    )
+    return activeTasks.filter((task) => {
+      const title = String(task?.title || '').toLowerCase()
+      const category = String(task?.category || '').toLowerCase()
+      const location = String(task?.location || '').toLowerCase()
+      const displayName = String(task?.displayName || '').toLowerCase()
+
+      return title.includes(query)
+        || category.includes(query)
+        || location.includes(query)
+        || displayName.includes(query)
+    })
   }, [activeTasks, searchText])
 
   const selectedTask = taskId

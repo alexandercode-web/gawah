@@ -97,13 +97,17 @@ function AdminPage({ hasUnreadNotifications = false }) {
   }
 
   const filteredUsers = adminData.users.filter((user) => {
-    const matchesSearch = user.FullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.Email.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesSearch
+    const fullName = String(user?.FullName || '').toLowerCase()
+    const email = String(user?.Email || '').toLowerCase()
+    const search = String(searchQuery || '').toLowerCase()
+    
+    return fullName.includes(search) || email.includes(search)
   })
 
   const filteredTasks = adminData.tasks.filter((task) => {
-    const matchesSearch = task.Title.toLowerCase().includes(searchQuery.toLowerCase())
+    const title = String(task?.Title || '').toLowerCase()
+    const search = String(searchQuery || '').toLowerCase()
+    const matchesSearch = title.includes(search)
     const matchesStatus = filterStatus === 'all' || task.Status === filterStatus
     return matchesSearch && matchesStatus
   })

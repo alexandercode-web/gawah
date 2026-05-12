@@ -43,7 +43,8 @@ function App() {
   useEffect(() => {
     // Show welcome banner once per session when user is logged in
     if (user && !sessionStorage.getItem('gh_welcome_shown')) {
-      setMessage(`Welcome back, ${user.FullName.split(' ')[0]}!`)
+      const firstName = String(user?.FullName || 'User').split(' ')[0]
+      setMessage(`Welcome back, ${firstName}!`)
       sessionStorage.setItem('gh_welcome_shown', '1')
       // Banner stays for 4 seconds
       const timer = setTimeout(() => setMessage(''), 4000)

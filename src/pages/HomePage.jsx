@@ -96,19 +96,20 @@ function HomePage({user, summary, myTasks = [], loading, error, hasUnreadNotific
 
   const filteredTasks = useMemo(() => {
     return normalizedTasks.filter((task) => {
-      const matchesCategory =
-        activeCategory === 'All' || task.category.toLowerCase() === activeCategory.toLowerCase()
+      const taskCategory = String(task?.category || '').toLowerCase()
+      const currentActiveCategory = String(activeCategory || 'All').toLowerCase()
+      const matchesCategory = currentActiveCategory === 'all' || taskCategory === currentActiveCategory
 
       const matchesStatus =
         statusFilter === 'All' || normalizedStatus(task.status) === statusFilter
 
-      const q = searchText.trim().toLowerCase()
+      const q = String(searchText || '').trim().toLowerCase()
       const matchesSearch =
         !q ||
-        task.title.toLowerCase().includes(q) ||
-        task.requester.toLowerCase().includes(q) ||
-        task.location.toLowerCase().includes(q) ||
-        task.category.toLowerCase().includes(q)
+        String(task?.title || '').toLowerCase().includes(q) ||
+        String(task?.requester || '').toLowerCase().includes(q) ||
+        String(task?.location || '').toLowerCase().includes(q) ||
+        String(task?.category || '').toLowerCase().includes(q)
 
       return matchesCategory && matchesStatus && matchesSearch
     })
@@ -188,7 +189,7 @@ function HomePage({user, summary, myTasks = [], loading, error, hasUnreadNotific
               <h1>
                 <span className="brand-gawa">Gawa</span><span className="brand-helper">Helper</span>
               </h1>
-              <p>{`Welcome back${user?.FullName ? `, ${user.FullName.split(' ')[0]}` : ''}. Find tasks or get help.`}</p>
+              <p>{`Welcome back${user?.FullName ? `, ${String(user.FullName).split(' ')[0]}` : ''}. Find tasks or get help.`}</p>
             </div>
           </div>
         </div>
