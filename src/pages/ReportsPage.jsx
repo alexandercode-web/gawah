@@ -129,9 +129,9 @@ function drawDoughnutChart(canvas, labels, data, colors, title) {
     return
   }
 
-  const cx = w / 2
-  const cy = (h / 2) - 10
-  const outerR = Math.min(cx, cy) - 40
+  const cx = w * 0.42
+  const cy = (h / 2) + 5
+  const outerR = Math.min(w * 0.35, h * 0.35)
   const innerR = outerR * 0.65
 
   let startAngle = -Math.PI / 2
@@ -145,7 +145,6 @@ function drawDoughnutChart(canvas, labels, data, colors, title) {
     ctx.closePath()
 
     // Gradient fill
-    const sliceMidAngle = startAngle + sliceAngle / 2
     const gradient = ctx.createLinearGradient(
       cx + Math.cos(startAngle) * innerR,
       cy + Math.sin(startAngle) * innerR,
@@ -167,7 +166,6 @@ function drawDoughnutChart(canvas, labels, data, colors, title) {
   })
 
   // Center visual
-  // Outer circle for the hole
   ctx.beginPath()
   ctx.arc(cx, cy, innerR - 2, 0, Math.PI * 2)
   ctx.fillStyle = '#1e293b'
@@ -175,47 +173,40 @@ function drawDoughnutChart(canvas, labels, data, colors, title) {
 
   // Center text
   ctx.fillStyle = '#f8fafc'
-  ctx.font = 'bold 24px Inter, system-ui, sans-serif'
+  ctx.font = 'bold 22px Inter, system-ui, sans-serif'
   ctx.textAlign = 'center'
   ctx.fillText(total.toLocaleString(), cx, cy + 5)
 
   ctx.fillStyle = '#94a3b8'
-  ctx.font = '600 10px Inter, system-ui, sans-serif'
+  ctx.font = '600 9px Inter, system-ui, sans-serif'
   ctx.fillText('TASKS', cx, cy + 20)
 
-  // Legend
-  const legendY = h - 45
-  const totalItems = Math.min(labels.length, 6)
-  const itemsPerRow = 2
-  const rowCount = Math.ceil(totalItems / itemsPerRow)
-  const totalLegendH = rowCount * 22
+  // Legend (Side Layout)
+  const legendX = w * 0.65
+  const itemHeight = 28
+  const legendYStart = cy - (Math.min(labels.length, 6) * itemHeight) / 2 + 10
 
   labels.forEach((label, i) => {
     if (i >= 6) return
-    const row = Math.floor(i / itemsPerRow)
-    const col = i % itemsPerRow
-
-    // Calculate centering for the row
-    const rowItemsCount = (row === rowCount - 1) ? (totalItems % itemsPerRow || itemsPerRow) : itemsPerRow
-    const itemWidth = 130
-    const rowW = rowItemsCount * itemWidth
-    const startX = (w - rowW) / 2
-
-    const lx = startX + col * itemWidth
-    const ly = legendY + row * 22
+    const ly = legendYStart + i * itemHeight
 
     // Color dot
     ctx.beginPath()
-    ctx.arc(lx + 6, ly - 4, 4.5, 0, Math.PI * 2)
+    ctx.arc(legendX, ly - 4, 5, 0, Math.PI * 2)
     ctx.fillStyle = colors[i % colors.length]
     ctx.fill()
 
     // Label
     const cleanLabel = label.replace(/([A-Z])/g, ' $1').trim()
     ctx.fillStyle = '#cbd5e1'
-    ctx.font = '600 11.5px Inter, system-ui, sans-serif'
+    ctx.font = '600 12px Inter, system-ui, sans-serif'
     ctx.textAlign = 'left'
-    ctx.fillText(`${cleanLabel} (${data[i]})`, lx + 18, ly)
+    ctx.fillText(`${cleanLabel}`, legendX + 15, ly - 5)
+    
+    // Count (Smaller/Subtle)
+    ctx.fillStyle = '#94a3b8'
+    ctx.font = '500 11px Inter, system-ui, sans-serif'
+    ctx.fillText(`${data[i]} tasks`, legendX + 15, ly + 10)
   })
 }
 
