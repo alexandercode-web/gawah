@@ -361,7 +361,7 @@ function LandingPage() {
             <div className="benefits-logo-shell" aria-hidden="true">
               <span className="benefits-orbit benefits-orbit-a" />
               <span className="benefits-orbit benefits-orbit-b" />
-              <img src="/gawalogo.png" alt="GawaHelper logo" className="benefits-image benefits-image-moving" />
+              <img src="/gawasmall.png" alt="GawaHelper logo" className="benefits-image benefits-image-moving" />
             </div>
           </div>
         </div>
