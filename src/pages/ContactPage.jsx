@@ -7,50 +7,49 @@ function ContactPage({ hasUnreadNotifications = false }) {
   const { user, logout: onLogout } = useAuth()
   const navigate = useNavigate()
 
+  const contactMethods = [
+    { title: 'Email Support', content: 'For technical issues or account inquiries: support@gawahelper.com', color: 'blue' },
+    { title: 'Social Media', content: 'Follow us on Facebook: GawaHelper Official for updates and community news.', color: 'indigo' },
+    { title: 'Office Location', content: 'Visit us at the University of Cebu Lapu-Lapu And Mandaue Campus, 2nd Floor.', color: 'orange' },
+    { title: 'Response Time', content: 'We typically respond to all inquiries within 24-48 hours during business days.', color: 'green' },
+  ]
+
   return (
-    <section className="page info-page">
-      <header className="page-header-minimal">
-        <button type="button" className="back-btn" onClick={() => navigate(-1)}>←</button>
-        <h1>Contact Us</h1>
-      </header>
+    <section className="guide-page">
+      <button type="button" className="guide-back-btn" onClick={() => navigate(-1)} aria-label="Go back">←</button>
+      
+      <div className="guide-container">
+        <header className="guide-header">
+          <h1>Contact Us</h1>
+          <p>Have questions or feedback? Reach out to our team through any of these channels.</p>
+        </header>
 
-      <div className="info-container">
-        <div className="info-hero">
-          <div className="info-icon">📧</div>
-          <h2>Get in Touch</h2>
-          <p>We're here to help you with any questions or issues.</p>
-        </div>
+        <div className="guide-list">
+          {contactMethods.map((item, idx) => (
+            <div key={idx} className="guide-card">
+              <div className={`guide-card-dot ${item.color}`} />
+              <div className="guide-card-content">
+                <h3>{item.title}</h3>
+                <p>{item.content}</p>
+              </div>
+            </div>
+          ))}
 
-        <section className="info-section">
-          <h3>Contact Details</h3>
-          <div className="contact-grid-v2">
-            <div className="contact-card-v2">
-              <h4>Email</h4>
-              <p>support@gawahelper.com</p>
+          <div className="guide-card" style={{ flexDirection: 'column' }}>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                <div className="guide-card-dot blue" />
+                <h3>Send us a Message</h3>
             </div>
-            <div className="contact-card-v2">
-              <h4>Social Media</h4>
-              <p>Facebook: GawaHelper Official</p>
-              <p>Twitter: @GawaHelper</p>
-            </div>
-            <div className="contact-card-v2">
-              <h4>Office</h4>
-              <p>Campus Center, 2nd Floor</p>
-              <p>Manila, Philippines</p>
-            </div>
+            <form className="contact-form-placeholder" onSubmit={(e) => e.preventDefault()} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <input type="text" placeholder="Your Name" style={{ padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc' }} />
+              <input type="email" placeholder="Your Email" style={{ padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc' }} />
+              <textarea placeholder="Your Message" rows="4" style={{ padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', resize: 'none' }}></textarea>
+              <button type="button" style={{ padding: '1rem', borderRadius: '10px', border: 'none', background: '#2563eb', color: 'white', fontWeight: '700', cursor: 'pointer' }}>Send Message</button>
+            </form>
           </div>
-        </section>
-
-        <section className="info-section">
-          <h3>Send us a Message</h3>
-          <form className="contact-form-placeholder" onSubmit={(e) => e.preventDefault()}>
-            <input type="text" placeholder="Your Name" className="form-input" />
-            <input type="email" placeholder="Your Email" className="form-input" />
-            <textarea placeholder="Your Message" className="form-input" rows="4"></textarea>
-            <button type="button" className="btn-cta-primary" style={{ width: '100%' }}>Send Message</button>
-          </form>
-        </section>
+        </div>
       </div>
+
       {user && (
         <Sidebar 
           user={user} 

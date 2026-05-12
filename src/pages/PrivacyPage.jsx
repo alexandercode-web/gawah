@@ -7,44 +7,37 @@ function PrivacyPage({ hasUnreadNotifications = false }) {
   const { user, logout: onLogout } = useAuth()
   const navigate = useNavigate()
 
+  const sections = [
+    { title: 'Information We Collect', content: 'We collect profile information such as your name, email, and phone number, along with task details and transaction history to facilitate our services.', color: 'blue' },
+    { title: 'How We Use Your Info', content: 'We use your data to facilitate task matching, improve our platform services, and ensure the safety of all community members.', color: 'orange' },
+    { title: 'Data Sharing', content: 'We only share your information with other users when you interact with them (e.g., sharing your name with a helper). We never sell your data to third parties.', color: 'green' },
+    { title: 'Data Security', content: 'We use industry-standard encryption to keep your data safe. However, please be aware that no method of transmission over the internet is 100% secure.', color: 'red' },
+    { title: 'Your Rights', content: 'You have the right to access, update, or request the deletion of your personal data at any time through your profile settings.', color: 'indigo' },
+  ]
+
   return (
-    <section className="page info-page">
-      <header className="page-header-minimal">
-        <button type="button" className="back-btn" onClick={() => navigate(-1)}>←</button>
-        <h1>Privacy Policy</h1>
-      </header>
+    <section className="guide-page">
+      <button type="button" className="guide-back-btn" onClick={() => navigate(-1)} aria-label="Go back">←</button>
+      
+      <div className="guide-container">
+        <header className="guide-header">
+          <h1>Privacy Policy</h1>
+          <p>Your privacy matters to us. Learn how we handle and protect your personal information.</p>
+        </header>
 
-      <div className="info-container">
-        <div className="info-hero">
-          <div className="info-icon">🔒</div>
-          <h2>Your Privacy Matters</h2>
-          <p>We are committed to protecting your personal data.</p>
+        <div className="guide-list">
+          {sections.map((section, idx) => (
+            <div key={idx} className="guide-card">
+              <div className={`guide-card-dot ${section.color}`} />
+              <div className="guide-card-content">
+                <h3>{section.title}</h3>
+                <p>{section.content}</p>
+              </div>
+            </div>
+          ))}
         </div>
-
-        <section className="info-section">
-          <h3>Information We Collect</h3>
-          <ul>
-            <li>Profile info (Name, Email, Phone).</li>
-            <li>Task details and transaction history.</li>
-            <li>Usage data and device information.</li>
-          </ul>
-        </section>
-
-        <section className="info-section">
-          <h3>How We Use Your Info</h3>
-          <p>We use your data to facilitate task matching, improve our services, and ensure platform safety.</p>
-        </section>
-
-        <section className="info-section">
-          <h3>Data Sharing</h3>
-          <p>We only share your information with other users when you interact with them (e.g., sharing your name with a helper). We never sell your data to third parties.</p>
-        </section>
-
-        <section className="info-section">
-          <h3>Security</h3>
-          <p>We use industry-standard encryption to keep your data safe. However, no method of transmission is 100% secure.</p>
-        </section>
       </div>
+
       {user && (
         <Sidebar 
           user={user} 
