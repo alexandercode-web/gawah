@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { startAuthentication } from '@simplewebauthn/browser'
 import { api } from '../api'
 
-function LoginPage({onLogin: parentOnLogin, loading: parentLoading, error: authError}) {
+function LoginPage({onLogin, loading, error: authError}) {
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
@@ -237,7 +237,7 @@ function LoginPage({onLogin: parentOnLogin, loading: parentLoading, error: authE
                   </div>
                 </div>
 
-                <button className="auth-submit-btn" type="submit" disabled={!canSubmit || loading || biometricLoading}>
+                <button className="auth-submit-btn" type="submit" disabled={!canSubmit || loading || biometricLoading || socialLoading}>
                   {loading ? 'Signing in...' : 'Sign In'}
                 </button>
               </form>
