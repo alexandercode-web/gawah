@@ -151,6 +151,8 @@ function PostTaskPage({ user, onSubmitTask, posting, hasUnreadNotifications = fa
   // Automatic item pricing
   useEffect(() => {
     const item = form.itemName.trim().toLowerCase()
+    const qty = Math.max(1, Number(form.itemQuantity) || 1)
+    
     const commonItems = {
       'pares': '55',
       'siomai rice': '45',
@@ -168,11 +170,12 @@ function PostTaskPage({ user, onSubmitTask, posting, hasUnreadNotifications = fa
       'medicine': '90',
     }
 
-    const foundPrice = Object.entries(commonItems).find(([key]) => item.includes(key))?.[1]
-    if (foundPrice) {
-      setForm(prev => ({ ...prev, productPrice: foundPrice }))
+    const foundBasePrice = Object.entries(commonItems).find(([key]) => item.includes(key))?.[1]
+    if (foundBasePrice) {
+      const totalPrice = String(Number(foundBasePrice) * qty)
+      setForm(prev => ({ ...prev, productPrice: totalPrice }))
     }
-  }, [form.itemName])
+  }, [form.itemName, form.itemQuantity])
 
   const isItemRecognized = useMemo(() => {
     const item = form.itemName.trim().toLowerCase()
