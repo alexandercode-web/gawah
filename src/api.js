@@ -83,22 +83,22 @@ export const api = {
     })
   },
   generateWebAuthnRegOptions() {
-    return request('/webauthn/generate-registration-options', { method: 'POST' })
+    return request('/auth/generate-registration-options', { method: 'POST' })
   },
   verifyWebAuthnReg(payload) {
-    return request('/webauthn/verify-registration', {
+    return request('/auth/verify-registration', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
   },
   generateWebAuthnAuthOptions(email) {
-    return request('/webauthn/generate-authentication-options', {
+    return request('/auth/generate-authentication-options', {
       method: 'POST',
       body: JSON.stringify({ email }),
     })
   },
   verifyWebAuthnAuth(email, payload) {
-    return request('/webauthn/verify-authentication', {
+    return request('/auth/verify-authentication', {
       method: 'POST',
       body: JSON.stringify({ email, body: payload }),
     })
