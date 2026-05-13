@@ -59,6 +59,29 @@ router.get('/home/summary', requireAuth, async (req, res) => {
   }
 })
 
+router.get('/me/rating-summary', requireAuth, async (req, res) => {
+  try {
+    const result = await query(`
+      SELECT 
+        Rating, 
+        (SELECT COUNT(*) FROM Reviews WHERE ReviewedUserID = ?) AS ReviewCount
+      FROM Users 
+      WHERE UserID = ?
+    `, [req.user.id, req.user.id])
+    
+    if (result.length === 0) return res.status(404).json({ message: 'User not found' })
+    
+    const user = result[0]
+    return res.json({
+      rating: Number(user.Rating || 0),
+      reviewCount: Number(user.ReviewCount || 0)
+    })
+  } catch (error) {
+    logger.error('API Error:', error.message)
+    return res.status(500).json({ message: 'Internal server error' })
+  }
+})
+
 router.get('/debug-query', async (req, res) => {
   try {
     const q = await query(`
